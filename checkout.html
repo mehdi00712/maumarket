@@ -34,10 +34,20 @@
     <div class="cart-summary">
       <p>Items Total: Rs <span id="itemsTotal">0</span></p>
       <p>Delivery Fee: Rs <span id="deliveryFee">150</span></p>
-      <h2>Total: Rs <span id="grandTotal">0</span></h2>
+      <h2>Total to Pay: Rs <span id="grandTotal">0</span></h2>
     </div>
 
-    <button id="placeOrderBtn">Place Order</button>
+    <div class="juice-box">
+      <h2>Pay with Juice</h2>
+      <p><strong>Pay to:</strong> MauMarket</p>
+      <p><strong>Juice Number:</strong> +230 5775 0662</p>
+      <p>Pay the total amount first, then upload your Juice payment screenshot below.</p>
+    </div>
+
+    <label>Upload Juice Payment Screenshot</label>
+    <input id="paymentProof" type="file" accept="image/*">
+
+    <button id="placeOrderBtn">Submit Payment & Place Order</button>
     <p id="checkoutMessage"></p>
   </section>
 </main>
