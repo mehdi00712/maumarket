@@ -375,3 +375,7 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+.approve-btn {
+  background: #16a34a;
+}
