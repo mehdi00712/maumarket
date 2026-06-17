@@ -1,32 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Register | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body class="auth-body">
+import { auth, db } from "./firebase-config.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-<div class="auth-card">
-  <h1>Create Account</h1>
+const registerBtn = document.getElementById("registerBtn");
+const message = document.getElementById("message");
 
-  <input id="name" placeholder="Full name">
-  <input id="phone" placeholder="Phone number">
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
+registerBtn.addEventListener("click", async () => {
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const role = document.getElementById("role").value;
 
-  <select id="role">
-    <option value="customer">Customer</option>
-    <option value="seller">Seller</option>
-  </select>
+  if (!name || !phone || !email || !password) {
+    message.textContent = "Please fill all fields.";
+    return;
+  }
 
-  <button id="registerBtn">Create Account</button>
+  try {
+    registerBtn.disabled = true;
 
-  <p id="message"></p>
-  <p>Already have an account? <a href="login.html">Login</a></p>
-</div>
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-<script type="module" src="js/register.js"></script>
-</body>
-</html>
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      name,
+      phone,
+      email,
+      role,
+      approved: role === "customer",
+      createdAt: serverTimestamp()
+    });
+
+    window.location.href = "dashboard.html";
+  } catch (error) {
+    message.textContent = error.message;
+    registerBtn.disabled = false;
+  }
+});
