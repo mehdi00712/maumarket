@@ -1,0 +1,140 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f7fb;
+  color: #111827;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.navbar {
+  background: white;
+  padding: 18px 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+
+.navbar h2 {
+  margin: 0;
+  color: #0f766e;
+}
+
+.navbar nav {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.hero {
+  padding: 90px 7%;
+  text-align: center;
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: white;
+}
+
+.hero h1 {
+  font-size: clamp(34px, 6vw, 64px);
+  margin-bottom: 15px;
+}
+
+.hero p {
+  font-size: 20px;
+  max-width: 760px;
+  margin: 0 auto 30px;
+}
+
+.btn,
+button {
+  border: none;
+  background: #0f766e;
+  color: white;
+  padding: 13px 22px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn.secondary {
+  background: white;
+  color: #0f766e;
+}
+
+.container {
+  width: min(1100px, 92%);
+  margin: 40px auto;
+}
+
+.cards {
+  width: min(1100px, 92%);
+  margin: 40px auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.card,
+.form-card,
+.auth-card {
+  background: white;
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+}
+
+.link-card:hover {
+  transform: translateY(-3px);
+  transition: 0.2s;
+}
+
+.auth-body {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0f766e, #111827);
+}
+
+.auth-card {
+  width: min(430px, 92%);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 14px;
+  margin: 9px 0;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+textarea {
+  min-height: 120px;
+}
+
+#message,
+#status {
+  color: #0f766e;
+  font-weight: bold;
+}
+
+@media (max-width: 700px) {
+  .navbar {
+    padding: 15px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero {
+    padding: 60px 20px;
+  }
+}
