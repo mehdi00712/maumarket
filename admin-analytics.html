@@ -1,1 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Analytics | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
+<header class="navbar">
+  <h2>Admin Analytics</h2>
+  <nav>
+    <a href="admin.html">Admin</a>
+    <a href="admin-commission.html">Commission</a>
+    <a href="admin-payouts.html">Payouts</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<main class="container">
+  <h1>Platform Overview</h1>
+
+  <section class="cards">
+    <div class="card"><h3>Users</h3><h2 id="totalUsers">0</h2></div>
+    <div class="card"><h3>Sellers</h3><h2 id="totalSellers">0</h2></div>
+    <div class="card"><h3>Customers</h3><h2 id="totalCustomers">0</h2></div>
+    <div class="card"><h3>Products/Services</h3><h2 id="totalProducts">0</h2></div>
+    <div class="card"><h3>Orders</h3><h2 id="totalOrders">0</h2></div>
+    <div class="card"><h3>Revenue</h3><h2>Rs <span id="totalRevenue">0</span></h2></div>
+  </section>
+
+  <h2>Recent Orders</h2>
+  <div id="recentOrders">Loading...</div>
+</main>
+
+<script type="module" src="js/admin-analytics.js"></script>
+</body>
+</html>
