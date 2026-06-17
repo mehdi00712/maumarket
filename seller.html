@@ -29,12 +29,15 @@
     <label>Shop Logo</label>
     <input id="shopLogo" type="file" accept="image/*">
 
+    <label>Shop Banner</label>
+    <input id="shopBanner" type="file" accept="image/*">
+
     <button id="saveShopBtn">Save Shop</button>
     <p id="shopMessage"></p>
   </section>
 
   <section class="form-card">
-    <h1>Add Product / Service</h1>
+    <h1 id="formTitle">Add Product / Service</h1>
 
     <select id="itemType">
       <option value="product">Product</option>
@@ -64,6 +67,7 @@
     <input id="itemImage" type="file" accept="image/*">
 
     <button id="saveItemBtn">Add Item</button>
+    <button id="cancelEditBtn" class="secondary-btn" style="display:none;">Cancel Edit</button>
     <p id="itemMessage"></p>
   </section>
 
