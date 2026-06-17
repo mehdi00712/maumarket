@@ -9,22 +9,69 @@
 <body>
 
 <header class="navbar">
-  <h2>Seller Dashboard</h2>
-  <a href="dashboard.html">Back</a>
+  <h2>MauMarket Seller</h2>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="products.html">Marketplace</a>
+  </nav>
 </header>
 
 <main class="container">
-  <h1>Create Your Shop</h1>
 
-  <div class="form-card">
+  <section class="form-card">
+    <h1>Your Shop</h1>
+
     <input id="shopName" placeholder="Shop name">
     <textarea id="shopDescription" placeholder="Shop description"></textarea>
     <input id="shopPhone" placeholder="Shop phone">
     <input id="shopLocation" placeholder="Shop location">
 
+    <label>Shop Logo</label>
+    <input id="shopLogo" type="file" accept="image/*">
+
     <button id="saveShopBtn">Save Shop</button>
-    <p id="message"></p>
-  </div>
+    <p id="shopMessage"></p>
+  </section>
+
+  <section class="form-card">
+    <h1>Add Product / Service</h1>
+
+    <select id="itemType">
+      <option value="product">Product</option>
+      <option value="service">Service</option>
+    </select>
+
+    <input id="itemTitle" placeholder="Title">
+    <textarea id="itemDescription" placeholder="Description"></textarea>
+
+    <input id="itemPrice" type="number" placeholder="Price in Rs">
+    <input id="itemStock" type="number" placeholder="Stock quantity">
+
+    <select id="itemCategory">
+      <option value="Beauty">Beauty</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Fashion">Fashion</option>
+      <option value="Food">Food</option>
+      <option value="Hardware">Hardware</option>
+      <option value="Home">Home</option>
+      <option value="Services">Services</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <input id="serviceArea" placeholder="Service area, example: Port Louis, Curepipe">
+
+    <label>Image</label>
+    <input id="itemImage" type="file" accept="image/*">
+
+    <button id="saveItemBtn">Add Item</button>
+    <p id="itemMessage"></p>
+  </section>
+
+  <section>
+    <h1>Your Items</h1>
+    <div id="myItems" class="cards"></div>
+  </section>
+
 </main>
 
 <script type="module" src="js/seller.js"></script>
