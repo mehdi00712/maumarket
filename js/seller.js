@@ -14,6 +14,7 @@ import {
   where,
   getDocs,
   deleteDoc,
+  updateDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -28,9 +29,11 @@ const shopDescription = document.getElementById("shopDescription");
 const shopPhone = document.getElementById("shopPhone");
 const shopLocation = document.getElementById("shopLocation");
 const shopLogo = document.getElementById("shopLogo");
+const shopBanner = document.getElementById("shopBanner");
 const saveShopBtn = document.getElementById("saveShopBtn");
 const shopMessage = document.getElementById("shopMessage");
 
+const formTitle = document.getElementById("formTitle");
 const itemType = document.getElementById("itemType");
 const itemTitle = document.getElementById("itemTitle");
 const itemDescription = document.getElementById("itemDescription");
@@ -40,11 +43,14 @@ const itemCategory = document.getElementById("itemCategory");
 const serviceArea = document.getElementById("serviceArea");
 const itemImage = document.getElementById("itemImage");
 const saveItemBtn = document.getElementById("saveItemBtn");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
 const itemMessage = document.getElementById("itemMessage");
 const myItems = document.getElementById("myItems");
 
 let currentUser = null;
 let currentShop = null;
+let editingItemId = null;
+let existingImageUrl = "";
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -73,7 +79,8 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 async function uploadImage(file, folder) {
-  const fileName = `${Date.now()}-${file.name}`;
+  const safeName = file.name.replaceAll(" ", "-");
+  const fileName = `${Date.now()}-${safeName}`;
   const imageRef = ref(storage, `${folder}/${currentUser.uid}/${fileName}`);
   await uploadBytes(imageRef, file);
   return await getDownloadURL(imageRef);
@@ -105,9 +112,14 @@ saveShopBtn.addEventListener("click", async () => {
 
   try {
     let logoUrl = currentShop?.logoUrl || "";
+    let bannerUrl = currentShop?.bannerUrl || "";
 
     if (shopLogo.files[0]) {
       logoUrl = await uploadImage(shopLogo.files[0], "shops");
+    }
+
+    if (shopBanner.files[0]) {
+      bannerUrl = await uploadImage(shopBanner.files[0], "shops");
     }
 
     await setDoc(doc(db, "shops", currentUser.uid), {
@@ -117,6 +129,7 @@ saveShopBtn.addEventListener("click", async () => {
       phone: shopPhone.value.trim(),
       location: shopLocation.value.trim(),
       logoUrl,
+      bannerUrl,
       active: true,
       updatedAt: serverTimestamp()
     }, { merge: true });
@@ -139,16 +152,16 @@ saveItemBtn.addEventListener("click", async () => {
   }
 
   saveItemBtn.disabled = true;
-  itemMessage.textContent = "Adding item...";
+  itemMessage.textContent = editingItemId ? "Updating item..." : "Adding item...";
 
   try {
-    let imageUrl = "";
+    let imageUrl = existingImageUrl;
 
     if (itemImage.files[0]) {
       imageUrl = await uploadImage(itemImage.files[0], "products");
     }
 
-    await addDoc(collection(db, "products"), {
+    const itemData = {
       sellerId: currentUser.uid,
       type: itemType.value,
       title: itemTitle.value.trim(),
@@ -158,19 +171,22 @@ saveItemBtn.addEventListener("click", async () => {
       category: itemCategory.value,
       serviceArea: serviceArea.value.trim(),
       imageUrl,
-      active: true,
-      createdAt: serverTimestamp()
-    });
+      updatedAt: serverTimestamp()
+    };
 
-    itemMessage.textContent = "Item added successfully.";
+    if (editingItemId) {
+      await updateDoc(doc(db, "products", editingItemId), itemData);
+      itemMessage.textContent = "Item updated successfully.";
+    } else {
+      await addDoc(collection(db, "products"), {
+        ...itemData,
+        active: true,
+        createdAt: serverTimestamp()
+      });
+      itemMessage.textContent = "Item added successfully.";
+    }
 
-    itemTitle.value = "";
-    itemDescription.value = "";
-    itemPrice.value = "";
-    itemStock.value = "";
-    serviceArea.value = "";
-    itemImage.value = "";
-
+    resetItemForm();
     await loadMyItems();
   } catch (error) {
     itemMessage.textContent = error.message;
@@ -178,6 +194,26 @@ saveItemBtn.addEventListener("click", async () => {
 
   saveItemBtn.disabled = false;
 });
+
+cancelEditBtn.addEventListener("click", resetItemForm);
+
+function resetItemForm() {
+  editingItemId = null;
+  existingImageUrl = "";
+
+  formTitle.textContent = "Add Product / Service";
+  saveItemBtn.textContent = "Add Item";
+  cancelEditBtn.style.display = "none";
+
+  itemType.value = "product";
+  itemTitle.value = "";
+  itemDescription.value = "";
+  itemPrice.value = "";
+  itemStock.value = "";
+  itemCategory.value = "Beauty";
+  serviceArea.value = "";
+  itemImage.value = "";
+}
 
 async function loadMyItems() {
   myItems.innerHTML = "Loading...";
@@ -205,14 +241,49 @@ async function loadMyItems() {
     div.innerHTML = `
       ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}">` : ""}
       <span class="badge">${item.type}</span>
+      <span class="status-badge ${item.active ? "active" : "hidden"}">
+        ${item.active ? "Visible" : "Hidden"}
+      </span>
       <h3>${item.title}</h3>
       <p>${item.category}</p>
       <p><strong>Rs ${item.price}</strong></p>
-      <button class="danger-btn">Delete</button>
+
+      <div class="seller-actions">
+        <button class="edit-btn">Edit</button>
+        <button class="toggle-btn">${item.active ? "Hide" : "Show"}</button>
+        <button class="danger-btn">Delete</button>
+      </div>
     `;
 
+    div.querySelector(".edit-btn").addEventListener("click", () => {
+      editingItemId = docSnap.id;
+      existingImageUrl = item.imageUrl || "";
+
+      formTitle.textContent = "Edit Product / Service";
+      saveItemBtn.textContent = "Update Item";
+      cancelEditBtn.style.display = "inline-block";
+
+      itemType.value = item.type || "product";
+      itemTitle.value = item.title || "";
+      itemDescription.value = item.description || "";
+      itemPrice.value = item.price || "";
+      itemStock.value = item.stock || "";
+      itemCategory.value = item.category || "Other";
+      serviceArea.value = item.serviceArea || "";
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    div.querySelector(".toggle-btn").addEventListener("click", async () => {
+      await updateDoc(doc(db, "products", docSnap.id), {
+        active: !item.active,
+        updatedAt: serverTimestamp()
+      });
+      await loadMyItems();
+    });
+
     div.querySelector(".danger-btn").addEventListener("click", async () => {
-      if (!confirm("Delete this item?")) return;
+      if (!confirm("Delete this item permanently?")) return;
       await deleteDoc(doc(db, "products", docSnap.id));
       await loadMyItems();
     });
