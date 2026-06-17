@@ -29,6 +29,7 @@ let currentUser = null;
 let cartItems = [];
 
 const DELIVERY_FEE = 150;
+const COMMISSION_RATE = 0.10;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -100,12 +101,18 @@ placeOrderBtn.addEventListener("click", async () => {
 
   try {
     const itemsTotal = cartItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
-    const grandTotal = itemsTotal + DELIVERY_FEE;
+    const deliveryFee = DELIVERY_FEE;
+    const grandTotal = itemsTotal + deliveryFee;
+
+    const commissionAmount = Math.round(itemsTotal * COMMISSION_RATE);
+    const sellerAmount = itemsTotal - commissionAmount;
+
     const sellerIds = [...new Set(cartItems.map(item => item.sellerId))];
 
-    await addDoc(collection(db, "orders"), {
+    const orderRef = await addDoc(collection(db, "orders"), {
       customerId: currentUser.uid,
       customerEmail: currentUser.email,
+
       customerName: customerName.value.trim(),
       customerPhone: customerPhone.value.trim(),
       deliveryAddress: deliveryAddress.value.trim(),
@@ -115,10 +122,17 @@ placeOrderBtn.addEventListener("click", async () => {
       sellerIds,
 
       itemsTotal,
-      deliveryFee: DELIVERY_FEE,
+      deliveryFee,
       grandTotal,
 
+      commissionRate: COMMISSION_RATE,
+      commissionAmount,
+      sellerAmount,
+
+      paymentMethod: "Juice",
       paymentStatus: "not_paid",
+      paymentProofUrl: "",
+
       orderStatus: "Pending Payment",
 
       createdAt: serverTimestamp(),
@@ -129,9 +143,10 @@ placeOrderBtn.addEventListener("click", async () => {
       await deleteDoc(doc(db, "carts", currentUser.uid, "items", item.cartItemId));
     }
 
-    checkoutMessage.textContent = "Order placed successfully.";
+    checkoutMessage.textContent = "Order placed successfully. Redirecting to payment...";
+
     setTimeout(() => {
-      window.location.href = "my-orders.html";
+      window.location.href = `payment.html?id=${orderRef.id}`;
     }, 900);
   } catch (error) {
     checkoutMessage.textContent = error.message;
