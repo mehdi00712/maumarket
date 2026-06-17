@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Juice Payment | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="navbar">
+  <h2>MauMarket Payment</h2>
+  <nav>
+    <a href="my-orders.html">My Orders</a>
+    <a href="products.html">Marketplace</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="form-card">
+    <h1>Pay with Juice</h1>
+
+    <div id="orderBox">Loading order...</div>
+
+    <div class="juice-box">
+      <h2>Juice Payment Details</h2>
+      <p><strong>Pay to:</strong> MauMarket</p>
+      <p><strong>Juice Number:</strong> +230 5775 0662</p>
+      <p>After payment, upload your Juice screenshot below.</p>
+    </div>
+
+    <label>Upload Juice Payment Screenshot</label>
+    <input id="paymentProof" type="file" accept="image/*">
+
+    <button id="submitPaymentBtn">Submit Payment Proof</button>
+    <p id="paymentMessage"></p>
+  </section>
+</main>
+
+<script type="module" src="js/payment.js"></script>
+</body>
+</html>
