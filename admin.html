@@ -2,25 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin | MauMarket</title>
+  <title>Admin Dashboard | MauMarket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header class="navbar">
-  <h2>Admin Dashboard</h2>
-  <a href="admin-payments.html">Payments</a>
-  <a href="admin-commission.html">Commission Dashboard</a>
-  <a href="admin-delivery.html">Delivery</a>
-  <a href="admin-analytics.html">Analytics</a>
-<a href="admin-payouts.html">Payouts</a>
-  <a href="dashboard.html">Back</a>
+  <h2>MauMarket Admin</h2>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="products.html">Marketplace</a>
+  </nav>
 </header>
 
 <main class="container">
-  <h1>Pending Sellers</h1>
-  <div id="sellerList"></div>
+  <h1>Admin Control Center</h1>
+
+  <div class="cards">
+    <a class="card link-card" href="admin-payments.html">
+      <h3>Payments</h3>
+      <p>Verify Juice payment proofs.</p>
+    </a>
+
+    <a class="card link-card" href="admin-delivery.html">
+      <h3>Delivery</h3>
+      <p>Manage pickup and delivery status.</p>
+    </a>
+
+    <a class="card link-card" href="admin-commission.html">
+      <h3>Commission</h3>
+      <p>Track sales, commission, and seller payouts.</p>
+    </a>
+
+    <a class="card link-card" href="admin-payouts.html">
+      <h3>Payouts</h3>
+      <p>Mark seller payouts as paid.</p>
+    </a>
+
+    <a class="card link-card" href="admin-analytics.html">
+      <h3>Analytics</h3>
+      <p>View platform statistics.</p>
+    </a>
+
+    <a class="card link-card" href="admin-users.html">
+      <h3>Users</h3>
+      <p>Approve, block, or manage users.</p>
+    </a>
+
+    <a class="card link-card" href="admin-products.html">
+      <h3>Products</h3>
+      <p>Hide or delete bad products and services.</p>
+    </a>
+  </div>
+
+  <section class="form-card">
+    <h2>Pending Sellers</h2>
+    <div id="sellerList">Loading pending sellers...</div>
+  </section>
 </main>
 
 <script type="module" src="js/admin.js"></script>
