@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Marketplace | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="navbar">
+  <h2>MauMarket</h2>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="login.html">Login</a>
+  </nav>
+</header>
+
+<section class="market-hero">
+  <h1>Browse Mauritius</h1>
+  <p>Products and services from local sellers.</p>
+</section>
+
+<main class="container">
+
+  <div class="filters">
+    <input id="searchInput" placeholder="Search products or services...">
+
+    <select id="typeFilter">
+      <option value="">All Types</option>
+      <option value="product">Products</option>
+      <option value="service">Services</option>
+    </select>
+
+    <select id="categoryFilter">
+      <option value="">All Categories</option>
+      <option value="Beauty">Beauty</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Fashion">Fashion</option>
+      <option value="Food">Food</option>
+      <option value="Hardware">Hardware</option>
+      <option value="Home">Home</option>
+      <option value="Services">Services</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+
+  <div id="productsGrid" class="cards"></div>
+
+</main>
+
+<script type="module" src="js/products.js"></script>
+</body>
+</html>
