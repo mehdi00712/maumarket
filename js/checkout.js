@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js";
+import { auth, db, storage } from "./firebase-config.js";
 
 import {
   onAuthStateChanged
@@ -13,10 +13,17 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+
 const customerName = document.getElementById("customerName");
 const customerPhone = document.getElementById("customerPhone");
 const deliveryAddress = document.getElementById("deliveryAddress");
 const orderNotes = document.getElementById("orderNotes");
+const paymentProof = document.getElementById("paymentProof");
 
 const checkoutItems = document.getElementById("checkoutItems");
 const itemsTotalEl = document.getElementById("itemsTotal");
@@ -91,13 +98,18 @@ placeOrderBtn.addEventListener("click", async () => {
     return;
   }
 
+  if (!paymentProof.files[0]) {
+    checkoutMessage.textContent = "Please upload your Juice payment screenshot before placing the order.";
+    return;
+  }
+
   if (cartItems.length === 0) {
     checkoutMessage.textContent = "Your cart is empty.";
     return;
   }
 
   placeOrderBtn.disabled = true;
-  checkoutMessage.textContent = "Creating order...";
+  checkoutMessage.textContent = "Uploading proof and creating order...";
 
   try {
     const itemsTotal = cartItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
@@ -106,10 +118,16 @@ placeOrderBtn.addEventListener("click", async () => {
 
     const commissionAmount = Math.round(itemsTotal * COMMISSION_RATE);
     const sellerAmount = itemsTotal - commissionAmount;
-
     const sellerIds = [...new Set(cartItems.map(item => item.sellerId))];
 
-    const orderRef = await addDoc(collection(db, "orders"), {
+    const file = paymentProof.files[0];
+    const safeName = file.name.replaceAll(" ", "-");
+    const fileRef = ref(storage, `payments/${currentUser.uid}/${Date.now()}-${safeName}`);
+
+    await uploadBytes(fileRef, file);
+    const proofUrl = await getDownloadURL(fileRef);
+
+    await addDoc(collection(db, "orders"), {
       customerId: currentUser.uid,
       customerEmail: currentUser.email,
 
@@ -130,10 +148,11 @@ placeOrderBtn.addEventListener("click", async () => {
       sellerAmount,
 
       paymentMethod: "Juice",
-      paymentStatus: "not_paid",
-      paymentProofUrl: "",
+      paymentStatus: "submitted",
+      paymentProofUrl: proofUrl,
+      paymentSubmittedAt: serverTimestamp(),
 
-      orderStatus: "Pending Payment",
+      orderStatus: "Payment Submitted",
 
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -143,11 +162,11 @@ placeOrderBtn.addEventListener("click", async () => {
       await deleteDoc(doc(db, "carts", currentUser.uid, "items", item.cartItemId));
     }
 
-    checkoutMessage.textContent = "Order placed successfully. Redirecting to payment...";
+    checkoutMessage.textContent = "Order placed. Waiting for admin payment verification.";
 
     setTimeout(() => {
-      window.location.href = `payment.html?id=${orderRef.id}`;
-    }, 900);
+      window.location.href = "my-orders.html";
+    }, 1200);
   } catch (error) {
     checkoutMessage.textContent = error.message;
     placeOrderBtn.disabled = false;
