@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Commission Dashboard | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
+<header class="navbar">
+  <h2>Commission Dashboard</h2>
+  <nav>
+    <a href="admin.html">Admin</a>
+    <a href="admin-payments.html">Payments</a>
+    <a href="admin-delivery.html">Delivery</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<main class="container">
+  <h1>MauMarket Revenue</h1>
+
+  <section class="cards">
+    <div class="card">
+      <h3>Total Sales</h3>
+      <h2>Rs <span id="totalSales">0</span></h2>
+    </div>
+
+    <div class="card">
+      <h3>Your Commission</h3>
+      <h2>Rs <span id="totalCommission">0</span></h2>
+    </div>
+
+    <div class="card">
+      <h3>Seller Payouts</h3>
+      <h2>Rs <span id="totalSellerPayout">0</span></h2>
+    </div>
+
+    <div class="card">
+      <h3>Delivery Fees</h3>
+      <h2>Rs <span id="totalDeliveryFees">0</span></h2>
+    </div>
+  </section>
+
+  <h2>Verified Orders</h2>
+  <div id="commissionOrders">Loading...</div>
+</main>
+
+<script type="module" src="js/admin-commission.js"></script>
+</body>
+</html>
