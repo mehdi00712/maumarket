@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Order | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
+<header class="navbar">
+  <h2>Review Order</h2>
+  <nav>
+    <a href="my-orders.html">My Orders</a>
+    <a href="products.html">Marketplace</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="form-card">
+    <h1>Leave a Review</h1>
+
+    <div id="orderBox">Loading...</div>
+
+    <label>Seller Rating</label>
+    <select id="sellerRating">
+      <option value="5">5 Stars</option>
+      <option value="4">4 Stars</option>
+      <option value="3">3 Stars</option>
+      <option value="2">2 Stars</option>
+      <option value="1">1 Star</option>
+    </select>
+
+    <label>Delivery Rating</label>
+    <select id="deliveryRating">
+      <option value="5">5 Stars</option>
+      <option value="4">4 Stars</option>
+      <option value="3">3 Stars</option>
+      <option value="2">2 Stars</option>
+      <option value="1">1 Star</option>
+    </select>
+
+    <textarea id="reviewText" placeholder="Write your review"></textarea>
+
+    <button id="submitReviewBtn">Submit Review</button>
+    <p id="reviewMessage"></p>
+  </section>
+</main>
+
+<script type="module" src="js/review.js"></script>
+</body>
+</html>
