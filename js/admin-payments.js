@@ -9,7 +9,6 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
   doc,
   getDoc,
   updateDoc,
@@ -30,7 +29,12 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, "users", currentUser.uid));
 
-  if (!userSnap.exists() || userSnap.data().role !== "admin") {
+  if (
+    !userSnap.exists() ||
+    userSnap.data().role !== "admin" ||
+    userSnap.data().approved !== true ||
+    userSnap.data().blocked === true
+  ) {
     window.location.href = "dashboard.html";
     return;
   }
@@ -43,8 +47,7 @@ async function loadPayments() {
 
   const q = query(
     collection(db, "orders"),
-    where("paymentStatus", "==", "submitted"),
-    orderBy("paymentSubmittedAt", "desc")
+    where("paymentStatus", "==", "submitted")
   );
 
   const snapshot = await getDocs(q);
@@ -54,11 +57,23 @@ async function loadPayments() {
     return;
   }
 
+  const orders = [];
+  snapshot.forEach((docSnap) => {
+    orders.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  orders.sort((a, b) => {
+    const aTime = a.paymentSubmittedAt?.seconds || 0;
+    const bTime = b.paymentSubmittedAt?.seconds || 0;
+    return bTime - aTime;
+  });
+
   paymentsList.innerHTML = "";
 
-  snapshot.forEach((docSnap) => {
-    const order = docSnap.data();
-
+  orders.forEach((order) => {
     const itemsHtml = (order.items || []).map(item => `
       <li>${item.title} — Rs ${item.price} x ${item.quantity}</li>
     `).join("");
@@ -67,10 +82,10 @@ async function loadPayments() {
     div.className = "order-card";
 
     div.innerHTML = `
-      <h3>Order #${docSnap.id.slice(0, 8)}</h3>
-      <p><strong>Customer:</strong> ${order.customerName}</p>
-      <p><strong>Phone:</strong> ${order.customerPhone}</p>
-      <p><strong>Total Paid:</strong> Rs ${order.grandTotal}</p>
+      <h3>Order #${order.id.slice(0, 8)}</h3>
+      <p><strong>Customer:</strong> ${order.customerName || ""}</p>
+      <p><strong>Phone:</strong> ${order.customerPhone || ""}</p>
+      <p><strong>Total Paid:</strong> Rs ${order.grandTotal || 0}</p>
       <p><strong>Commission:</strong> Rs ${order.commissionAmount || 0}</p>
       <p><strong>Seller Amount:</strong> Rs ${order.sellerAmount || 0}</p>
 
@@ -90,7 +105,7 @@ async function loadPayments() {
     `;
 
     div.querySelector(".approve-btn").addEventListener("click", async () => {
-      await updateDoc(doc(db, "orders", docSnap.id), {
+      await updateDoc(doc(db, "orders", order.id), {
         paymentStatus: "verified",
         orderStatus: "Preparing Order",
         paymentVerifiedAt: serverTimestamp(),
@@ -103,7 +118,7 @@ async function loadPayments() {
     div.querySelector(".danger-btn").addEventListener("click", async () => {
       const reason = prompt("Reason for rejecting payment:");
 
-      await updateDoc(doc(db, "orders", docSnap.id), {
+      await updateDoc(doc(db, "orders", order.id), {
         paymentStatus: "rejected",
         orderStatus: "Payment Rejected",
         paymentRejectReason: reason || "",
