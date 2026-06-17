@@ -50,7 +50,11 @@ async function loadSellerOrders() {
   snapshot.forEach((docSnap) => {
     const order = docSnap.data();
 
-    const sellerItems = order.items.filter(item => item.sellerId === currentUser.uid);
+    if (order.paymentStatus !== "verified") {
+      return;
+    }
+
+    const sellerItems = (order.items || []).filter(item => item.sellerId === currentUser.uid);
 
     const itemsHtml = sellerItems.map(item => `
       <li>${item.title} — Rs ${item.price} x ${item.quantity}</li>
@@ -76,6 +80,7 @@ async function loadSellerOrders() {
     div.querySelector(".ready-btn").addEventListener("click", async () => {
       await updateDoc(doc(db, "orders", docSnap.id), {
         orderStatus: "Ready for Pickup",
+        sellerReadyAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
 
@@ -84,4 +89,8 @@ async function loadSellerOrders() {
 
     sellerOrdersList.appendChild(div);
   });
+
+  if (!sellerOrdersList.innerHTML.trim()) {
+    sellerOrdersList.innerHTML = "<p>No verified orders yet.</p>";
+  }
 }
