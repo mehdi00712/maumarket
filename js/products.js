@@ -13,6 +13,7 @@ const productsGrid = document.getElementById("productsGrid");
 const searchInput = document.getElementById("searchInput");
 const typeFilter = document.getElementById("typeFilter");
 const categoryFilter = document.getElementById("categoryFilter");
+const sortFilter = document.getElementById("sortFilter");
 
 let allItems = [];
 let shopCache = {};
@@ -62,6 +63,7 @@ function renderItems() {
   const search = searchInput.value.toLowerCase().trim();
   const type = typeFilter.value;
   const category = categoryFilter.value;
+  const sort = sortFilter.value;
 
   let filtered = allItems.filter((item) => {
     const matchesSearch =
@@ -75,6 +77,22 @@ function renderItems() {
 
     return matchesSearch && matchesType && matchesCategory;
   });
+
+  if (sort === "low-high") {
+    filtered.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+  }
+
+  if (sort === "high-low") {
+    filtered.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+  }
+
+  if (sort === "newest") {
+    filtered.sort((a, b) => {
+      const dateA = a.createdAt?.seconds || 0;
+      const dateB = b.createdAt?.seconds || 0;
+      return dateB - dateA;
+    });
+  }
 
   if (filtered.length === 0) {
     productsGrid.innerHTML = "<p>No items found.</p>";
@@ -105,5 +123,6 @@ function renderItems() {
 searchInput.addEventListener("input", renderItems);
 typeFilter.addEventListener("change", renderItems);
 categoryFilter.addEventListener("change", renderItems);
+sortFilter.addEventListener("change", renderItems);
 
 loadItems();
