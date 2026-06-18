@@ -8,39 +8,61 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>Review Order</h2>
+<header class="amazon-topbar">
+  <a class="brand" href="index.html">MauMarket</a>
+
+  <div class="amazon-search">
+    <select>
+      <option>All</option>
+    </select>
+    <input placeholder="Search MauMarket">
+    <button onclick="window.location.href='products.html'">Search</button>
+  </div>
+
   <nav>
     <a href="my-orders.html">My Orders</a>
     <a href="products.html">Marketplace</a>
+    <a href="dashboard.html">Dashboard</a>
   </nav>
 </header>
 
+<div class="amazon-subnav">
+  <a href="products.html">All</a>
+  <a href="products.html?category=Beauty">Beauty</a>
+  <a href="products.html?category=Electronics">Electronics</a>
+  <a href="products.html?category=Fashion">Fashion</a>
+  <a href="products.html?category=Food">Food</a>
+  <a href="products.html?category=Hardware">Hardware</a>
+  <a href="products.html?category=Services">Services</a>
+</div>
+
 <main class="container">
-  <section class="form-card">
-    <h1>Leave a Review</h1>
+  <section class="form-card review-page-card">
+    <h1>Leave a Verified Review</h1>
+    <p class="muted">You can review this order because it has been delivered.</p>
 
     <div id="orderBox">Loading...</div>
 
     <label>Seller Rating</label>
     <select id="sellerRating">
-      <option value="5">5 Stars</option>
-      <option value="4">4 Stars</option>
-      <option value="3">3 Stars</option>
-      <option value="2">2 Stars</option>
-      <option value="1">1 Star</option>
+      <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+      <option value="4">⭐⭐⭐⭐ Good</option>
+      <option value="3">⭐⭐⭐ Average</option>
+      <option value="2">⭐⭐ Poor</option>
+      <option value="1">⭐ Bad</option>
     </select>
 
     <label>Delivery Rating</label>
     <select id="deliveryRating">
-      <option value="5">5 Stars</option>
-      <option value="4">4 Stars</option>
-      <option value="3">3 Stars</option>
-      <option value="2">2 Stars</option>
-      <option value="1">1 Star</option>
+      <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+      <option value="4">⭐⭐⭐⭐ Good</option>
+      <option value="3">⭐⭐⭐ Average</option>
+      <option value="2">⭐⭐ Poor</option>
+      <option value="1">⭐ Bad</option>
     </select>
 
-    <textarea id="reviewText" placeholder="Write your review"></textarea>
+    <label>Your Review</label>
+    <textarea id="reviewText" placeholder="Write your experience with the seller, product, and delivery..."></textarea>
 
     <button id="submitReviewBtn">Submit Review</button>
     <p id="reviewMessage"></p>
