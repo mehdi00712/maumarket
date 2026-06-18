@@ -8,10 +8,13 @@
 </head>
 <body>
 
-<header class="amazon-topbar">
-  <a class="brand" href="index.html">MauMarket</a>
+<header class="market-mobile-header">
+  <div class="mobile-top-row">
+    <a class="brand" href="index.html">MauMarket</a>
+    <button id="mobileMenuBtn" class="hamburger-btn">☰</button>
+  </div>
 
-  <div class="amazon-search">
+  <div class="mobile-search">
     <select id="typeFilter">
       <option value="">All</option>
       <option value="product">Products</option>
@@ -19,42 +22,46 @@
     </select>
 
     <input id="searchInput" placeholder="Search MauMarket">
-
     <button id="searchBtn">Search</button>
   </div>
 
-  <nav>
+  <nav id="mobileNav" class="mobile-nav">
     <a href="dashboard.html">Account</a>
     <a href="my-orders.html">Orders</a>
     <a href="cart.html">Cart</a>
+    <a href="register.html">Sell</a>
   </nav>
 </header>
 
-<div class="amazon-subnav">
+<div class="market-category-strip">
   <a href="products.html">All</a>
-  <a href="products.html?category=Beauty">Beauty</a>
-  <a href="products.html?category=Electronics">Electronics</a>
-  <a href="products.html?category=Fashion">Fashion</a>
-  <a href="products.html?category=Food">Food</a>
-  <a href="products.html?category=Hardware">Hardware</a>
-  <a href="products.html?category=Home">Home</a>
-  <a href="products.html?category=Services">Services</a>
-  <a href="products.html?category=Other">Other</a>
+  <a href="products.html?category=Beauty">💄 Beauty</a>
+  <a href="products.html?category=Electronics">📱 Electronics</a>
+  <a href="products.html?category=Fashion">👕 Fashion</a>
+  <a href="products.html?category=Food">🍔 Food</a>
+  <a href="products.html?category=Hardware">🔨 Hardware</a>
+  <a href="products.html?category=Home">🏠 Home</a>
+  <a href="products.html?category=Services">🧰 Services</a>
 </div>
 
 <section id="topAdBanner" class="top-ad-banner"></section>
 
-<section class="amazon-hero">
-  <div>
-    <h1>Shop local deals in Mauritius</h1>
-    <p>Products and services from approved MauMarket sellers.</p>
-    <a class="btn secondary" href="register.html">Become a Seller</a>
-  </div>
+<section class="compact-hero">
+  <h1>Shop local deals in Mauritius</h1>
+  <p>Products and services from approved MauMarket sellers.</p>
 </section>
 
-<main class="amazon-layout">
+<section id="featuredShopsSection" class="featured-shops-section">
+  <div class="section-row-title">
+    <h2>Featured Shops</h2>
+    <a href="products.html">View all</a>
+  </div>
+  <div id="featuredShops" class="featured-shops-row"></div>
+</section>
 
-  <aside class="amazon-sidebar">
+<main class="market-layout">
+
+  <aside class="market-sidebar">
     <h3>Filters</h3>
 
     <label>Category</label>
@@ -79,12 +86,12 @@
   </aside>
 
   <section>
-    <div class="market-heading">
+    <div class="market-heading compact-heading">
       <h2>Featured Products & Services</h2>
       <p id="resultCount"></p>
     </div>
 
-    <div id="productsGrid" class="amazon-grid"></div>
+    <div id="productsGrid" class="market-product-grid"></div>
   </section>
 
 </main>
