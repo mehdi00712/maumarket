@@ -19,6 +19,10 @@ const sortFilter = document.getElementById("sortFilter");
 const resultCount = document.getElementById("resultCount");
 const searchBtn = document.getElementById("searchBtn");
 const topAdBanner = document.getElementById("topAdBanner");
+const featuredShops = document.getElementById("featuredShops");
+const featuredShopsSection = document.getElementById("featuredShopsSection");
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const mobileNav = document.getElementById("mobileNav");
 
 let allItems = [];
 let shopCache = {};
@@ -28,6 +32,12 @@ const urlCategory = params.get("category");
 
 if (urlCategory && categoryFilter) {
   categoryFilter.value = urlCategory;
+}
+
+if (mobileMenuBtn && mobileNav) {
+  mobileMenuBtn.addEventListener("click", () => {
+    mobileNav.classList.toggle("show");
+  });
 }
 
 async function loadTopBanner() {
@@ -69,7 +79,7 @@ async function loadTopBanner() {
     }
 
     topAdBanner.innerHTML = `
-      <div class="top-ad-inner">
+      <div class="top-ad-inner compact-ad">
         <img src="${banner.imageUrl}" alt="${banner.title || "Featured shop"}">
 
         <div class="top-ad-content">
@@ -122,6 +132,7 @@ async function loadItems() {
     }
 
     renderItems();
+    renderFeaturedShops();
   } catch (error) {
     productsGrid.innerHTML = `
       <div class="order-card">
@@ -143,19 +154,66 @@ async function getShop(sellerId) {
     const shopSnap = await getDoc(doc(db, "shops", sellerId));
 
     if (shopSnap.exists()) {
-      shopCache[sellerId] = shopSnap.data();
+      shopCache[sellerId] = {
+        id: sellerId,
+        ...shopSnap.data()
+      };
     } else {
       shopCache[sellerId] = {
+        id: sellerId,
         shopName: "Unknown Shop"
       };
     }
   } catch (error) {
     shopCache[sellerId] = {
+      id: sellerId,
       shopName: "Unknown Shop"
     };
   }
 
   return shopCache[sellerId];
+}
+
+function renderFeaturedShops() {
+  if (!featuredShops || !featuredShopsSection) return;
+
+  const uniqueShops = {};
+
+  allItems.forEach((item) => {
+    if (item.sellerId && item.shop) {
+      uniqueShops[item.sellerId] = {
+        id: item.sellerId,
+        ...item.shop
+      };
+    }
+  });
+
+  const shops = Object.values(uniqueShops).slice(0, 12);
+
+  if (shops.length === 0) {
+    featuredShopsSection.style.display = "none";
+    return;
+  }
+
+  featuredShops.innerHTML = "";
+
+  shops.forEach((shop) => {
+    const card = document.createElement("a");
+    card.className = "featured-shop-card";
+    card.href = `shop.html?id=${shop.id}`;
+
+    card.innerHTML = `
+      ${
+        shop.logoUrl
+          ? `<img src="${shop.logoUrl}" alt="${shop.shopName || "Shop"}">`
+          : `<div class="shop-logo-fallback">Shop</div>`
+      }
+      <strong>${shop.shopName || "Shop"}</strong>
+      <span>✓ Verified</span>
+    `;
+
+    featuredShops.appendChild(card);
+  });
 }
 
 function renderItems() {
@@ -212,29 +270,37 @@ function renderItems() {
   productsGrid.innerHTML = "";
 
   filtered.forEach((item) => {
+    const rating = item.rating || item.shop?.rating || "4.8";
+    const sold = item.soldCount || 0;
+
     const div = document.createElement("div");
-    div.className = "card product-card";
+    div.className = "market-product-card";
 
     div.innerHTML = `
-      <div class="product-img-wrap">
+      <a class="market-product-img" href="product-details.html?id=${item.id}">
         ${
           item.imageUrl
             ? `<img src="${item.imageUrl}" alt="${item.title || "Product"}">`
             : `<div class="no-img">No Image</div>`
         }
+      </a>
+
+      <div class="market-product-body">
+        <span class="badge">${item.type || "item"}</span>
+
+        <h3>${item.title || "Untitled"}</h3>
+
+        <p class="seller-line">
+          <span>✓ Verified</span>
+          ${item.shop?.shopName || "Shop"}
+        </p>
+
+        <p class="rating-line-small">⭐ ${rating} ${sold ? `• ${sold} sold` : ""}</p>
+
+        <p class="price">Rs ${Number(item.price || 0)}</p>
+
+        <a class="btn product-main-btn" href="product-details.html?id=${item.id}">View</a>
       </div>
-
-      <span class="badge">${item.type || "item"}</span>
-
-      <h3>${item.title || "Untitled"}</h3>
-
-      <p class="muted">${item.category || "Other"}</p>
-      <p class="muted">Sold by ${item.shop?.shopName || "Shop"}</p>
-
-      <p class="price">Rs ${Number(item.price || 0)}</p>
-
-      <a class="btn" href="product-details.html?id=${item.id}">View Details</a>
-      <a class="small-link" href="shop.html?id=${item.sellerId}">Visit Shop</a>
     `;
 
     productsGrid.appendChild(div);
