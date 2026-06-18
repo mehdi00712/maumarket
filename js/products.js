@@ -33,93 +33,123 @@ if (urlCategory && categoryFilter) {
 async function loadTopBanner() {
   if (!topAdBanner) return;
 
-  const q = query(
-    collection(db, "banners"),
-    where("active", "==", true)
-  );
+  try {
+    const q = query(
+      collection(db, "banners"),
+      where("active", "==", true)
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  if (snapshot.empty) {
-    topAdBanner.style.display = "none";
-    return;
-  }
-
-  const banners = [];
-
-  snapshot.forEach((docSnap) => {
-    banners.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
-  });
-
-  banners.sort((a, b) => {
-    const aTime = a.createdAt?.seconds || 0;
-    const bTime = b.createdAt?.seconds || 0;
-    return bTime - aTime;
-  });
-
-  const banner = banners[0];
-
-  topAdBanner.innerHTML = `
-    <div class="top-ad-inner">
-      <img src="${banner.imageUrl}" alt="${banner.title}">
-      <div class="top-ad-content">
-        <span>Featured Shop</span>
-        <h2>${banner.title || ""}</h2>
-        <p>${banner.subtitle || banner.shopName || ""}</p>
-        <button>Visit Shop</button>
-      </div>
-    </div>
-  `;
-
-  topAdBanner.addEventListener("click", async () => {
-    try {
-      await updateDoc(doc(db, "banners", banner.id), {
-        clicks: increment(1)
-      });
-    } catch (error) {
-      console.warn(error.message);
+    if (snapshot.empty) {
+      topAdBanner.style.display = "none";
+      return;
     }
 
-    window.location.href = `shop.html?id=${banner.shopId}`;
-  });
+    const banners = [];
+
+    snapshot.forEach((docSnap) => {
+      banners.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    banners.sort((a, b) => {
+      const aTime = a.createdAt?.seconds || 0;
+      const bTime = b.createdAt?.seconds || 0;
+      return bTime - aTime;
+    });
+
+    const banner = banners[0];
+
+    if (!banner.imageUrl || !banner.shopId) {
+      topAdBanner.style.display = "none";
+      return;
+    }
+
+    topAdBanner.innerHTML = `
+      <div class="top-ad-inner">
+        <img src="${banner.imageUrl}" alt="${banner.title || "Featured shop"}">
+
+        <div class="top-ad-content">
+          <span>Featured Shop</span>
+          <h2>${banner.title || banner.shopName || "Featured Seller"}</h2>
+          <p>${banner.subtitle || banner.shopName || "Discover this MauMarket seller."}</p>
+          <button type="button">Visit Shop</button>
+        </div>
+      </div>
+    `;
+
+    topAdBanner.onclick = async () => {
+      try {
+        await updateDoc(doc(db, "banners", banner.id), {
+          clicks: increment(1)
+        });
+      } catch (error) {
+        console.warn("Could not update banner clicks:", error.message);
+      }
+
+      window.location.href = `shop.html?id=${banner.shopId}`;
+    };
+  } catch (error) {
+    console.warn("Banner not loaded:", error.message);
+    topAdBanner.style.display = "none";
+  }
 }
 
 async function loadItems() {
   productsGrid.innerHTML = `<div class="order-card">Loading marketplace...</div>`;
 
-  const q = query(
-    collection(db, "products"),
-    where("active", "==", true)
-  );
+  try {
+    const q = query(
+      collection(db, "products"),
+      where("active", "==", true)
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  allItems = [];
+    allItems = [];
 
-  for (const docSnap of snapshot.docs) {
-    const item = {
-      id: docSnap.id,
-      ...docSnap.data()
-    };
+    for (const docSnap of snapshot.docs) {
+      const item = {
+        id: docSnap.id,
+        ...docSnap.data()
+      };
 
-    item.shop = await getShop(item.sellerId);
-    allItems.push(item);
+      item.shop = await getShop(item.sellerId);
+      allItems.push(item);
+    }
+
+    renderItems();
+  } catch (error) {
+    productsGrid.innerHTML = `
+      <div class="order-card">
+        <h3>Marketplace could not load</h3>
+        <p>${error.message}</p>
+      </div>
+    `;
   }
-
-  renderItems();
 }
 
 async function getShop(sellerId) {
+  if (!sellerId) {
+    return { shopName: "Unknown Shop" };
+  }
+
   if (shopCache[sellerId]) return shopCache[sellerId];
 
-  const shopSnap = await getDoc(doc(db, "shops", sellerId));
+  try {
+    const shopSnap = await getDoc(doc(db, "shops", sellerId));
 
-  if (shopSnap.exists()) {
-    shopCache[sellerId] = shopSnap.data();
-  } else {
+    if (shopSnap.exists()) {
+      shopCache[sellerId] = shopSnap.data();
+    } else {
+      shopCache[sellerId] = {
+        shopName: "Unknown Shop"
+      };
+    }
+  } catch (error) {
     shopCache[sellerId] = {
       shopName: "Unknown Shop"
     };
