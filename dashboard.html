@@ -8,22 +8,44 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>MauMarket</h2>
+<header class="amazon-topbar">
+  <a class="brand" href="index.html">MauMarket</a>
+
+  <div class="amazon-search">
+    <select>
+      <option>All</option>
+    </select>
+    <input placeholder="Search MauMarket">
+    <button onclick="window.location.href='products.html'">Search</button>
+  </div>
+
   <nav>
     <a href="products.html">Marketplace</a>
     <a href="cart.html">Cart</a>
-    <a href="my-orders.html">My Orders</a>
-    <a href="admin-delivery.html">Delivery</a>
+    <a href="my-orders.html">Orders</a>
     <button id="logoutBtn">Logout</button>
   </nav>
 </header>
 
-<main class="container">
-  <h1 id="welcome">Loading...</h1>
-  <p id="status"></p>
+<main class="dashboard-page">
+  <section class="dashboard-hero">
+    <div>
+      <span id="roleBadge" class="hero-badge">Account</span>
+      <h1 id="welcome">Loading...</h1>
+      <p id="status">Manage your MauMarket account from one place.</p>
+    </div>
+  </section>
 
-  <div id="actions" class="cards"></div>
+  <section id="quickStats" class="dashboard-stats"></section>
+
+  <section>
+    <div class="dashboard-section-title">
+      <h2>Your Control Center</h2>
+      <p>Choose what you want to manage.</p>
+    </div>
+
+    <div id="actions" class="dashboard-grid"></div>
+  </section>
 </main>
 
 <script type="module" src="js/dashboard.js"></script>
