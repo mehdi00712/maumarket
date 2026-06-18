@@ -8,19 +8,85 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>MauMarket</h2>
+<header class="amazon-topbar">
+  <a class="brand" href="index.html">MauMarket</a>
+
+  <div class="amazon-search">
+    <select>
+      <option>All</option>
+    </select>
+    <input placeholder="Search MauMarket">
+    <button onclick="window.location.href='products.html'">Search</button>
+  </div>
+
   <nav>
     <a href="products.html">Marketplace</a>
+    <a href="cart.html">Cart</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
 </header>
 
-<main class="container">
-  <section id="shopHeader" class="shop-header">Loading shop...</section>
+<div class="amazon-subnav">
+  <a href="products.html">All</a>
+  <a href="products.html?category=Beauty">Beauty</a>
+  <a href="products.html?category=Electronics">Electronics</a>
+  <a href="products.html?category=Fashion">Fashion</a>
+  <a href="products.html?category=Food">Food</a>
+  <a href="products.html?category=Hardware">Hardware</a>
+  <a href="products.html?category=Services">Services</a>
+</div>
 
-  <h2>Shop Items</h2>
-  <div id="shopItems" class="cards"></div>
+<main class="shop-page">
+  <div class="breadcrumbs">
+    <a href="index.html">Home</a>
+    <span>/</span>
+    <a href="products.html">Marketplace</a>
+    <span>/</span>
+    <span id="breadcrumbShop">Shop</span>
+  </div>
+
+  <section id="shopHeader" class="pro-shop-header">Loading shop...</section>
+
+  <div class="shop-tabs">
+    <button class="tab-btn active" data-tab="products">Shop Products</button>
+    <button class="tab-btn" data-tab="about">About Shop</button>
+    <button class="tab-btn" data-tab="reviews">Reviews</button>
+  </div>
+
+  <section class="shop-content-layout">
+    <div>
+      <div id="productsTab" class="tab-content active">
+        <div class="shop-section-head">
+          <div>
+            <h2>Shop Products</h2>
+            <p id="shopResultCount" class="muted"></p>
+          </div>
+
+          <select id="shopSort">
+            <option value="newest">Newest</option>
+            <option value="low-high">Price Low to High</option>
+            <option value="high-low">Price High to Low</option>
+          </select>
+        </div>
+
+        <div id="shopItems" class="pro-product-grid">Loading items...</div>
+      </div>
+
+      <div id="aboutTab" class="tab-content">
+        <div id="aboutShopBox" class="pro-side-card"></div>
+      </div>
+
+      <div id="reviewsTab" class="tab-content">
+        <div id="reviewsBox" class="pro-side-card">Loading reviews...</div>
+      </div>
+    </div>
+
+    <aside class="shop-sidebar">
+      <div id="shopAboutCard" class="pro-side-card"></div>
+      <div id="shopPolicyCard" class="pro-side-card"></div>
+      <div id="shopRatingCard" class="pro-side-card"></div>
+    </aside>
+  </section>
 </main>
 
 <script type="module" src="js/shop.js"></script>
