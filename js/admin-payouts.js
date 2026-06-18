@@ -10,7 +10,6 @@ import {
   addDoc,
   doc,
   getDoc,
-  orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -24,7 +23,12 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, "users", user.uid));
 
-  if (!userSnap.exists() || userSnap.data().role !== "admin") {
+  if (
+    !userSnap.exists() ||
+    userSnap.data().role !== "admin" ||
+    userSnap.data().approved !== true ||
+    userSnap.data().blocked === true
+  ) {
     window.location.href = "dashboard.html";
     return;
   }
@@ -37,15 +41,14 @@ async function loadPayouts() {
 
   const ordersQuery = query(
     collection(db, "orders"),
-    where("paymentStatus", "==", "verified"),
-    orderBy("createdAt", "desc")
+    where("paymentStatus", "==", "verified")
   );
 
   const ordersSnap = await getDocs(ordersQuery);
-
   const payoutsSnap = await getDocs(collection(db, "payouts"));
 
   const paidBySeller = {};
+
   payoutsSnap.forEach((docSnap) => {
     const payout = docSnap.data();
     paidBySeller[payout.sellerId] = (paidBySeller[payout.sellerId] || 0) + Number(payout.amount || 0);
