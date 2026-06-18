@@ -8,16 +8,23 @@ import {
   doc,
   getDoc,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const detailsBox = document.getElementById("detailsBox");
+const relatedItems = document.getElementById("relatedItems");
+
 const params = new URLSearchParams(window.location.search);
 const itemId = params.get("id");
 
 let currentUser = null;
 let currentItem = null;
 let currentShop = null;
+let shopReviews = [];
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
@@ -49,21 +56,55 @@ async function loadDetails() {
     if (shopSnap.exists()) currentShop = shopSnap.data();
   }
 
+  await loadShopReviews();
+  renderDetails();
+  await loadRelatedItems();
+}
+
+async function loadShopReviews() {
+  const q = query(
+    collection(db, "reviews"),
+    where("sellerIds", "array-contains", currentItem.sellerId)
+  );
+
+  const snapshot = await getDocs(q);
+
+  shopReviews = [];
+
+  snapshot.forEach((docSnap) => {
+    shopReviews.push(docSnap.data());
+  });
+}
+
+function renderDetails() {
+  const rating = getAverageRating();
+
   detailsBox.innerHTML = `
-    <div class="details-grid">
-      <div>
-        ${currentItem.imageUrl ? `<img class="details-img" src="${currentItem.imageUrl}" alt="${currentItem.title}">` : ""}
+    <section class="pro-product-details">
+      <div class="pro-gallery">
+        ${
+          currentItem.imageUrl
+            ? `<img class="main-product-img" src="${currentItem.imageUrl}" alt="${currentItem.title}">`
+            : `<div class="main-product-img no-img">No Image</div>`
+        }
       </div>
 
-      <div>
-        <span class="badge">${currentItem.type}</span>
-        <h1>${currentItem.title}</h1>
-        <p class="muted">${currentItem.category}</p>
-        <h2>Rs ${currentItem.price}</h2>
-        <p>${currentItem.description || ""}</p>
+      <div class="pro-product-info">
+        <span class="badge">${currentItem.type || "item"}</span>
+        <h1>${currentItem.title || "Untitled"}</h1>
 
-        ${currentItem.type === "product" ? `<p><strong>Stock:</strong> ${currentItem.stock}</p>` : ""}
-        ${currentItem.type === "service" ? `<p><strong>Service Area:</strong> ${currentItem.serviceArea || "Not specified"}</p>` : ""}
+        <p class="muted">${currentItem.category || "Other"}</p>
+        <p class="rating-line">${rating} ⭐ (${shopReviews.length} shop reviews)</p>
+
+        <h2 class="product-price">Rs ${Number(currentItem.price || 0)}</h2>
+
+        <p>${currentItem.description || "No description provided."}</p>
+
+        ${
+          currentItem.type === "product"
+            ? `<p><strong>Stock:</strong> ${Number(currentItem.stock || 0)}</p>`
+            : `<p><strong>Service Area:</strong> ${currentItem.serviceArea || "Not specified"}</p>`
+        }
 
         <div class="cart-actions">
           <input id="qtyInput" type="number" min="1" value="1">
@@ -71,20 +112,79 @@ async function loadDetails() {
         </div>
 
         <p id="cartMessage"></p>
-
-        <hr>
-
-        <h3>${currentShop.shopName}</h3>
-        <p>${currentShop.description || ""}</p>
-        <p><strong>Location:</strong> ${currentShop.location || "Not specified"}</p>
-        <p><strong>Phone:</strong> ${currentShop.phone || "Not specified"}</p>
-
-        <a class="btn" href="shop.html?id=${currentItem.sellerId}">View Seller Shop</a>
       </div>
-    </div>
+
+      <aside class="buy-box">
+        <h3>Seller</h3>
+        <div class="mini-shop">
+          ${currentShop.logoUrl ? `<img src="${currentShop.logoUrl}" alt="${currentShop.shopName}">` : ""}
+          <div>
+            <strong>${currentShop.shopName || "Shop"}</strong>
+            <p>${rating} ⭐</p>
+          </div>
+        </div>
+
+        <p>📍 ${currentShop.location || "Mauritius"}</p>
+        <p>☎ ${currentShop.phone || "Not specified"}</p>
+        <p>🚚 Delivery by MauMarket</p>
+
+        <a class="btn" href="shop.html?id=${currentItem.sellerId}">Visit Shop</a>
+      </aside>
+    </section>
   `;
 
   document.getElementById("addToCartBtn").addEventListener("click", addToCart);
+}
+
+async function loadRelatedItems() {
+  if (!currentItem.category) return;
+
+  const q = query(
+    collection(db, "products"),
+    where("category", "==", currentItem.category),
+    where("active", "==", true)
+  );
+
+  const snapshot = await getDocs(q);
+
+  const items = [];
+
+  snapshot.forEach((docSnap) => {
+    if (docSnap.id !== currentItem.id) {
+      items.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    }
+  });
+
+  if (items.length === 0) {
+    relatedItems.innerHTML = "<p>No related items found.</p>";
+    return;
+  }
+
+  relatedItems.innerHTML = "";
+
+  items.slice(0, 8).forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "pro-product-card";
+
+    div.innerHTML = `
+      <div class="pro-product-img">
+        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}">` : `<div class="no-img">No Image</div>`}
+      </div>
+
+      <div class="pro-product-body">
+        <span class="badge">${item.type || "item"}</span>
+        <h3>${item.title || "Untitled"}</h3>
+        <p class="muted">${item.category || ""}</p>
+        <p class="pro-price">Rs ${Number(item.price || 0)}</p>
+        <a class="btn" href="product-details.html?id=${item.id}">View Details</a>
+      </div>
+    `;
+
+    relatedItems.appendChild(div);
+  });
 }
 
 async function addToCart() {
@@ -95,11 +195,6 @@ async function addToCart() {
     setTimeout(() => {
       window.location.href = "login.html";
     }, 800);
-    return;
-  }
-
-  if (!currentItem || currentItem.active !== true) {
-    cartMessage.textContent = "This item is not available.";
     return;
   }
 
@@ -129,4 +224,14 @@ async function addToCart() {
   }, { merge: true });
 
   cartMessage.textContent = "Added to cart.";
+}
+
+function getAverageRating() {
+  if (shopReviews.length === 0) return "0.0";
+
+  const total = shopReviews.reduce((sum, review) => {
+    return sum + Number(review.sellerRating || 0);
+  }, 0);
+
+  return (total / shopReviews.length).toFixed(1);
 }
