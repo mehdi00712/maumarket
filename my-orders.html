@@ -8,8 +8,17 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>My Orders</h2>
+<header class="amazon-topbar">
+  <a class="brand" href="index.html">MauMarket</a>
+
+  <div class="amazon-search">
+    <select>
+      <option>All</option>
+    </select>
+    <input placeholder="Search MauMarket">
+    <button onclick="window.location.href='products.html'">Search</button>
+  </div>
+
   <nav>
     <a href="products.html">Marketplace</a>
     <a href="cart.html">Cart</a>
@@ -17,8 +26,20 @@
   </nav>
 </header>
 
+<div class="amazon-subnav">
+  <a href="products.html">All</a>
+  <a href="products.html?category=Beauty">Beauty</a>
+  <a href="products.html?category=Electronics">Electronics</a>
+  <a href="products.html?category=Fashion">Fashion</a>
+  <a href="products.html?category=Food">Food</a>
+  <a href="products.html?category=Hardware">Hardware</a>
+  <a href="products.html?category=Services">Services</a>
+</div>
+
 <main class="container">
   <h1>My Orders</h1>
+  <p class="muted">Track your orders and leave reviews after delivery.</p>
+
   <div id="ordersList"></div>
 </main>
 
