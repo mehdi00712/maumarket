@@ -6,7 +6,9 @@ import {
   query,
   where,
   doc,
-  getDoc
+  getDoc,
+  updateDoc,
+  increment
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const productsGrid = document.getElementById("productsGrid");
@@ -16,6 +18,7 @@ const categoryFilter = document.getElementById("categoryFilter");
 const sortFilter = document.getElementById("sortFilter");
 const resultCount = document.getElementById("resultCount");
 const searchBtn = document.getElementById("searchBtn");
+const topAdBanner = document.getElementById("topAdBanner");
 
 let allItems = [];
 let shopCache = {};
@@ -25,6 +28,63 @@ const urlCategory = params.get("category");
 
 if (urlCategory && categoryFilter) {
   categoryFilter.value = urlCategory;
+}
+
+async function loadTopBanner() {
+  if (!topAdBanner) return;
+
+  const q = query(
+    collection(db, "banners"),
+    where("active", "==", true)
+  );
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    topAdBanner.style.display = "none";
+    return;
+  }
+
+  const banners = [];
+
+  snapshot.forEach((docSnap) => {
+    banners.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  banners.sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
+  });
+
+  const banner = banners[0];
+
+  topAdBanner.innerHTML = `
+    <div class="top-ad-inner">
+      <img src="${banner.imageUrl}" alt="${banner.title}">
+      <div class="top-ad-content">
+        <span>Featured Shop</span>
+        <h2>${banner.title || ""}</h2>
+        <p>${banner.subtitle || banner.shopName || ""}</p>
+        <button>Visit Shop</button>
+      </div>
+    </div>
+  `;
+
+  topAdBanner.addEventListener("click", async () => {
+    try {
+      await updateDoc(doc(db, "banners", banner.id), {
+        clicks: increment(1)
+      });
+    } catch (error) {
+      console.warn(error.message);
+    }
+
+    window.location.href = `shop.html?id=${banner.shopId}`;
+  });
 }
 
 async function loadItems() {
@@ -129,7 +189,7 @@ function renderItems() {
       <div class="product-img-wrap">
         ${
           item.imageUrl
-            ? `<img src="${item.imageUrl}" alt="${item.title}">`
+            ? `<img src="${item.imageUrl}" alt="${item.title || "Product"}">`
             : `<div class="no-img">No Image</div>`
         }
       </div>
@@ -139,7 +199,7 @@ function renderItems() {
       <h3>${item.title || "Untitled"}</h3>
 
       <p class="muted">${item.category || "Other"}</p>
-      <p class="muted">${item.shop?.shopName || "Shop"}</p>
+      <p class="muted">Sold by ${item.shop?.shopName || "Shop"}</p>
 
       <p class="price">Rs ${Number(item.price || 0)}</p>
 
@@ -160,4 +220,5 @@ if (searchBtn) {
   searchBtn.addEventListener("click", renderItems);
 }
 
+loadTopBanner();
 loadItems();
