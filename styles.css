@@ -1438,3 +1438,132 @@ label {
     font-size: 14px;
   }
 }
+
+.dashboard-page {
+  width: min(1200px, 94%);
+  margin: 26px auto 60px;
+}
+
+.dashboard-hero {
+  border-radius: 28px;
+  padding: 36px;
+  background:
+    linear-gradient(135deg, rgba(15,23,42,0.92), rgba(15,118,110,0.88)),
+    radial-gradient(circle at top right, rgba(245,158,11,0.28), transparent 35%);
+  color: white;
+  box-shadow: var(--shadow);
+}
+
+.dashboard-hero h1 {
+  font-size: clamp(34px, 6vw, 62px);
+  margin: 14px 0 8px;
+  letter-spacing: -1.5px;
+}
+
+.dashboard-hero p {
+  color: #e5e7eb;
+  font-size: 18px;
+  max-width: 750px;
+}
+
+.dashboard-stats {
+  margin: 22px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.dash-stat {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+}
+
+.dash-stat strong {
+  display: block;
+  font-size: 26px;
+  color: #0f766e;
+}
+
+.dash-stat span {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.dashboard-section-title {
+  margin: 28px 0 18px;
+}
+
+.dashboard-section-title h2 {
+  margin: 0 0 6px;
+  font-size: 30px;
+}
+
+.dashboard-section-title p {
+  margin: 0;
+  color: #64748b;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.dashboard-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: var(--shadow-soft);
+  transition: 0.2s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+}
+
+.dash-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #ecfeff;
+  color: #0f766e;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  margin-bottom: 14px;
+}
+
+.dashboard-card h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.dashboard-card p {
+  color: #64748b;
+  min-height: 48px;
+}
+
+.dashboard-card span {
+  color: #0f766e;
+  font-weight: 900;
+}
+
+@media (max-width: 700px) {
+  .dashboard-hero {
+    padding: 25px;
+    border-radius: 22px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card p {
+    min-height: auto;
+  }
+}
