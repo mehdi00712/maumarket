@@ -8,13 +8,13 @@ import {
   collection,
   query,
   where,
-  getDocs,
-  orderBy
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const ordersList = document.getElementById("ordersList");
 
 let currentUser = null;
+let reviewedOrderIds = new Set();
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -23,16 +23,32 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
+  await loadReviewedOrders();
   await loadOrders();
 });
+
+async function loadReviewedOrders() {
+  const q = query(
+    collection(db, "reviews"),
+    where("customerId", "==", currentUser.uid)
+  );
+
+  const snapshot = await getDocs(q);
+
+  reviewedOrderIds = new Set();
+
+  snapshot.forEach((docSnap) => {
+    const review = docSnap.data();
+    if (review.orderId) reviewedOrderIds.add(review.orderId);
+  });
+}
 
 async function loadOrders() {
   ordersList.innerHTML = "Loading orders...";
 
   const q = query(
     collection(db, "orders"),
-    where("customerId", "==", currentUser.uid),
-    orderBy("createdAt", "desc")
+    where("customerId", "==", currentUser.uid)
   );
 
   const snapshot = await getDocs(q);
@@ -42,26 +58,45 @@ async function loadOrders() {
     return;
   }
 
-  ordersList.innerHTML = "";
+  const orders = [];
 
   snapshot.forEach((docSnap) => {
-    const order = docSnap.data();
+    orders.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
 
+  orders.sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
+  });
+
+  ordersList.innerHTML = "";
+
+  orders.forEach((order) => {
     const itemsHtml = (order.items || []).map(item => `
       <li>${item.title} — Rs ${item.price} x ${item.quantity}</li>
     `).join("");
 
     const paymentButton =
       order.paymentStatus === "not_paid" || order.paymentStatus === "rejected"
-        ? `<a class="btn" href="payment.html?id=${docSnap.id}">Pay with Juice</a>`
+        ? `<a class="btn" href="payment.html?id=${order.id}">Pay with Juice</a>`
         : "";
 
     const proofButton = order.paymentProofUrl
       ? `<a class="small-link" href="${order.paymentProofUrl}" target="_blank">View Payment Proof</a>`
       : "";
 
-    const reviewButton = order.orderStatus === "Delivered"
-      ? `<a class="btn" href="review.html?id=${docSnap.id}">Leave Review</a>`
+    const canReview = order.orderStatus === "Delivered" && !reviewedOrderIds.has(order.id);
+
+    const reviewButton = canReview
+      ? `<a class="btn" href="review.html?id=${order.id}">Leave Review</a>`
+      : "";
+
+    const reviewedBadge = order.orderStatus === "Delivered" && reviewedOrderIds.has(order.id)
+      ? `<span class="status-badge active">Reviewed</span>`
       : "";
 
     const rejectReason = order.paymentRejectReason
@@ -76,7 +111,7 @@ async function loadOrders() {
     div.className = "order-card";
 
     div.innerHTML = `
-      <h3>Order #${docSnap.id.slice(0, 8)}</h3>
+      <h3>Order #${order.id.slice(0, 8)} ${reviewedBadge}</h3>
 
       <div class="tracking-box">
         <span class="${getStepClass(order.orderStatus, "Pending Payment")}">Pending</span>
