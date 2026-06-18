@@ -131,7 +131,7 @@ async function loadItems() {
       allItems.push(item);
     }
 
-    renderItems();
+    renderItems(false);
     renderFeaturedShops();
   } catch (error) {
     productsGrid.innerHTML = `
@@ -216,21 +216,23 @@ function renderFeaturedShops() {
   });
 }
 
-function renderItems() {
+function renderItems(shouldScroll = false) {
   const search = (searchInput?.value || "").toLowerCase().trim();
   const type = typeFilter?.value || "";
   const category = categoryFilter?.value || "";
   const sort = sortFilter?.value || "newest";
 
   let filtered = allItems.filter((item) => {
-    const matchesSearch =
-      !search ||
-      item.title?.toLowerCase().includes(search) ||
-      item.description?.toLowerCase().includes(search) ||
-      item.category?.toLowerCase().includes(search) ||
-      item.type?.toLowerCase().includes(search) ||
-      item.shop?.shopName?.toLowerCase().includes(search);
+    const text = `
+      ${item.title || ""}
+      ${item.description || ""}
+      ${item.category || ""}
+      ${item.type || ""}
+      ${item.shop?.shopName || ""}
+      ${item.price || ""}
+    `.toLowerCase();
 
+    const matchesSearch = !search || text.includes(search);
     const matchesType = !type || item.type === type;
     const matchesCategory = !category || item.category === category;
 
@@ -254,16 +256,23 @@ function renderItems() {
   }
 
   if (resultCount) {
-    resultCount.textContent = `${filtered.length} result(s) found`;
+    resultCount.textContent = search
+      ? `${filtered.length} result(s) for "${search}"`
+      : `${filtered.length} result(s) found`;
   }
 
   if (filtered.length === 0) {
     productsGrid.innerHTML = `
       <div class="order-card">
         <h3>No items found</h3>
-        <p>Try another search, category, or filter.</p>
+        <p>No result for "${search}". Try another search, category, or filter.</p>
       </div>
     `;
+
+    if (shouldScroll) {
+      productsGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     return;
   }
 
@@ -305,15 +314,36 @@ function renderItems() {
 
     productsGrid.appendChild(div);
   });
+
+  if (shouldScroll) {
+    productsGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
-searchInput?.addEventListener("input", renderItems);
-typeFilter?.addEventListener("change", renderItems);
-categoryFilter?.addEventListener("change", renderItems);
-sortFilter?.addEventListener("change", renderItems);
+function runSearch() {
+  renderItems(true);
+}
+
+searchInput?.addEventListener("input", () => {
+  renderItems(false);
+});
+
+searchInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    runSearch();
+  }
+});
+
+typeFilter?.addEventListener("change", runSearch);
+categoryFilter?.addEventListener("change", runSearch);
+sortFilter?.addEventListener("change", runSearch);
 
 if (searchBtn) {
-  searchBtn.addEventListener("click", renderItems);
+  searchBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    runSearch();
+  });
 }
 
 loadTopBanner();
