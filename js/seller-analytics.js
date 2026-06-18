@@ -7,7 +7,6 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -30,7 +29,12 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, "users", currentUser.uid));
 
-  if (!userSnap.exists() || userSnap.data().role !== "seller") {
+  if (
+    !userSnap.exists() ||
+    userSnap.data().role !== "seller" ||
+    userSnap.data().approved !== true ||
+    userSnap.data().blocked === true
+  ) {
     window.location.href = "dashboard.html";
     return;
   }
@@ -52,8 +56,7 @@ async function loadSellerAnalytics() {
 
   const reviewsQ = query(
     collection(db, "reviews"),
-    where("sellerIds", "array-contains", currentUser.uid),
-    orderBy("createdAt", "desc")
+    where("sellerIds", "array-contains", currentUser.uid)
   );
 
   const productsSnap = await getDocs(productsQ);
@@ -73,32 +76,43 @@ async function loadSellerAnalytics() {
   });
 
   let totalRating = 0;
+  let reviews = [];
 
   reviewsSnap.forEach((docSnap) => {
-    totalRating += Number(docSnap.data().sellerRating || 0);
+    const review = {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+
+    totalRating += Number(review.sellerRating || 0);
+    reviews.push(review);
+  });
+
+  reviews.sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
   });
 
   sellerProducts.textContent = productsSnap.size;
   sellerOrders.textContent = ordersSnap.size;
   sellerRevenue.textContent = revenue;
-  sellerRatingAvg.textContent = reviewsSnap.size
-    ? (totalRating / reviewsSnap.size).toFixed(1)
+  sellerRatingAvg.textContent = reviews.length
+    ? (totalRating / reviews.length).toFixed(1)
     : "0";
 
-  renderReviews(reviewsSnap);
+  renderReviews(reviews);
 }
 
-function renderReviews(snapshot) {
-  if (snapshot.empty) {
+function renderReviews(reviews) {
+  if (reviews.length === 0) {
     sellerReviews.innerHTML = "<p>No reviews yet.</p>";
     return;
   }
 
   sellerReviews.innerHTML = "";
 
-  snapshot.forEach((docSnap) => {
-    const review = docSnap.data();
-
+  reviews.forEach((review) => {
     const div = document.createElement("div");
     div.className = "order-card";
 
