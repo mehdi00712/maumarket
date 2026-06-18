@@ -8,16 +8,41 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>MauMarket</h2>
+<header class="amazon-topbar">
+  <a class="brand" href="index.html">MauMarket</a>
+
+  <div class="amazon-search">
+    <select>
+      <option>All</option>
+    </select>
+    <input placeholder="Search MauMarket">
+    <button onclick="window.location.href='products.html'">Search</button>
+  </div>
+
   <nav>
     <a href="products.html">Marketplace</a>
+    <a href="cart.html">Cart</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
 </header>
 
-<main class="container">
-  <div id="detailsBox" class="details-box">Loading...</div>
+<div class="amazon-subnav">
+  <a href="products.html">All</a>
+  <a href="products.html?category=Beauty">Beauty</a>
+  <a href="products.html?category=Electronics">Electronics</a>
+  <a href="products.html?category=Fashion">Fashion</a>
+  <a href="products.html?category=Food">Food</a>
+  <a href="products.html?category=Hardware">Hardware</a>
+  <a href="products.html?category=Services">Services</a>
+</div>
+
+<main class="product-page">
+  <div id="detailsBox" class="pro-details-box">Loading...</div>
+
+  <section>
+    <h2>Related Items</h2>
+    <div id="relatedItems" class="pro-product-grid"></div>
+  </section>
 </main>
 
 <script type="module" src="js/product-details.js"></script>
