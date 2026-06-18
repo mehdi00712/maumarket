@@ -14,12 +14,21 @@ const searchInput = document.getElementById("searchInput");
 const typeFilter = document.getElementById("typeFilter");
 const categoryFilter = document.getElementById("categoryFilter");
 const sortFilter = document.getElementById("sortFilter");
+const resultCount = document.getElementById("resultCount");
+const searchBtn = document.getElementById("searchBtn");
 
 let allItems = [];
 let shopCache = {};
 
+const params = new URLSearchParams(window.location.search);
+const urlCategory = params.get("category");
+
+if (urlCategory && categoryFilter) {
+  categoryFilter.value = urlCategory;
+}
+
 async function loadItems() {
-  productsGrid.innerHTML = "Loading marketplace...";
+  productsGrid.innerHTML = `<div class="order-card">Loading marketplace...</div>`;
 
   const q = query(
     collection(db, "products"),
@@ -60,16 +69,18 @@ async function getShop(sellerId) {
 }
 
 function renderItems() {
-  const search = searchInput.value.toLowerCase().trim();
-  const type = typeFilter.value;
-  const category = categoryFilter.value;
-  const sort = sortFilter.value;
+  const search = (searchInput?.value || "").toLowerCase().trim();
+  const type = typeFilter?.value || "";
+  const category = categoryFilter?.value || "";
+  const sort = sortFilter?.value || "newest";
 
   let filtered = allItems.filter((item) => {
     const matchesSearch =
+      !search ||
       item.title?.toLowerCase().includes(search) ||
       item.description?.toLowerCase().includes(search) ||
       item.category?.toLowerCase().includes(search) ||
+      item.type?.toLowerCase().includes(search) ||
       item.shop?.shopName?.toLowerCase().includes(search);
 
     const matchesType = !type || item.type === type;
@@ -94,8 +105,17 @@ function renderItems() {
     });
   }
 
+  if (resultCount) {
+    resultCount.textContent = `${filtered.length} result(s) found`;
+  }
+
   if (filtered.length === 0) {
-    productsGrid.innerHTML = "<p>No items found.</p>";
+    productsGrid.innerHTML = `
+      <div class="order-card">
+        <h3>No items found</h3>
+        <p>Try another search, category, or filter.</p>
+      </div>
+    `;
     return;
   }
 
@@ -106,23 +126,38 @@ function renderItems() {
     div.className = "card product-card";
 
     div.innerHTML = `
-      ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}">` : ""}
-      <span class="badge">${item.type}</span>
-      <h3>${item.title}</h3>
-      <p>${item.category}</p>
+      <div class="product-img-wrap">
+        ${
+          item.imageUrl
+            ? `<img src="${item.imageUrl}" alt="${item.title}">`
+            : `<div class="no-img">No Image</div>`
+        }
+      </div>
+
+      <span class="badge">${item.type || "item"}</span>
+
+      <h3>${item.title || "Untitled"}</h3>
+
+      <p class="muted">${item.category || "Other"}</p>
       <p class="muted">${item.shop?.shopName || "Shop"}</p>
-      <p><strong>Rs ${item.price}</strong></p>
+
+      <p class="price">Rs ${Number(item.price || 0)}</p>
+
       <a class="btn" href="product-details.html?id=${item.id}">View Details</a>
-      <a class="small-link" href="shop.html?id=${item.sellerId}">View Shop</a>
+      <a class="small-link" href="shop.html?id=${item.sellerId}">Visit Shop</a>
     `;
 
     productsGrid.appendChild(div);
   });
 }
 
-searchInput.addEventListener("input", renderItems);
-typeFilter.addEventListener("change", renderItems);
-categoryFilter.addEventListener("change", renderItems);
-sortFilter.addEventListener("change", renderItems);
+searchInput?.addEventListener("input", renderItems);
+typeFilter?.addEventListener("change", renderItems);
+categoryFilter?.addEventListener("change", renderItems);
+sortFilter?.addEventListener("change", renderItems);
+
+if (searchBtn) {
+  searchBtn.addEventListener("click", renderItems);
+}
 
 loadItems();
