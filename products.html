@@ -8,31 +8,52 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>MauMarket</h2>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="login.html">Login</a>
-  </nav>
-</header>
+<header class="amazon-topbar">
+  <a class="brand" href="index.html">MauMarket</a>
 
-<section class="market-hero">
-  <h1>Browse Mauritius</h1>
-  <p>Products and services from local sellers.</p>
-</section>
-
-<main class="container">
-
-  <div class="filters">
-    <input id="searchInput" placeholder="Search products or services...">
-
+  <div class="amazon-search">
     <select id="typeFilter">
-      <option value="">All Types</option>
+      <option value="">All</option>
       <option value="product">Products</option>
       <option value="service">Services</option>
     </select>
 
+    <input id="searchInput" placeholder="Search MauMarket">
+
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <nav>
+    <a href="dashboard.html">Account</a>
+    <a href="my-orders.html">Orders</a>
+    <a href="cart.html">Cart</a>
+  </nav>
+</header>
+
+<div class="amazon-subnav">
+  <a href="products.html">All</a>
+  <a href="products.html?category=Beauty">Beauty</a>
+  <a href="products.html?category=Electronics">Electronics</a>
+  <a href="products.html?category=Fashion">Fashion</a>
+  <a href="products.html?category=Food">Food</a>
+  <a href="products.html?category=Hardware">Hardware</a>
+  <a href="products.html?category=Services">Services</a>
+</div>
+
+<section class="amazon-hero">
+  <div>
+    <h1>Shop local deals in Mauritius</h1>
+    <p>Products and services from approved MauMarket sellers.</p>
+    <a class="btn secondary" href="register.html">Become a Seller</a>
+  </div>
+</section>
+
+<main class="amazon-layout">
+
+  <aside class="amazon-sidebar">
+    <h3>Filters</h3>
+
+    <label>Category</label>
     <select id="categoryFilter">
       <option value="">All Categories</option>
       <option value="Beauty">Beauty</option>
@@ -45,14 +66,22 @@
       <option value="Other">Other</option>
     </select>
 
+    <label>Sort</label>
     <select id="sortFilter">
       <option value="newest">Newest</option>
       <option value="low-high">Price Low to High</option>
       <option value="high-low">Price High to Low</option>
     </select>
-  </div>
+  </aside>
 
-  <div id="productsGrid" class="cards"></div>
+  <section>
+    <div class="market-heading">
+      <h2>Featured Products & Services</h2>
+      <p id="resultCount"></p>
+    </div>
+
+    <div id="productsGrid" class="amazon-grid"></div>
+  </section>
 
 </main>
 
