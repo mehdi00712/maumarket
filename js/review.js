@@ -1,6 +1,8 @@
 import { auth, db } from "./firebase-config.js";
 
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
   doc,
@@ -37,6 +39,12 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 async function loadOrder() {
+  if (!orderId) {
+    orderBox.innerHTML = "<p>Order not found.</p>";
+    submitReviewBtn.disabled = true;
+    return;
+  }
+
   const orderSnap = await getDoc(doc(db, "orders", orderId));
 
   if (!orderSnap.exists()) {
@@ -45,7 +53,10 @@ async function loadOrder() {
     return;
   }
 
-  currentOrder = orderSnap.data();
+  currentOrder = {
+    id: orderSnap.id,
+    ...orderSnap.data()
+  };
 
   if (currentOrder.customerId !== currentUser.uid) {
     orderBox.innerHTML = "<p>You cannot review this order.</p>";
@@ -73,11 +84,17 @@ async function loadOrder() {
     return;
   }
 
+  const itemsHtml = (currentOrder.items || []).map(item => `
+    <li>${item.title} — Rs ${item.price} x ${item.quantity}</li>
+  `).join("");
+
   orderBox.innerHTML = `
     <div class="order-card">
       <h3>Order #${orderId.slice(0, 8)}</h3>
-      <p><strong>Total:</strong> Rs ${currentOrder.grandTotal}</p>
+      <p><strong>Total:</strong> Rs ${currentOrder.grandTotal || 0}</p>
       <p><strong>Status:</strong> ${currentOrder.orderStatus}</p>
+      <h4>Items</h4>
+      <ul>${itemsHtml}</ul>
     </div>
   `;
 }
@@ -85,18 +102,34 @@ async function loadOrder() {
 submitReviewBtn.addEventListener("click", async () => {
   if (!currentUser || !currentOrder) return;
 
+  const text = reviewText.value.trim();
+
+  if (!text) {
+    reviewMessage.textContent = "Please write a short review.";
+    return;
+  }
+
   submitReviewBtn.disabled = true;
   reviewMessage.textContent = "Submitting review...";
 
   try {
+    const productIds = (currentOrder.items || [])
+      .map(item => item.productId)
+      .filter(Boolean);
+
     await addDoc(collection(db, "reviews"), {
       orderId,
       customerId: currentUser.uid,
-      customerName: currentOrder.customerName || "",
+      customerEmail: currentUser.email,
+      customerName: currentOrder.customerName || "Customer",
+
       sellerIds: currentOrder.sellerIds || [],
+      productIds,
+
       sellerRating: Number(sellerRating.value),
       deliveryRating: Number(deliveryRating.value),
-      reviewText: reviewText.value.trim(),
+      reviewText: text,
+
       createdAt: serverTimestamp()
     });
 
