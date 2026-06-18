@@ -9,7 +9,6 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -28,7 +27,12 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, "users", user.uid));
 
-  if (!userSnap.exists() || userSnap.data().role !== "admin") {
+  if (
+    !userSnap.exists() ||
+    userSnap.data().role !== "admin" ||
+    userSnap.data().approved !== true ||
+    userSnap.data().blocked === true
+  ) {
     window.location.href = "dashboard.html";
     return;
   }
@@ -41,11 +45,25 @@ async function loadCommission() {
 
   const q = query(
     collection(db, "orders"),
-    where("paymentStatus", "==", "verified"),
-    orderBy("createdAt", "desc")
+    where("paymentStatus", "==", "verified")
   );
 
   const snapshot = await getDocs(q);
+
+  let orders = [];
+
+  snapshot.forEach((docSnap) => {
+    orders.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  orders.sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
+  });
 
   let sales = 0;
   let commission = 0;
@@ -54,13 +72,11 @@ async function loadCommission() {
 
   commissionOrders.innerHTML = "";
 
-  if (snapshot.empty) {
-    commissionOrders.innerHTML = "<p>No verified orders yet.</p>";
+  if (orders.length === 0) {
+    commissionOrders.innerHTML = "<p>No verified orders yet. Approve a payment first.</p>";
   }
 
-  snapshot.forEach((docSnap) => {
-    const order = docSnap.data();
-
+  orders.forEach((order) => {
     sales += Number(order.grandTotal || 0);
     commission += Number(order.commissionAmount || 0);
     sellerPayout += Number(order.sellerAmount || 0);
@@ -70,13 +86,13 @@ async function loadCommission() {
     div.className = "order-card";
 
     div.innerHTML = `
-      <h3>Order #${docSnap.id.slice(0, 8)}</h3>
-      <p><strong>Customer:</strong> ${order.customerName}</p>
+      <h3>Order #${order.id.slice(0, 8)}</h3>
+      <p><strong>Customer:</strong> ${order.customerName || ""}</p>
       <p><strong>Total:</strong> Rs ${order.grandTotal || 0}</p>
       <p><strong>Commission:</strong> Rs ${order.commissionAmount || 0}</p>
       <p><strong>Seller Payout:</strong> Rs ${order.sellerAmount || 0}</p>
       <p><strong>Delivery Fee:</strong> Rs ${order.deliveryFee || 0}</p>
-      <p><strong>Status:</strong> ${order.orderStatus}</p>
+      <p><strong>Status:</strong> ${order.orderStatus || ""}</p>
     `;
 
     commissionOrders.appendChild(div);
