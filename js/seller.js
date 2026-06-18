@@ -33,6 +33,10 @@ const shopBanner = document.getElementById("shopBanner");
 const saveShopBtn = document.getElementById("saveShopBtn");
 const shopMessage = document.getElementById("shopMessage");
 
+const slotInfo = document.getElementById("slotInfo");
+const requestSlotsBtn = document.getElementById("requestSlotsBtn");
+const slotMessage = document.getElementById("slotMessage");
+
 const formTitle = document.getElementById("formTitle");
 const itemType = document.getElementById("itemType");
 const itemTitle = document.getElementById("itemTitle");
@@ -48,7 +52,9 @@ const itemMessage = document.getElementById("itemMessage");
 const myItems = document.getElementById("myItems");
 
 let currentUser = null;
+let currentUserData = null;
 let currentShop = null;
+let currentProductCount = 0;
 let editingItemId = null;
 let existingImageUrl = "";
 
@@ -67,9 +73,13 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  const userData = userSnap.data();
+  currentUserData = userSnap.data();
 
-  if (userData.role !== "seller" || userData.approved !== true) {
+  if (
+    currentUserData.role !== "seller" ||
+    currentUserData.approved !== true ||
+    currentUserData.blocked === true
+  ) {
     window.location.href = "dashboard.html";
     return;
   }
@@ -151,6 +161,13 @@ saveItemBtn.addEventListener("click", async () => {
     return;
   }
 
+  const productLimit = Number(currentUserData.productLimit || 50);
+
+  if (!editingItemId && currentProductCount >= productLimit) {
+    itemMessage.textContent = "You reached your product slot limit. Request more slots.";
+    return;
+  }
+
   saveItemBtn.disabled = true;
   itemMessage.textContent = editingItemId ? "Updating item..." : "Adding item...";
 
@@ -225,6 +242,13 @@ async function loadMyItems() {
 
   const snapshot = await getDocs(q);
 
+  currentProductCount = snapshot.size;
+  const productLimit = Number(currentUserData.productLimit || 50);
+
+  if (slotInfo) {
+    slotInfo.textContent = `You are using ${currentProductCount} / ${productLimit} product slots.`;
+  }
+
   if (snapshot.empty) {
     myItems.innerHTML = "<p>No items added yet.</p>";
     return;
@@ -289,5 +313,30 @@ async function loadMyItems() {
     });
 
     myItems.appendChild(div);
+  });
+}
+
+if (requestSlotsBtn) {
+  requestSlotsBtn.addEventListener("click", async () => {
+    if (!currentUser) return;
+
+    const requestedAmount = prompt("How many extra slots do you want? Example: 50");
+
+    if (!requestedAmount || Number(requestedAmount) <= 0) {
+      slotMessage.textContent = "Invalid slot request.";
+      return;
+    }
+
+    await addDoc(collection(db, "quotaRequests"), {
+      sellerId: currentUser.uid,
+      sellerName: currentUserData.name || "",
+      sellerEmail: currentUserData.email || "",
+      currentLimit: Number(currentUserData.productLimit || 50),
+      requestedExtra: Number(requestedAmount),
+      status: "pending",
+      createdAt: serverTimestamp()
+    });
+
+    slotMessage.textContent = "Request sent to admin.";
   });
 }
