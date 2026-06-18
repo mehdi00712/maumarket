@@ -9,7 +9,6 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -31,7 +30,12 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, "users", currentUser.uid));
 
-  if (!userSnap.exists() || userSnap.data().role !== "seller") {
+  if (
+    !userSnap.exists() ||
+    userSnap.data().role !== "seller" ||
+    userSnap.data().approved !== true ||
+    userSnap.data().blocked === true
+  ) {
     window.location.href = "dashboard.html";
     return;
   }
@@ -45,11 +49,25 @@ async function loadEarnings() {
   const q = query(
     collection(db, "orders"),
     where("sellerIds", "array-contains", currentUser.uid),
-    where("paymentStatus", "==", "verified"),
-    orderBy("createdAt", "desc")
+    where("paymentStatus", "==", "verified")
   );
 
   const snapshot = await getDocs(q);
+
+  let orders = [];
+
+  snapshot.forEach((docSnap) => {
+    orders.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  orders.sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
+  });
 
   let totalSales = 0;
   let totalEarnings = 0;
@@ -57,13 +75,11 @@ async function loadEarnings() {
 
   sellerEarningsOrders.innerHTML = "";
 
-  if (snapshot.empty) {
+  if (orders.length === 0) {
     sellerEarningsOrders.innerHTML = "<p>No verified sales yet.</p>";
   }
 
-  snapshot.forEach((docSnap) => {
-    const order = docSnap.data();
-
+  orders.forEach((order) => {
     const sellerItems = (order.items || []).filter(item => item.sellerId === currentUser.uid);
 
     let sellerItemsTotal = 0;
@@ -88,8 +104,8 @@ async function loadEarnings() {
     div.className = "order-card";
 
     div.innerHTML = `
-      <h3>Order #${docSnap.id.slice(0, 8)}</h3>
-      <p><strong>Status:</strong> ${order.orderStatus}</p>
+      <h3>Order #${order.id.slice(0, 8)}</h3>
+      <p><strong>Status:</strong> ${order.orderStatus || ""}</p>
       <p><strong>Sales:</strong> Rs ${sellerItemsTotal}</p>
       <p><strong>Commission:</strong> Rs ${orderCommission}</p>
       <p><strong>Your Earnings:</strong> Rs ${orderEarnings}</p>
