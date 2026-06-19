@@ -34,7 +34,6 @@ async function loadReviewedOrders() {
   );
 
   const snapshot = await getDocs(q);
-
   reviewedOrderIds = new Set();
 
   snapshot.forEach((docSnap) => {
@@ -68,16 +67,14 @@ async function loadOrders() {
   });
 
   orders.sort((a, b) => {
-    const aTime = a.createdAt?.seconds || 0;
-    const bTime = b.createdAt?.seconds || 0;
-    return bTime - aTime;
+    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
   });
 
   ordersList.innerHTML = "";
 
   orders.forEach((order) => {
     const itemsHtml = (order.items || []).map(item => `
-      <li>${item.title} — Rs ${item.price} x ${item.quantity}</li>
+      <li>${item.title || "Item"} — Rs ${Number(item.price || 0)} x ${Number(item.quantity || 1)}</li>
     `).join("");
 
     const paymentButton =
@@ -95,9 +92,10 @@ async function loadOrders() {
       ? `<a class="btn" href="review.html?id=${order.id}">Leave Review</a>`
       : "";
 
-    const reviewedBadge = order.orderStatus === "Delivered" && reviewedOrderIds.has(order.id)
-      ? `<span class="status-badge active">Reviewed</span>`
-      : "";
+    const reviewedBadge =
+      order.orderStatus === "Delivered" && reviewedOrderIds.has(order.id)
+        ? `<span class="status-badge active">Reviewed</span>`
+        : "";
 
     const rejectReason = order.paymentRejectReason
       ? `<p><strong>Reject Reason:</strong> ${order.paymentRejectReason}</p>`
@@ -105,6 +103,19 @@ async function loadOrders() {
 
     const deliveryNote = order.deliveryNote
       ? `<p><strong>Delivery Note:</strong> ${order.deliveryNote}</p>`
+      : "";
+
+    const driverInfo = order.deliveryGuyName
+      ? `<p><strong>Delivery Driver:</strong> ${order.deliveryGuyName}</p>`
+      : "";
+
+    const deliverySubmitted =
+      order.orderStatus === "Delivery Submitted"
+        ? `<p class="muted"><strong>Delivery submitted:</strong> Waiting for admin validation.</p>`
+        : "";
+
+    const signatureInfo = order.deliverySignedBy
+      ? `<p><strong>Signed By:</strong> ${order.deliverySignedBy}</p>`
       : "";
 
     const div = document.createElement("div");
@@ -118,7 +129,9 @@ async function loadOrders() {
         <span class="${getStepClass(order.orderStatus, "Payment Submitted")}">Submitted</span>
         <span class="${getStepClass(order.orderStatus, "Preparing Order")}">Preparing</span>
         <span class="${getStepClass(order.orderStatus, "Ready for Pickup")}">Ready</span>
-        <span class="${getStepClass(order.orderStatus, "Out for Delivery")}">Delivery</span>
+        <span class="${getStepClass(order.orderStatus, "Picked Up")}">Picked Up</span>
+        <span class="${getStepClass(order.orderStatus, "Out for Delivery")}">Out</span>
+        <span class="${getStepClass(order.orderStatus, "Delivery Submitted")}">Checking</span>
         <span class="${getStepClass(order.orderStatus, "Delivered")}">Delivered</span>
       </div>
 
@@ -126,6 +139,10 @@ async function loadOrders() {
       <p><strong>Payment:</strong> ${order.paymentStatus || "not_paid"}</p>
       <p><strong>Total:</strong> Rs ${order.grandTotal || 0}</p>
       <p><strong>Delivery Address:</strong> ${order.deliveryAddress || ""}</p>
+
+      ${driverInfo}
+      ${deliverySubmitted}
+      ${signatureInfo}
       ${rejectReason}
       ${deliveryNote}
 
@@ -145,13 +162,14 @@ async function loadOrders() {
 }
 
 function getStepClass(currentStatus, stepStatus) {
-  const order = [
+  const steps = [
     "Pending Payment",
     "Payment Submitted",
     "Preparing Order",
     "Ready for Pickup",
     "Picked Up",
     "Out for Delivery",
+    "Delivery Submitted",
     "Delivered"
   ];
 
@@ -159,8 +177,8 @@ function getStepClass(currentStatus, stepStatus) {
     return "track-step cancelled";
   }
 
-  const currentIndex = order.indexOf(currentStatus || "Pending Payment");
-  const stepIndex = order.indexOf(stepStatus);
+  const currentIndex = steps.indexOf(currentStatus || "Pending Payment");
+  const stepIndex = steps.indexOf(stepStatus);
 
   return currentIndex >= stepIndex ? "track-step done" : "track-step";
 }
