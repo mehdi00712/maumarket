@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Delivery Dashboard | MauMarket</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="navbar">
+  <h2>Delivery Dashboard</h2>
+
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="products.html">Marketplace</a>
+  </nav>
+</header>
+
+<main class="container">
+
+  <h1>Assigned Deliveries</h1>
+
+  <p>
+    Delivery drivers can collect customer signatures and submit completed deliveries.
+  </p>
+
+  <div id="deliveryOrdersList"></div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+
+<script type="module" src="js/delivery.js"></script>
+
+</body>
+</html>
