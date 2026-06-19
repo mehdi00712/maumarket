@@ -63,6 +63,8 @@ onAuthStateChanged(auth, async (user) => {
     const snap = await getDoc(doc(db, "users", user.uid));
 
     if (!snap.exists()) {
+      roleBadge.textContent = "Error";
+      welcome.textContent = "Profile missing";
       statusText.textContent = "User profile not found.";
       actions.innerHTML = "";
       quickStats.innerHTML = "";
@@ -109,6 +111,7 @@ onAuthStateChanged(auth, async (user) => {
 
     await renderCustomerDashboard(user.uid);
   } catch (error) {
+    roleBadge.textContent = "Error";
     welcome.textContent = "Dashboard error";
     statusText.textContent = error.message;
     actions.innerHTML = "";
@@ -135,9 +138,7 @@ async function renderCustomerDashboard(uid) {
   ordersSnap.forEach((docSnap) => {
     const order = docSnap.data();
 
-    if (order.orderStatus === "Delivered") {
-      deliveredOrders++;
-    }
+    if (order.orderStatus === "Delivered") deliveredOrders++;
 
     if (
       order.orderStatus !== "Delivered" &&
@@ -213,14 +214,20 @@ async function renderSellerDashboard(uid, data) {
 
 async function renderDeliveryDashboard(uid) {
   roleBadge.textContent = "Delivery";
-  statusText.textContent = "View assigned deliveries, collect signatures, and submit deliveries for admin validation.";
+  statusText.textContent = "View assigned deliveries, collect customer signatures, and submit deliveries for admin validation.";
 
-  const assignedQ = query(
-    collection(db, "orders"),
-    where("deliveryGuyId", "==", uid)
-  );
+  let assignedSnap = { size: 0, forEach: () => {} };
 
-  const assignedSnap = await getDocs(assignedQ);
+  try {
+    const assignedQ = query(
+      collection(db, "orders"),
+      where("deliveryGuyId", "==", uid)
+    );
+
+    assignedSnap = await getDocs(assignedQ);
+  } catch (error) {
+    console.warn("Delivery stats unavailable:", error.message);
+  }
 
   let activeDeliveries = 0;
   let submittedDeliveries = 0;
@@ -229,13 +236,8 @@ async function renderDeliveryDashboard(uid) {
   assignedSnap.forEach((docSnap) => {
     const order = docSnap.data();
 
-    if (order.orderStatus === "Delivery Submitted") {
-      submittedDeliveries++;
-    }
-
-    if (order.orderStatus === "Delivered") {
-      completedDeliveries++;
-    }
+    if (order.orderStatus === "Delivery Submitted") submittedDeliveries++;
+    if (order.orderStatus === "Delivered") completedDeliveries++;
 
     if (
       order.orderStatus !== "Delivered" &&
