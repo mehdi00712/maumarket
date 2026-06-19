@@ -8,9 +8,16 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>Delivery Management</h2>
-  <nav>
+<header class="market-mobile-header">
+  <div class="mobile-top-row">
+    <a href="admin.html" class="logo-brand">
+      <img src="images/maumarketlogo.png" alt="MauMarket">
+    </a>
+
+    <button id="adminDeliveryMenuBtn" class="hamburger-btn" type="button">☰</button>
+  </div>
+
+  <nav id="adminDeliveryNav" class="mobile-nav">
     <a href="admin.html">Admin</a>
     <a href="admin-payments.html">Payments</a>
     <a href="dashboard.html">Dashboard</a>
@@ -19,8 +26,8 @@
 </header>
 
 <main class="container">
-  <h1>Verified Orders</h1>
-  <p class="muted">Manage pickup and delivery status for paid orders.</p>
+  <h1>Delivery Management</h1>
+  <p class="muted">Assign delivery drivers, validate signatures, and confirm completed deliveries.</p>
 
   <div id="deliveryOrdersList">Loading delivery orders...</div>
 </main>
