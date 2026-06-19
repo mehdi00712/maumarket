@@ -8,24 +8,29 @@
 </head>
 <body>
 
-<header class="amazon-topbar">
-  <a href="dashboard.html" class="logo-brand">
-  <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
+<header class="market-mobile-header">
+  <div class="mobile-top-row">
+    <a href="dashboard.html" class="logo-brand">
+      <img src="images/maumarketlogo.png" alt="MauMarket">
+    </a>
 
-  <div class="amazon-search">
+    <button id="dashboardMenuBtn" class="hamburger-btn" type="button">☰</button>
+  </div>
+
+  <div class="mobile-search">
     <select>
       <option>All</option>
     </select>
-    <input placeholder="Search MauMarket">
-    <button onclick="window.location.href='products.html'">Search</button>
+
+    <input id="dashboardSearchInput" placeholder="Search MauMarket">
+    <button id="dashboardSearchBtn" type="button">Search</button>
   </div>
 
-  <nav>
+  <nav id="dashboardNav" class="mobile-nav">
     <a href="products.html">Marketplace</a>
     <a href="cart.html">Cart</a>
     <a href="my-orders.html">Orders</a>
-    <button id="logoutBtn">Logout</button>
+    <button id="logoutBtn" type="button">Logout</button>
   </nav>
 </header>
 
