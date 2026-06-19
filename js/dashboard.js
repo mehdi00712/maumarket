@@ -21,7 +21,34 @@ const logoutBtn = document.getElementById("logoutBtn");
 const roleBadge = document.getElementById("roleBadge");
 const quickStats = document.getElementById("quickStats");
 
-logoutBtn.addEventListener("click", async () => {
+const dashboardMenuBtn = document.getElementById("dashboardMenuBtn");
+const dashboardNav = document.getElementById("dashboardNav");
+const dashboardSearchInput = document.getElementById("dashboardSearchInput");
+const dashboardSearchBtn = document.getElementById("dashboardSearchBtn");
+
+dashboardMenuBtn?.addEventListener("click", () => {
+  dashboardNav?.classList.toggle("show");
+});
+
+dashboardSearchBtn?.addEventListener("click", () => {
+  const search = dashboardSearchInput?.value?.trim() || "";
+  window.location.href = search
+    ? `products.html?search=${encodeURIComponent(search)}`
+    : "products.html";
+});
+
+dashboardSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+
+    const search = dashboardSearchInput.value.trim();
+    window.location.href = search
+      ? `products.html?search=${encodeURIComponent(search)}`
+      : "products.html";
+  }
+});
+
+logoutBtn?.addEventListener("click", async () => {
   await signOut(auth);
   window.location.href = "login.html";
 });
@@ -32,49 +59,51 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  const snap = await getDoc(doc(db, "users", user.uid));
+  try {
+    const snap = await getDoc(doc(db, "users", user.uid));
 
-  if (!snap.exists()) {
-    statusText.textContent = "User profile not found.";
-    return;
-  }
-
-  const data = snap.data();
-
-  if (data.blocked === true) {
-    statusText.textContent = "Your account has been blocked. Please contact MauMarket.";
-    actions.innerHTML = "";
-    quickStats.innerHTML = "";
-    return;
-  }
-
-  welcome.textContent = `Welcome, ${data.name || "User"}`;
-
-  if (data.role === "admin") {
-    renderAdminDashboard();
-    return;
-  }
-
-  if (data.role === "seller") {
-    if (!data.approved) {
-      roleBadge.textContent = "Seller Pending";
-      statusText.textContent = "Your seller account is waiting for admin approval.";
+    if (!snap.exists()) {
+      statusText.textContent = "User profile not found.";
+      actions.innerHTML = "";
       quickStats.innerHTML = "";
-      actions.innerHTML = `
-        <div class="dashboard-card">
-          <div class="dash-icon">⏳</div>
-          <h3>Waiting for Approval</h3>
-          <p>Admin needs to approve your seller account before you can create your shop.</p>
-        </div>
-      `;
       return;
     }
 
-    await renderSellerDashboard(user.uid, data);
-    return;
-  }
+    const data = snap.data();
 
-  await renderCustomerDashboard(user.uid);
+    if (data.blocked === true) {
+      roleBadge.textContent = "Blocked";
+      welcome.textContent = "Account blocked";
+      statusText.textContent = "Your account has been blocked. Please contact MauMarket.";
+      actions.innerHTML = "";
+      quickStats.innerHTML = "";
+      return;
+    }
+
+    welcome.textContent = `Welcome, ${data.name || "User"}`;
+
+    if (data.role === "admin") {
+      await renderAdminDashboard();
+      return;
+    }
+
+    if (data.role === "seller") {
+      if (!data.approved) {
+        renderPendingSeller();
+        return;
+      }
+
+      await renderSellerDashboard(user.uid, data);
+      return;
+    }
+
+    await renderCustomerDashboard(user.uid);
+  } catch (error) {
+    welcome.textContent = "Dashboard error";
+    statusText.textContent = error.message;
+    actions.innerHTML = "";
+    quickStats.innerHTML = "";
+  }
 });
 
 async function renderCustomerDashboard(uid) {
@@ -91,35 +120,35 @@ async function renderCustomerDashboard(uid) {
   const ordersSnap = await getDocs(ordersQ);
 
   let activeOrders = 0;
+  let deliveredOrders = 0;
 
   ordersSnap.forEach((docSnap) => {
     const order = docSnap.data();
-    if (order.orderStatus !== "Delivered" && order.orderStatus !== "Cancelled") {
+
+    if (order.orderStatus === "Delivered") {
+      deliveredOrders++;
+    }
+
+    if (
+      order.orderStatus !== "Delivered" &&
+      order.orderStatus !== "Cancelled"
+    ) {
       activeOrders++;
     }
   });
 
   quickStats.innerHTML = `
-    <div class="dash-stat">
-      <strong>${cartSnap.size}</strong>
-      <span>Cart Items</span>
-    </div>
-
-    <div class="dash-stat">
-      <strong>${ordersSnap.size}</strong>
-      <span>Total Orders</span>
-    </div>
-
-    <div class="dash-stat">
-      <strong>${activeOrders}</strong>
-      <span>Active Orders</span>
-    </div>
+    ${statCard(cartSnap.size, "Cart Items")}
+    ${statCard(ordersSnap.size, "Total Orders")}
+    ${statCard(activeOrders, "Active Orders")}
+    ${statCard(deliveredOrders, "Delivered")}
   `;
 
   actions.innerHTML = `
     ${dashboardCard("🛒", "Marketplace", "Browse products and services from local sellers.", "products.html")}
     ${dashboardCard("🧺", "My Cart", "Review your selected items before checkout.", "cart.html")}
     ${dashboardCard("📦", "My Orders", "Track deliveries and leave verified reviews.", "my-orders.html")}
+    ${dashboardCard("⭐", "Reviews", "Review delivered orders and support trusted sellers.", "my-orders.html")}
   `;
 }
 
@@ -142,21 +171,24 @@ async function renderSellerDashboard(uid, data) {
 
   const productLimit = Number(data.productLimit || 50);
 
+  let activeProducts = 0;
+  let deliveredOrders = 0;
+
+  productsSnap.forEach((docSnap) => {
+    const product = docSnap.data();
+    if (product.active === true) activeProducts++;
+  });
+
+  ordersSnap.forEach((docSnap) => {
+    const order = docSnap.data();
+    if (order.orderStatus === "Delivered") deliveredOrders++;
+  });
+
   quickStats.innerHTML = `
-    <div class="dash-stat">
-      <strong>${productsSnap.size}/${productLimit}</strong>
-      <span>Product Slots</span>
-    </div>
-
-    <div class="dash-stat">
-      <strong>${ordersSnap.size}</strong>
-      <span>Seller Orders</span>
-    </div>
-
-    <div class="dash-stat">
-      <strong>${data.approved ? "Approved" : "Pending"}</strong>
-      <span>Seller Status</span>
-    </div>
+    ${statCard(`${productsSnap.size}/${productLimit}`, "Product Slots")}
+    ${statCard(activeProducts, "Visible Products")}
+    ${statCard(ordersSnap.size, "Seller Orders")}
+    ${statCard(deliveredOrders, "Delivered")}
   `;
 
   actions.innerHTML = `
@@ -164,29 +196,44 @@ async function renderSellerDashboard(uid, data) {
     ${dashboardCard("📦", "Seller Orders", "View customer orders for your products.", "seller-orders.html")}
     ${dashboardCard("💰", "Earnings", "Track your sales, commission, and payouts.", "seller-earnings.html")}
     ${dashboardCard("📊", "Analytics", "See your products, reviews, and performance.", "seller-analytics.html")}
+    ${dashboardCard("🎯", "Slot Requests", "Request more product slots when your shop grows.", "seller.html")}
     ${dashboardCard("🛍️", "Marketplace", "See how your shop appears to customers.", "products.html")}
   `;
 }
 
-function renderAdminDashboard() {
+async function renderAdminDashboard() {
   roleBadge.textContent = "Admin";
   statusText.textContent = "Manage sellers, payments, delivery, products, banners, payouts, and analytics.";
 
+  let usersCount = 0;
+  let productsCount = 0;
+  let ordersCount = 0;
+  let pendingSellers = 0;
+
+  try {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const productsSnap = await getDocs(collection(db, "products"));
+    const ordersSnap = await getDocs(collection(db, "orders"));
+
+    usersCount = usersSnap.size;
+    productsCount = productsSnap.size;
+    ordersCount = ordersSnap.size;
+
+    usersSnap.forEach((docSnap) => {
+      const user = docSnap.data();
+      if (user.role === "seller" && user.approved !== true) {
+        pendingSellers++;
+      }
+    });
+  } catch (error) {
+    console.warn("Admin stats unavailable:", error.message);
+  }
+
   quickStats.innerHTML = `
-    <div class="dash-stat">
-      <strong>Admin</strong>
-      <span>Control</span>
-    </div>
-
-    <div class="dash-stat">
-      <strong>Live</strong>
-      <span>Marketplace</span>
-    </div>
-
-    <div class="dash-stat">
-      <strong>Secure</strong>
-      <span>Management</span>
-    </div>
+    ${statCard(usersCount, "Users")}
+    ${statCard(productsCount, "Products")}
+    ${statCard(ordersCount, "Orders")}
+    ${statCard(pendingSellers, "Pending Sellers")}
   `;
 
   actions.innerHTML = `
@@ -200,6 +247,32 @@ function renderAdminDashboard() {
     ${dashboardCard("🛍️", "Products", "Hide or delete bad products.", "admin-products.html")}
     ${dashboardCard("🎯", "Ad Banners", "Manage paid featured shop banners.", "admin-banners.html")}
     ${dashboardCard("📦", "Slot Requests", "Approve sellers requesting more product slots.", "admin-quota.html")}
+  `;
+}
+
+function renderPendingSeller() {
+  roleBadge.textContent = "Seller Pending";
+  statusText.textContent = "Your seller account is waiting for admin approval.";
+  quickStats.innerHTML = "";
+
+  actions.innerHTML = `
+    <div class="dashboard-card">
+      <div class="dash-icon">⏳</div>
+      <h3>Waiting for Approval</h3>
+      <p>Admin needs to approve your seller account before you can create your shop.</p>
+      <span>Pending</span>
+    </div>
+
+    ${dashboardCard("🛍️", "Browse Marketplace", "You can still browse products while waiting.", "products.html")}
+  `;
+}
+
+function statCard(value, label) {
+  return `
+    <div class="dash-stat">
+      <strong>${value}</strong>
+      <span>${label}</span>
+    </div>
   `;
 }
 
