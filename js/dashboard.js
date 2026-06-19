@@ -97,6 +97,16 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
+    if (data.role === "delivery") {
+      if (!data.approved) {
+        renderPendingDelivery();
+        return;
+      }
+
+      await renderDeliveryDashboard(user.uid);
+      return;
+    }
+
     await renderCustomerDashboard(user.uid);
   } catch (error) {
     welcome.textContent = "Dashboard error";
@@ -201,6 +211,53 @@ async function renderSellerDashboard(uid, data) {
   `;
 }
 
+async function renderDeliveryDashboard(uid) {
+  roleBadge.textContent = "Delivery";
+  statusText.textContent = "View assigned deliveries, collect signatures, and submit deliveries for admin validation.";
+
+  const assignedQ = query(
+    collection(db, "orders"),
+    where("deliveryGuyId", "==", uid)
+  );
+
+  const assignedSnap = await getDocs(assignedQ);
+
+  let activeDeliveries = 0;
+  let submittedDeliveries = 0;
+  let completedDeliveries = 0;
+
+  assignedSnap.forEach((docSnap) => {
+    const order = docSnap.data();
+
+    if (order.orderStatus === "Delivery Submitted") {
+      submittedDeliveries++;
+    }
+
+    if (order.orderStatus === "Delivered") {
+      completedDeliveries++;
+    }
+
+    if (
+      order.orderStatus !== "Delivered" &&
+      order.orderStatus !== "Cancelled"
+    ) {
+      activeDeliveries++;
+    }
+  });
+
+  quickStats.innerHTML = `
+    ${statCard(assignedSnap.size, "Assigned")}
+    ${statCard(activeDeliveries, "Active")}
+    ${statCard(submittedDeliveries, "Submitted")}
+    ${statCard(completedDeliveries, "Completed")}
+  `;
+
+  actions.innerHTML = `
+    ${dashboardCard("🛵", "Delivery Dashboard", "Open assigned deliveries and collect customer signatures.", "delivery.html")}
+    ${dashboardCard("📦", "Marketplace", "Browse MauMarket products.", "products.html")}
+  `;
+}
+
 async function renderAdminDashboard() {
   roleBadge.textContent = "Admin";
   statusText.textContent = "Manage sellers, payments, delivery, products, banners, payouts, and analytics.";
@@ -239,7 +296,7 @@ async function renderAdminDashboard() {
   actions.innerHTML = `
     ${dashboardCard("🛡️", "Admin Dashboard", "Open the full MauMarket control center.", "admin.html")}
     ${dashboardCard("💳", "Payments", "Verify Juice payment screenshots.", "admin-payments.html")}
-    ${dashboardCard("🚚", "Delivery", "Manage pickup and delivery tracking.", "admin-delivery.html")}
+    ${dashboardCard("🚚", "Delivery Management", "Assign drivers and validate customer signatures.", "admin-delivery.html")}
     ${dashboardCard("📊", "Analytics", "View marketplace statistics.", "admin-analytics.html")}
     ${dashboardCard("💰", "Commission", "Track platform revenue and seller payouts.", "admin-commission.html")}
     ${dashboardCard("🏦", "Payouts", "Mark seller payouts as paid.", "admin-payouts.html")}
@@ -264,6 +321,21 @@ function renderPendingSeller() {
     </div>
 
     ${dashboardCard("🛍️", "Browse Marketplace", "You can still browse products while waiting.", "products.html")}
+  `;
+}
+
+function renderPendingDelivery() {
+  roleBadge.textContent = "Delivery Pending";
+  statusText.textContent = "Your delivery account is waiting for admin approval.";
+  quickStats.innerHTML = "";
+
+  actions.innerHTML = `
+    <div class="dashboard-card">
+      <div class="dash-icon">⏳</div>
+      <h3>Waiting for Approval</h3>
+      <p>Admin needs to approve your delivery account before you can receive assigned deliveries.</p>
+      <span>Pending</span>
+    </div>
   `;
 }
 
