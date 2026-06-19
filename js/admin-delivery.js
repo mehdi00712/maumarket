@@ -17,15 +17,6 @@ import {
 
 const deliveryOrdersList = document.getElementById("deliveryOrdersList");
 
-const DELIVERY_STATUSES = [
-  "Preparing Order",
-  "Ready for Pickup",
-  "Picked Up",
-  "Out for Delivery",
-  "Delivered",
-  "Cancelled"
-];
-
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "login.html";
@@ -57,7 +48,7 @@ async function loadDeliveryOrders() {
 
   const snapshot = await getDocs(q);
 
-  let orders = [];
+  const orders = [];
 
   snapshot.forEach((docSnap) => {
     orders.push({
@@ -67,9 +58,7 @@ async function loadDeliveryOrders() {
   });
 
   orders.sort((a, b) => {
-    const aTime = a.updatedAt?.seconds || 0;
-    const bTime = b.updatedAt?.seconds || 0;
-    return bTime - aTime;
+    return (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0);
   });
 
   if (orders.length === 0) {
@@ -84,11 +73,25 @@ async function loadDeliveryOrders() {
       <li>${item.title} — Rs ${item.price} x ${item.quantity} — ${item.shopName || ""}</li>
     `).join("");
 
-    const statusOptions = DELIVERY_STATUSES.map(status => `
-      <option value="${status}" ${order.orderStatus === status ? "selected" : ""}>
-        ${status}
-      </option>
-    `).join("");
+    const signatureBox = order.deliverySignature
+      ? `
+        <div class="form-card">
+          <h4>Customer Signature</h4>
+          <img src="${order.deliverySignature}" alt="Customer signature" style="max-width:100%; background:#fff; border:1px solid #ddd; border-radius:12px;">
+          <p><strong>Signed by:</strong> ${order.deliverySignedBy || "Customer"}</p>
+          <p><strong>Delivery guy:</strong> ${order.deliveryGuyName || "Not specified"}</p>
+          <p><strong>Delivery note:</strong> ${order.deliveryNote || "None"}</p>
+        </div>
+      `
+      : `<p class="muted">No customer signature submitted yet.</p>`;
+
+    const validateButton = order.orderStatus === "Delivery Submitted"
+      ? `<button class="approve-btn validate-delivery-btn">Validate Delivery</button>`
+      : "";
+
+    const rejectButton = order.orderStatus === "Delivery Submitted"
+      ? `<button class="danger-btn reject-delivery-btn">Reject Delivery</button>`
+      : "";
 
     const div = document.createElement("div");
     div.className = "order-card";
@@ -107,6 +110,7 @@ async function loadDeliveryOrders() {
         <div>
           <p><strong>Payment:</strong> ${order.paymentStatus || ""}</p>
           <p><strong>Status:</strong> ${order.orderStatus || ""}</p>
+          <p><strong>Delivery Status:</strong> ${order.deliveryStatus || "Not started"}</p>
           <p><strong>Total:</strong> Rs ${order.grandTotal || 0}</p>
           <p><strong>Delivery Fee:</strong> Rs ${order.deliveryFee || 0}</p>
         </div>
@@ -115,34 +119,37 @@ async function loadDeliveryOrders() {
       <h4>Items</h4>
       <ul>${itemsHtml}</ul>
 
-      <div class="delivery-control">
-        <label>Update Delivery Status</label>
-        <select class="status-select">
-          ${statusOptions}
-        </select>
+      ${signatureBox}
 
-        <textarea class="delivery-note" placeholder="Delivery note optional">${order.deliveryNote || ""}</textarea>
-
-        <button class="update-status-btn">Update Status</button>
+      <div class="seller-actions">
+        ${validateButton}
+        ${rejectButton}
       </div>
     `;
 
-    div.querySelector(".update-status-btn").addEventListener("click", async () => {
-      const newStatus = div.querySelector(".status-select").value;
-      const deliveryNote = div.querySelector(".delivery-note").value.trim();
-
-      const updateData = {
-        orderStatus: newStatus,
-        deliveryNote,
+    div.querySelector(".validate-delivery-btn")?.addEventListener("click", async () => {
+      await updateDoc(doc(db, "orders", order.id), {
+        orderStatus: "Delivered",
+        deliveryStatus: "validated",
+        adminDeliveryValidated: true,
+        deliveredAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      };
+      });
 
-      if (newStatus === "Picked Up") updateData.pickedUpAt = serverTimestamp();
-      if (newStatus === "Out for Delivery") updateData.outForDeliveryAt = serverTimestamp();
-      if (newStatus === "Delivered") updateData.deliveredAt = serverTimestamp();
-      if (newStatus === "Cancelled") updateData.cancelledAt = serverTimestamp();
+      await loadDeliveryOrders();
+    });
 
-      await updateDoc(doc(db, "orders", order.id), updateData);
+    div.querySelector(".reject-delivery-btn")?.addEventListener("click", async () => {
+      const reason = prompt("Why are you rejecting this delivery?");
+
+      await updateDoc(doc(db, "orders", order.id), {
+        orderStatus: "Out for Delivery",
+        deliveryStatus: "rejected",
+        adminDeliveryValidated: false,
+        adminDeliveryRejectReason: reason || "",
+        updatedAt: serverTimestamp()
+      });
+
       await loadDeliveryOrders();
     });
 
