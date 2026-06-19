@@ -34,11 +34,9 @@ if (urlCategory && categoryFilter) {
   categoryFilter.value = urlCategory;
 }
 
-if (mobileMenuBtn && mobileNav) {
-  mobileMenuBtn.addEventListener("click", () => {
-    mobileNav.classList.toggle("show");
-  });
-}
+mobileMenuBtn?.addEventListener("click", () => {
+  mobileNav?.classList.toggle("show");
+});
 
 async function loadTopBanner() {
   if (!topAdBanner) return;
@@ -56,19 +54,13 @@ async function loadTopBanner() {
       return;
     }
 
-    const banners = [];
-
-    snapshot.forEach((docSnap) => {
-      banners.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
-    });
+    const banners = snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
 
     banners.sort((a, b) => {
-      const aTime = a.createdAt?.seconds || 0;
-      const bTime = b.createdAt?.seconds || 0;
-      return bTime - aTime;
+      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
     });
 
     const banner = banners[0];
@@ -109,7 +101,11 @@ async function loadTopBanner() {
 }
 
 async function loadItems() {
-  productsGrid.innerHTML = `<div class="order-card">Loading marketplace...</div>`;
+  productsGrid.innerHTML = `
+    <div class="order-card">
+      Loading marketplace...
+    </div>
+  `;
 
   try {
     const q = query(
@@ -145,7 +141,11 @@ async function loadItems() {
 
 async function getShop(sellerId) {
   if (!sellerId) {
-    return { shopName: "Unknown Shop" };
+    return {
+      id: "",
+      shopName: "Unknown Shop",
+      verified: false
+    };
   }
 
   if (shopCache[sellerId]) return shopCache[sellerId];
@@ -156,18 +156,24 @@ async function getShop(sellerId) {
     if (shopSnap.exists()) {
       shopCache[sellerId] = {
         id: sellerId,
+        verified: true,
+        rating: 4.8,
         ...shopSnap.data()
       };
     } else {
       shopCache[sellerId] = {
         id: sellerId,
-        shopName: "Unknown Shop"
+        shopName: "Unknown Shop",
+        verified: false,
+        rating: 4.8
       };
     }
   } catch (error) {
     shopCache[sellerId] = {
       id: sellerId,
-      shopName: "Unknown Shop"
+      shopName: "Unknown Shop",
+      verified: false,
+      rating: 4.8
     };
   }
 
@@ -195,6 +201,7 @@ function renderFeaturedShops() {
     return;
   }
 
+  featuredShopsSection.style.display = "block";
   featuredShops.innerHTML = "";
 
   shops.forEach((shop) => {
@@ -208,6 +215,7 @@ function renderFeaturedShops() {
           ? `<img src="${shop.logoUrl}" alt="${shop.shopName || "Shop"}">`
           : `<div class="shop-logo-fallback">Shop</div>`
       }
+
       <strong>${shop.shopName || "Shop"}</strong>
       <span>✓ Verified</span>
     `;
@@ -223,7 +231,7 @@ function renderItems(shouldScroll = false) {
   const sort = sortFilter?.value || "newest";
 
   let filtered = allItems.filter((item) => {
-    const text = `
+    const searchableText = `
       ${item.title || ""}
       ${item.description || ""}
       ${item.category || ""}
@@ -232,7 +240,7 @@ function renderItems(shouldScroll = false) {
       ${item.price || ""}
     `.toLowerCase();
 
-    const matchesSearch = !search || text.includes(search);
+    const matchesSearch = !search || searchableText.includes(search);
     const matchesType = !type || item.type === type;
     const matchesCategory = !category || item.category === category;
 
@@ -249,9 +257,7 @@ function renderItems(shouldScroll = false) {
 
   if (sort === "newest") {
     filtered.sort((a, b) => {
-      const dateA = a.createdAt?.seconds || 0;
-      const dateB = b.createdAt?.seconds || 0;
-      return dateB - dateA;
+      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
     });
   }
 
@@ -265,12 +271,15 @@ function renderItems(shouldScroll = false) {
     productsGrid.innerHTML = `
       <div class="order-card">
         <h3>No items found</h3>
-        <p>No result for "${search}". Try another search, category, or filter.</p>
+        <p>${search ? `No result for "${search}".` : "Try another search, category, or filter."}</p>
       </div>
     `;
 
     if (shouldScroll) {
-      productsGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+      productsGrid.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
     }
 
     return;
@@ -280,7 +289,7 @@ function renderItems(shouldScroll = false) {
 
   filtered.forEach((item) => {
     const rating = item.rating || item.shop?.rating || "4.8";
-    const sold = item.soldCount || 0;
+    const sold = Number(item.soldCount || 0);
 
     const div = document.createElement("div");
     div.className = "market-product-card";
@@ -304,11 +313,15 @@ function renderItems(shouldScroll = false) {
           ${item.shop?.shopName || "Shop"}
         </p>
 
-        <p class="rating-line-small">⭐ ${rating} ${sold ? `• ${sold} sold` : ""}</p>
+        <p class="rating-line-small">
+          ⭐ ${rating}${sold > 0 ? ` • ${sold} sold` : ""}
+        </p>
 
         <p class="price">Rs ${Number(item.price || 0)}</p>
 
-        <a class="btn product-main-btn" href="product-details.html?id=${item.id}">View</a>
+        <a class="btn product-main-btn" href="product-details.html?id=${item.id}">
+          View
+        </a>
       </div>
     `;
 
@@ -316,7 +329,10 @@ function renderItems(shouldScroll = false) {
   });
 
   if (shouldScroll) {
-    productsGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+    productsGrid.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
   }
 }
 
@@ -328,9 +344,9 @@ searchInput?.addEventListener("input", () => {
   renderItems(false);
 });
 
-searchInput?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
+searchInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
     runSearch();
   }
 });
@@ -339,12 +355,10 @@ typeFilter?.addEventListener("change", runSearch);
 categoryFilter?.addEventListener("change", runSearch);
 sortFilter?.addEventListener("change", runSearch);
 
-if (searchBtn) {
-  searchBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    runSearch();
-  });
-}
+searchBtn?.addEventListener("click", (event) => {
+  event.preventDefault();
+  runSearch();
+});
 
 loadTopBanner();
 loadItems();
