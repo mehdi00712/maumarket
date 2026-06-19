@@ -101,7 +101,7 @@ async function loadDeliveryOrders() {
 
   orders.forEach((order) => {
     const itemsHtml = (order.items || []).map(item => `
-      <li>${item.title} — Rs ${item.price} x ${item.quantity} — ${item.shopName || ""}</li>
+      <li>${item.title || "Item"} — Rs ${Number(item.price || 0)} x ${Number(item.quantity || 1)} — ${item.shopName || ""}</li>
     `).join("");
 
     const driverOptions = deliveryDrivers.map(driver => `
