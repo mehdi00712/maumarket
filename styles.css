@@ -1952,120 +1952,223 @@ label {
   }
 }
 
-/* MAUMARKET LOGO FIX */
+/* =========================================================
+   CLEAN FINAL HEADER + LOGO FIX
+   ========================================================= */
 
 .logo-brand {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 245px !important;
+  height: 74px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.logo-brand img {
+  position: absolute !important;
+  height: 235px !important;
+  width: auto !important;
+  max-width: none !important;
+  object-fit: contain !important;
+  left: 0 !important;
+  top: 50% !important;
+  transform: translate(-63px, -50%) !important;
+}
+
+.market-mobile-header {
+  background: #131921;
+  color: white;
+  padding: 14px 7% 12px;
+}
+
+.mobile-top-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 190px;
-  height: 62px;
-  overflow: hidden;
-  position: relative;
-  padding: 0 !important;
-  flex-shrink: 0;
-}
-
-.logo-brand img {
-  position: absolute;
-  height: 220px;
-  width: auto;
-  max-width: none;
-  object-fit: contain;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.amazon-topbar .logo-brand {
-  width: 200px;
-  height: 64px;
-}
-
-.navbar .logo-brand {
-  width: 190px;
-  height: 60px;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .market-mobile-header .logo-brand {
-  width: 175px;
-  height: 58px;
-}
-
-@media (max-width: 768px) {
-  .logo-brand {
-    width: 150px;
-    height: 50px;
-  }
-
-  .logo-brand img {
-    height: 185px;
-  }
-
-  .amazon-topbar .logo-brand,
-  .navbar .logo-brand,
-  .market-mobile-header .logo-brand {
-    width: 150px;
-    height: 50px;
-  }
-}
-
-@media (max-width: 420px) {
-  .logo-brand {
-    width: 135px;
-    height: 46px;
-  }
-
-  .logo-brand img {
-    height: 170px;
-  }
-}
-
-/* FINAL LOGO DISPLAY FIX */
-.logo-brand {
-  width: 260px !important;
-  height: 70px !important;
-  overflow: hidden !important;
-  justify-content: flex-start !important;
-}
-
-.logo-brand img {
-  height: 230px !important;
-  max-width: none !important;
-  width: auto !important;
-  object-fit: contain !important;
-  transform: translate(-145px, -80px) !important;
-}
-
-.market-mobile-header .logo-brand {
-  width: 230px !important;
-  height: 62px !important;
+  width: 250px !important;
+  height: 76px !important;
 }
 
 .market-mobile-header .logo-brand img {
-  height: 210px !important;
-  transform: translate(-130px, -73px) !important;
+  height: 238px !important;
+  transform: translate(-64px, -50%) !important;
 }
 
-@media (max-width: 700px) {
-  .logo-brand {
-    width: 210px !important;
-    height: 58px !important;
-  }
-
-  .logo-brand img {
-    height: 200px !important;
-    transform: translate(-124px, -70px) !important;
-  }
+.hamburger-btn {
+  background: #232f3e;
+  color: white;
+  width: 52px;
+  height: 48px;
+  padding: 0;
+  border-radius: 16px;
+  box-shadow: none;
+  font-size: 24px;
+  display: grid;
+  place-items: center;
 }
 
-@media (min-width: 701px) {
+.mobile-search {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 90px 1fr 130px;
+  overflow: hidden;
+  border-radius: 12px;
+  max-width: 760px;
+}
+
+.mobile-search select,
+.mobile-search input {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  height: 48px;
+  font-size: 15px;
+}
+
+.mobile-search button {
+  grid-column: auto;
+  height: 48px;
+  border-radius: 0;
+  background: #f59e0b;
+  color: #111827;
+  box-shadow: none;
+}
+
+.mobile-nav {
+  display: none;
+  margin-top: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.mobile-nav.show {
+  display: grid;
+}
+
+.mobile-nav a {
+  background: #232f3e;
+  color: white;
+  padding: 12px 10px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.market-category-strip {
+  background: #232f3e;
+  color: white;
+  padding: 10px 7%;
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  font-weight: 800;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.market-category-strip a {
+  white-space: nowrap;
+}
+
+/* Desktop marketplace layout */
+@media (min-width: 901px) {
   .market-mobile-header {
-    padding: 16px 7%;
+    display: grid;
+    grid-template-columns: 255px minmax(420px, 760px) auto;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .mobile-top-row {
+    display: flex;
+  }
+
+  .hamburger-btn {
+    display: none;
   }
 
   .mobile-search {
-    max-width: 760px;
+    margin-top: 0;
+    width: 100%;
+  }
+
+  .mobile-nav {
+    display: flex;
+    margin-top: 0;
+    gap: 14px;
+    justify-content: flex-end;
+  }
+
+  .mobile-nav a {
+    background: transparent;
+    padding: 9px 0;
+    border-radius: 0;
   }
 }
 
+/* Tablet */
+@media (max-width: 900px) {
+  .market-mobile-header {
+    padding: 14px 22px 12px;
+  }
+
+  .mobile-search {
+    grid-template-columns: 85px 1fr;
+    max-width: none;
+  }
+
+  .mobile-search button {
+    grid-column: span 2;
+  }
+
+  .mobile-nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile logo */
+@media (max-width: 700px) {
+  .logo-brand,
+  .market-mobile-header .logo-brand {
+    width: 215px !important;
+    height: 64px !important;
+  }
+
+  .logo-brand img,
+  .market-mobile-header .logo-brand img {
+    height: 205px !important;
+    transform: translate(-55px, -50%) !important;
+  }
+
+  .market-mobile-header {
+    padding: 12px 18px;
+  }
+
+  .mobile-search select,
+  .mobile-search input,
+  .mobile-search button {
+    height: 50px;
+  }
+}
+
+/* Small mobile logo */
+@media (max-width: 420px) {
+  .logo-brand,
+  .market-mobile-header .logo-brand {
+    width: 190px !important;
+    height: 58px !important;
+  }
+
+  .logo-brand img,
+  .market-mobile-header .logo-brand img {
+    height: 185px !important;
+    transform: translate(-50px, -50%) !important;
+  }
+}
