@@ -8,17 +8,27 @@
 </head>
 <body>
 
-<header class="navbar">
-  <h2>Seller Orders</h2>
-  <nav>
-    <a href="seller.html">Seller Dashboard</a>
-    <a href="products.html">Marketplace</a>
+<header class="market-mobile-header">
+  <div class="mobile-top-row">
+    <a href="seller.html" class="logo-brand">
+      <img src="images/maumarketlogo.png" alt="MauMarket">
+    </a>
+
+    <button id="sellerOrdersMenuBtn" class="hamburger-btn" type="button">☰</button>
+  </div>
+
+  <nav id="sellerOrdersNav" class="mobile-nav">
+    <a href="seller.html">Seller</a>
+    <a href="seller-earnings.html">Earnings</a>
+    <a href="seller-analytics.html">Analytics</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
 </header>
 
 <main class="container">
   <h1>Orders For Your Shop</h1>
+  <p class="muted">You will see orders here as soon as customers place them.</p>
+
   <div id="sellerOrdersList"></div>
 </main>
 
