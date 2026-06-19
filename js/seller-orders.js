@@ -106,21 +106,39 @@ async function loadSellerOrders() {
         </li>
       `).join("");
 
-      const canMarkReady =
-        order.paymentStatus === "verified" &&
-        order.orderStatus !== "Ready for Pickup" &&
-        order.orderStatus !== "Picked Up" &&
-        order.orderStatus !== "Out for Delivery" &&
-        order.orderStatus !== "Delivered" &&
-        order.orderStatus !== "Cancelled";
-
       const paymentNotice =
         order.paymentStatus !== "verified"
           ? `<p class="muted"><strong>Waiting:</strong> Admin has not verified this payment yet.</p>`
           : `<p><strong>Payment:</strong> Verified</p>`;
 
-      const buttonHtml = canMarkReady
-        ? `<button class="ready-btn">Mark Ready for Pickup</button>`
+      const canStartPreparing =
+        order.paymentStatus === "verified" &&
+        (
+          order.orderStatus === "Payment Submitted" ||
+          order.orderStatus === "Pending Payment" ||
+          !order.orderStatus
+        );
+
+      const canMarkReady =
+        order.paymentStatus === "verified" &&
+        order.orderStatus === "Preparing Order";
+
+      const statusButtons = `
+        ${
+          canStartPreparing
+            ? `<button class="ready-btn start-preparing-btn">Start Preparing</button>`
+            : ""
+        }
+
+        ${
+          canMarkReady
+            ? `<button class="approve-btn ready-pickup-btn">Mark Ready for Pickup</button>`
+            : ""
+        }
+      `;
+
+      const driverInfo = order.deliveryGuyName
+        ? `<p><strong>Assigned Driver:</strong> ${order.deliveryGuyName}</p>`
         : "";
 
       const div = document.createElement("div");
@@ -134,7 +152,9 @@ async function loadSellerOrders() {
           <span class="${stepClass(order.orderStatus, "Payment Submitted")}">Submitted</span>
           <span class="${stepClass(order.orderStatus, "Preparing Order")}">Preparing</span>
           <span class="${stepClass(order.orderStatus, "Ready for Pickup")}">Ready</span>
-          <span class="${stepClass(order.orderStatus, "Out for Delivery")}">Delivery</span>
+          <span class="${stepClass(order.orderStatus, "Picked Up")}">Picked Up</span>
+          <span class="${stepClass(order.orderStatus, "Out for Delivery")}">Out</span>
+          <span class="${stepClass(order.orderStatus, "Delivery Submitted")}">Checking</span>
           <span class="${stepClass(order.orderStatus, "Delivered")}">Delivered</span>
         </div>
 
@@ -142,6 +162,7 @@ async function loadSellerOrders() {
         <p><strong>Phone:</strong> ${order.customerPhone || "Not provided"}</p>
         <p><strong>Address:</strong> ${order.deliveryAddress || "Not provided"}</p>
         <p><strong>Status:</strong> ${order.orderStatus || "Pending Payment"}</p>
+        ${driverInfo}
         ${paymentNotice}
 
         <h4>Your Items</h4>
@@ -149,15 +170,22 @@ async function loadSellerOrders() {
 
         <p><strong>Your item total:</strong> Rs ${sellerTotal}</p>
 
-        ${buttonHtml}
+        <div class="seller-actions">
+          ${statusButtons}
+        </div>
       `;
 
-      const readyBtn = div.querySelector(".ready-btn");
+      div.querySelector(".start-preparing-btn")?.addEventListener("click", async () => {
+        await updateDoc(doc(db, "orders", order.id), {
+          orderStatus: "Preparing Order",
+          sellerPreparingAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
 
-      readyBtn?.addEventListener("click", async () => {
-        readyBtn.disabled = true;
-        readyBtn.textContent = "Updating...";
+        await loadSellerOrders();
+      });
 
+      div.querySelector(".ready-pickup-btn")?.addEventListener("click", async () => {
         await updateDoc(doc(db, "orders", order.id), {
           orderStatus: "Ready for Pickup",
           sellerReadyAt: serverTimestamp(),
@@ -196,6 +224,7 @@ function stepClass(currentStatus, stepStatus) {
     "Ready for Pickup",
     "Picked Up",
     "Out for Delivery",
+    "Delivery Submitted",
     "Delivered"
   ];
 
