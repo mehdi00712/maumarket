@@ -2020,3 +2020,52 @@ label {
     height: 170px;
   }
 }
+
+/* FINAL LOGO DISPLAY FIX */
+.logo-brand {
+  width: 260px !important;
+  height: 70px !important;
+  overflow: hidden !important;
+  justify-content: flex-start !important;
+}
+
+.logo-brand img {
+  height: 230px !important;
+  max-width: none !important;
+  width: auto !important;
+  object-fit: contain !important;
+  transform: translate(-145px, -80px) !important;
+}
+
+.market-mobile-header .logo-brand {
+  width: 230px !important;
+  height: 62px !important;
+}
+
+.market-mobile-header .logo-brand img {
+  height: 210px !important;
+  transform: translate(-130px, -73px) !important;
+}
+
+@media (max-width: 700px) {
+  .logo-brand {
+    width: 210px !important;
+    height: 58px !important;
+  }
+
+  .logo-brand img {
+    height: 200px !important;
+    transform: translate(-124px, -70px) !important;
+  }
+}
+
+@media (min-width: 701px) {
+  .market-mobile-header {
+    padding: 16px 7%;
+  }
+
+  .mobile-search {
+    max-width: 760px;
+  }
+}
+
