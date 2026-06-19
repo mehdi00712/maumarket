@@ -10,10 +10,11 @@
 
 <header class="market-mobile-header">
   <div class="mobile-top-row">
-    <a class="brand logo-brand" href="index.html">
-  <img src="images/maumarketlogo.png" alt="MauMarket">
+    <a class="logo-brand" href="index.html">
+      <img src="images/maumarketlogo.png" alt="MauMarket">
     </a>
-    <button id="mobileMenuBtn" class="hamburger-btn">☰</button>
+
+    <button id="mobileMenuBtn" class="hamburger-btn" type="button">☰</button>
   </div>
 
   <div class="mobile-search">
@@ -23,8 +24,8 @@
       <option value="service">Services</option>
     </select>
 
-    <input id="searchInput" placeholder="Search MauMarket">
-    <button id="searchBtn">Search</button>
+    <input id="searchInput" placeholder="Search products, services, or shops">
+    <button id="searchBtn" type="button">Search</button>
   </div>
 
   <nav id="mobileNav" class="mobile-nav">
@@ -44,13 +45,14 @@
   <a href="products.html?category=Hardware">🔨 Hardware</a>
   <a href="products.html?category=Home">🏠 Home</a>
   <a href="products.html?category=Services">🧰 Services</a>
+  <a href="products.html?category=Other">✨ Other</a>
 </div>
 
 <section id="topAdBanner" class="top-ad-banner"></section>
 
 <section class="compact-hero">
   <h1>Shop local deals in Mauritius</h1>
-  <p>Products and services from approved MauMarket sellers.</p>
+  <p>Discover trusted products and services from approved MauMarket sellers.</p>
 </section>
 
 <section id="featuredShopsSection" class="featured-shops-section">
@@ -90,7 +92,7 @@
   <section>
     <div class="market-heading compact-heading">
       <h2>Featured Products & Services</h2>
-      <p id="resultCount"></p>
+      <p id="resultCount">Loading...</p>
     </div>
 
     <div id="productsGrid" class="market-product-grid"></div>
