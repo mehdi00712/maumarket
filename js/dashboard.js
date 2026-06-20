@@ -224,18 +224,18 @@ async function renderDeliveryDashboard(uid) {
   let delivered = 0;
 
   try {
-    const ordersQ = query(
-      collection(db, "orders"),
-      where("deliveryGuyId", "==", uid)
+    const jobsQ = query(
+      collection(db, "deliveryJobs"),
+      where("driverId", "==", uid)
     );
 
-    const ordersSnap = await getDocs(ordersQ);
+    const jobsSnap = await getDocs(jobsQ);
 
-    assigned = ordersSnap.size;
+    assigned = jobsSnap.size;
 
-    ordersSnap.forEach((docSnap) => {
-      const order = docSnap.data();
-      const status = order.orderStatus || "";
+    jobsSnap.forEach((docSnap) => {
+      const job = docSnap.data();
+      const status = job.orderStatus || "";
 
       if (status === "Picked Up") pickedUp++;
       if (status === "Out for Delivery") outForDelivery++;
@@ -244,13 +244,14 @@ async function renderDeliveryDashboard(uid) {
 
       if (
         status !== "Delivered" &&
-        status !== "Cancelled"
+        status !== "Cancelled" &&
+        job.active !== false
       ) {
         active++;
       }
     });
   } catch (error) {
-    console.warn("Delivery stats unavailable:", error.message);
+    console.error("Delivery jobs stats error:", error.message);
   }
 
   quickStats.innerHTML = `
@@ -263,8 +264,8 @@ async function renderDeliveryDashboard(uid) {
   `;
 
   actions.innerHTML = `
-    ${dashboardCard("🛵", "Delivery Dashboard", "View assigned orders and collect customer signatures.", "delivery.html")}
-    ${dashboardCard("✅", "Completed Deliveries", "Delivered orders appear after admin validation.", "delivery.html")}
+    ${dashboardCard("🛵", "Delivery Dashboard", "View assigned deliveries and collect customer signatures.", "delivery.html")}
+    ${dashboardCard("✅", "Completed Deliveries", "See deliveries after admin validation.", "delivery.html")}
     ${dashboardCard("📦", "Marketplace", "Browse MauMarket products.", "products.html")}
   `;
 }
