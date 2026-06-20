@@ -6,8 +6,6 @@ import {
 
 import {
   collection,
-  query,
-  where,
   getDocs,
   doc,
   getDoc,
@@ -53,33 +51,28 @@ async function loadOrders() {
   `;
 
   try {
-    const q = query(
-      collection(db, "orders"),
-      where("deliveryGuyId", "==", currentUser.uid)
-    );
-
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(collection(db, "orders"));
 
     const orders = [];
 
     snapshot.forEach((docSnap) => {
-      orders.push({
+      const order = {
         id: docSnap.id,
         ...docSnap.data()
-      });
+      };
+
+      if (order.deliveryGuyId === currentUser.uid) {
+        orders.push(order);
+      }
     });
 
     const activeOrders = orders
-      .filter((order) => {
-        return (
-          order.paymentStatus === "verified" &&
-          order.orderStatus !== "Delivered" &&
-          order.orderStatus !== "Cancelled"
-        );
-      })
-      .sort((a, b) => {
-        return (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0);
-      });
+      .filter((order) =>
+        order.paymentStatus === "verified" &&
+        order.orderStatus !== "Delivered" &&
+        order.orderStatus !== "Cancelled"
+      )
+      .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
 
     if (activeOrders.length === 0) {
       deliveryOrdersList.innerHTML = `
@@ -93,9 +86,7 @@ async function loadOrders() {
 
     deliveryOrdersList.innerHTML = "";
 
-    activeOrders.forEach((order) => {
-      renderOrderCard(order);
-    });
+    activeOrders.forEach(renderOrderCard);
   } catch (error) {
     deliveryOrdersList.innerHTML = `
       <div class="order-card">
@@ -122,8 +113,7 @@ function renderOrderCard(order) {
     order.orderStatus === "Ready for Pickup" ||
     order.deliveryStatus === "assigned";
 
-  const showOutButton =
-    order.orderStatus === "Picked Up";
+  const showOutButton = order.orderStatus === "Picked Up";
 
   const showSignatureBox =
     order.orderStatus === "Out for Delivery" ||
