@@ -105,7 +105,7 @@ onAuthStateChanged(auth, async (user) => {
         return;
       }
 
-      await renderDeliveryDashboard(user.uid);
+      renderDeliveryDashboard();
       return;
     }
 
@@ -212,46 +212,15 @@ async function renderSellerDashboard(uid, data) {
   `;
 }
 
-async function renderDeliveryDashboard(uid) {
+function renderDeliveryDashboard() {
   roleBadge.textContent = "Delivery";
-  statusText.textContent = "View assigned deliveries, collect customer signatures, and submit deliveries for admin validation.";
-
-  let assignedSnap = { size: 0, forEach: () => {} };
-
-  try {
-    const assignedQ = query(
-      collection(db, "orders"),
-      where("deliveryGuyId", "==", uid)
-    );
-
-    assignedSnap = await getDocs(assignedQ);
-  } catch (error) {
-    console.warn("Delivery stats unavailable:", error.message);
-  }
-
-  let activeDeliveries = 0;
-  let submittedDeliveries = 0;
-  let completedDeliveries = 0;
-
-  assignedSnap.forEach((docSnap) => {
-    const order = docSnap.data();
-
-    if (order.orderStatus === "Delivery Submitted") submittedDeliveries++;
-    if (order.orderStatus === "Delivered") completedDeliveries++;
-
-    if (
-      order.orderStatus !== "Delivered" &&
-      order.orderStatus !== "Cancelled"
-    ) {
-      activeDeliveries++;
-    }
-  });
+  statusText.textContent = "Open your delivery dashboard to view assigned deliveries, collect signatures, and submit completed deliveries.";
 
   quickStats.innerHTML = `
-    ${statCard(assignedSnap.size, "Assigned")}
-    ${statCard(activeDeliveries, "Active")}
-    ${statCard(submittedDeliveries, "Submitted")}
-    ${statCard(completedDeliveries, "Completed")}
+    ${statCard("Ready", "Account")}
+    ${statCard("Assigned", "By Admin")}
+    ${statCard("Signature", "Required")}
+    ${statCard("Admin", "Validation")}
   `;
 
   actions.innerHTML = `
