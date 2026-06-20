@@ -6,10 +6,13 @@ import {
 
 import {
   collection,
+  query,
+  where,
   getDocs,
   doc,
   getDoc,
   updateDoc,
+  setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -39,54 +42,82 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUserData = userSnap.data();
-
   await loadOrders();
 });
 
 async function loadOrders() {
   deliveryOrdersList.innerHTML = `
-    <div class="order-card">
-      Loading assigned deliveries...
-    </div>
+    <div class="order-card">Loading assigned deliveries...</div>
   `;
 
   try {
-    const snapshot = await getDocs(collection(db, "orders"));
+    const q = query(
+      collection(db, "deliveryJobs"),
+      where("driverId", "==", currentUser.uid)
+    );
 
-    const orders = [];
+    const snapshot = await getDocs(q);
+
+    const jobs = [];
 
     snapshot.forEach((docSnap) => {
-      const order = {
+      jobs.push({
         id: docSnap.id,
         ...docSnap.data()
-      };
-
-      if (order.deliveryGuyId === currentUser.uid) {
-        orders.push(order);
-      }
+      });
     });
 
-    const activeOrders = orders
-      .filter((order) =>
-        order.paymentStatus === "verified" &&
-        order.orderStatus !== "Delivered" &&
-        order.orderStatus !== "Cancelled"
-      )
-      .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+    jobs.sort((a, b) => {
+      return (b.updatedAt?.seconds || b.assignedAt?.seconds || 0) -
+             (a.updatedAt?.seconds || a.assignedAt?.seconds || 0);
+    });
 
-    if (activeOrders.length === 0) {
+    if (jobs.length === 0) {
       deliveryOrdersList.innerHTML = `
         <div class="order-card">
           <h3>No assigned deliveries</h3>
-          <p>Admin has not assigned you any active deliveries yet.</p>
+          <p>Admin has not assigned you any deliveries yet.</p>
         </div>
       `;
       return;
     }
 
-    deliveryOrdersList.innerHTML = "";
+    const activeJobs = jobs.filter(job =>
+      job.orderStatus !== "Delivered" &&
+      job.orderStatus !== "Cancelled" &&
+      job.active !== false
+    );
 
-    activeOrders.forEach(renderOrderCard);
+    const completedJobs = jobs.filter(job =>
+      job.orderStatus === "Delivered" ||
+      job.active === false
+    );
+
+    deliveryOrdersList.innerHTML = `
+      <section class="form-card">
+        <h2>Active Deliveries</h2>
+        <div id="activeDeliveries"></div>
+      </section>
+
+      <section class="form-card">
+        <h2>Completed Deliveries</h2>
+        <div id="completedDeliveries"></div>
+      </section>
+    `;
+
+    const activeDeliveries = document.getElementById("activeDeliveries");
+    const completedDeliveries = document.getElementById("completedDeliveries");
+
+    activeDeliveries.innerHTML = activeJobs.length
+      ? ""
+      : `<p class="muted">No active deliveries.</p>`;
+
+    completedDeliveries.innerHTML = completedJobs.length
+      ? ""
+      : `<p class="muted">No completed deliveries yet.</p>`;
+
+    activeJobs.forEach(job => renderOrderCard(job, activeDeliveries, false));
+    completedJobs.forEach(job => renderOrderCard(job, completedDeliveries, true));
   } catch (error) {
     deliveryOrdersList.innerHTML = `
       <div class="order-card">
@@ -97,9 +128,11 @@ async function loadOrders() {
   }
 }
 
-function renderOrderCard(order) {
+function renderOrderCard(order, container, completed) {
   const card = document.createElement("div");
   card.className = "order-card";
+
+  const orderId = order.orderId || order.id;
 
   const itemsHtml = (order.items || []).map((item) => `
     <li>
@@ -110,17 +143,36 @@ function renderOrderCard(order) {
   `).join("");
 
   const showPickupButton =
-    order.orderStatus === "Ready for Pickup" ||
-    order.deliveryStatus === "assigned";
+    !completed &&
+    (
+      order.orderStatus === "Ready for Pickup" ||
+      order.deliveryStatus === "assigned"
+    );
 
-  const showOutButton = order.orderStatus === "Picked Up";
+  const showOutButton =
+    !completed &&
+    order.orderStatus === "Picked Up";
 
   const showSignatureBox =
-    order.orderStatus === "Out for Delivery" ||
-    order.deliveryStatus === "rejected";
+    !completed &&
+    (
+      order.orderStatus === "Out for Delivery" ||
+      order.deliveryStatus === "rejected"
+    );
+
+  const signaturePreview = order.deliverySignature
+    ? `
+      <div class="form-card">
+        <h4>Customer Signature</h4>
+        <img src="${order.deliverySignature}" alt="Customer signature" style="max-width:100%; background:#fff; border:1px solid #ddd; border-radius:12px;">
+        <p><strong>Signed by:</strong> ${order.deliverySignedBy || "Customer"}</p>
+        <p><strong>Delivery note:</strong> ${order.deliveryNote || "None"}</p>
+      </div>
+    `
+    : "";
 
   card.innerHTML = `
-    <h3>Order #${order.id.slice(0, 8)}</h3>
+    <h3>Order #${String(orderId).slice(0, 8)}</h3>
 
     <div class="tracking-box">
       <span class="${stepClass(order.orderStatus, "Ready for Pickup")}">Ready</span>
@@ -141,8 +193,8 @@ function renderOrderCard(order) {
       <div>
         <p><strong>Status:</strong> ${order.orderStatus || "Not started"}</p>
         <p><strong>Delivery Status:</strong> ${order.deliveryStatus || "assigned"}</p>
-        <p><strong>Total:</strong> Rs ${order.grandTotal || 0}</p>
-        <p><strong>Delivery Fee:</strong> Rs ${order.deliveryFee || 0}</p>
+        <p><strong>Total:</strong> Rs ${Number(order.grandTotal || 0)}</p>
+        <p><strong>Delivery Fee:</strong> Rs ${Number(order.deliveryFee || 0)}</p>
       </div>
     </div>
 
@@ -154,6 +206,8 @@ function renderOrderCard(order) {
         ? `<p class="muted"><strong>Admin reject reason:</strong> ${order.adminDeliveryRejectReason}</p>`
         : ""
     }
+
+    ${signaturePreview}
 
     <div class="seller-actions">
       ${showPickupButton ? `<button class="ready-btn pickup-btn">Mark Picked Up</button>` : ""}
@@ -175,7 +229,6 @@ function renderOrderCard(order) {
             </canvas>
 
             <input class="customer-name" placeholder="Customer full name">
-
             <textarea class="delivery-note" placeholder="Delivery note optional"></textarea>
 
             <div class="seller-actions">
@@ -188,10 +241,10 @@ function renderOrderCard(order) {
     }
   `;
 
-  deliveryOrdersList.appendChild(card);
+  container.appendChild(card);
 
   card.querySelector(".pickup-btn")?.addEventListener("click", async () => {
-    await updateDoc(doc(db, "orders", order.id), {
+    await updateBoth(orderId, {
       orderStatus: "Picked Up",
       deliveryStatus: "picked_up",
       pickedUpAt: serverTimestamp(),
@@ -202,7 +255,7 @@ function renderOrderCard(order) {
   });
 
   card.querySelector(".out-btn")?.addEventListener("click", async () => {
-    await updateDoc(doc(db, "orders", order.id), {
+    await updateBoth(orderId, {
       orderStatus: "Out for Delivery",
       deliveryStatus: "out_for_delivery",
       outForDeliveryAt: serverTimestamp(),
@@ -213,11 +266,11 @@ function renderOrderCard(order) {
   });
 
   if (showSignatureBox) {
-    setupSignature(order, card);
+    setupSignature(orderId, card);
   }
 }
 
-function setupSignature(order, card) {
+function setupSignature(orderId, card) {
   const canvas = card.querySelector(".signature-canvas");
 
   if (!canvas || typeof SignaturePad === "undefined") {
@@ -260,7 +313,7 @@ function setupSignature(order, card) {
 
     const signature = signaturePad.toDataURL("image/png");
 
-    await updateDoc(doc(db, "orders", order.id), {
+    await updateBoth(orderId, {
       deliverySignature: signature,
       deliverySignedBy: customerName,
       deliveryNote,
@@ -270,18 +323,29 @@ function setupSignature(order, card) {
         currentUser.displayName ||
         currentUser.email ||
         "Delivery Driver",
+      driverId: currentUser.uid,
+      driverName:
+        currentUserData?.name ||
+        currentUser.displayName ||
+        currentUser.email ||
+        "Delivery Driver",
       deliveryStatus: "awaiting_admin_validation",
       orderStatus: "Delivery Submitted",
       deliverySubmittedAt: serverTimestamp(),
       adminDeliveryValidated: false,
       adminDeliveryRejectReason: "",
+      active: true,
       updatedAt: serverTimestamp()
     });
 
     alert("Delivery submitted for admin validation.");
-
     await loadOrders();
   });
+}
+
+async function updateBoth(orderId, data) {
+  await updateDoc(doc(db, "orders", orderId), data);
+  await setDoc(doc(db, "deliveryJobs", orderId), data, { merge: true });
 }
 
 function resizeCanvas(canvas) {
