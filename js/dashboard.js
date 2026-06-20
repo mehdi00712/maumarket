@@ -105,7 +105,7 @@ onAuthStateChanged(auth, async (user) => {
         return;
       }
 
-      renderDeliveryDashboard();
+      await renderDeliveryDashboard(user.uid);
       return;
     }
 
@@ -212,19 +212,59 @@ async function renderSellerDashboard(uid, data) {
   `;
 }
 
-function renderDeliveryDashboard() {
+async function renderDeliveryDashboard(uid) {
   roleBadge.textContent = "Delivery";
-  statusText.textContent = "Open your delivery dashboard to view assigned deliveries, collect signatures, and submit completed deliveries.";
+  statusText.textContent = "Manage assigned deliveries, collect customer signatures, and submit completed deliveries.";
+
+  let assigned = 0;
+  let active = 0;
+  let pickedUp = 0;
+  let outForDelivery = 0;
+  let submitted = 0;
+  let delivered = 0;
+
+  try {
+    const ordersQ = query(
+      collection(db, "orders"),
+      where("deliveryGuyId", "==", uid)
+    );
+
+    const ordersSnap = await getDocs(ordersQ);
+
+    assigned = ordersSnap.size;
+
+    ordersSnap.forEach((docSnap) => {
+      const order = docSnap.data();
+      const status = order.orderStatus || "";
+
+      if (status === "Picked Up") pickedUp++;
+      if (status === "Out for Delivery") outForDelivery++;
+      if (status === "Delivery Submitted") submitted++;
+      if (status === "Delivered") delivered++;
+
+      if (
+        status !== "Delivered" &&
+        status !== "Cancelled"
+      ) {
+        active++;
+      }
+    });
+  } catch (error) {
+    console.warn("Delivery stats unavailable:", error.message);
+  }
 
   quickStats.innerHTML = `
-    ${statCard("Ready", "Account")}
-    ${statCard("Assigned", "By Admin")}
-    ${statCard("Signature", "Required")}
-    ${statCard("Admin", "Validation")}
+    ${statCard(assigned, "Assigned")}
+    ${statCard(active, "Active")}
+    ${statCard(pickedUp, "Picked Up")}
+    ${statCard(outForDelivery, "Out")}
+    ${statCard(submitted, "Submitted")}
+    ${statCard(delivered, "Delivered")}
   `;
 
   actions.innerHTML = `
-    ${dashboardCard("🛵", "Delivery Dashboard", "Open assigned deliveries and collect customer signatures.", "delivery.html")}
+    ${dashboardCard("🛵", "Delivery Dashboard", "View assigned orders and collect customer signatures.", "delivery.html")}
+    ${dashboardCard("✅", "Completed Deliveries", "Delivered orders appear after admin validation.", "delivery.html")}
     ${dashboardCard("📦", "Marketplace", "Browse MauMarket products.", "products.html")}
   `;
 }
