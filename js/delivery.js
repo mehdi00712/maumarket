@@ -34,7 +34,6 @@ onAuthStateChanged(auth, async (user) => {
   if (
     !userSnap.exists() ||
     userSnap.data().role !== "delivery" ||
-    userSnap.data().approved !== true ||
     userSnap.data().blocked === true
   ) {
     window.location.href = "dashboard.html";
@@ -244,7 +243,7 @@ function renderOrderCard(order, container, completed) {
   container.appendChild(card);
 
   card.querySelector(".pickup-btn")?.addEventListener("click", async () => {
-    await updateBoth(orderId, {
+    await updateDelivery(orderId, {
       orderStatus: "Picked Up",
       deliveryStatus: "picked_up",
       pickedUpAt: serverTimestamp(),
@@ -255,7 +254,7 @@ function renderOrderCard(order, container, completed) {
   });
 
   card.querySelector(".out-btn")?.addEventListener("click", async () => {
-    await updateBoth(orderId, {
+    await updateDelivery(orderId, {
       orderStatus: "Out for Delivery",
       deliveryStatus: "out_for_delivery",
       outForDeliveryAt: serverTimestamp(),
@@ -313,7 +312,7 @@ function setupSignature(orderId, card) {
 
     const signature = signaturePad.toDataURL("image/png");
 
-    await updateBoth(orderId, {
+    await updateDelivery(orderId, {
       deliverySignature: signature,
       deliverySignedBy: customerName,
       deliveryNote,
@@ -343,9 +342,14 @@ function setupSignature(orderId, card) {
   });
 }
 
-async function updateBoth(orderId, data) {
-  await updateDoc(doc(db, "orders", orderId), data);
+async function updateDelivery(orderId, data) {
   await setDoc(doc(db, "deliveryJobs", orderId), data, { merge: true });
+
+  try {
+    await updateDoc(doc(db, "orders", orderId), data);
+  } catch (error) {
+    console.warn("Order update skipped:", error.message);
+  }
 }
 
 function resizeCanvas(canvas) {
