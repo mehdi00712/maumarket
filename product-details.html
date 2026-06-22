@@ -6,19 +6,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <header class="amazon-topbar">
   <a class="brand logo-brand" href="index.html">
-  <img src="images/maumarketlogo.png" alt="MauMarket">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
   </a>
 
   <div class="amazon-search">
     <select>
       <option>All</option>
     </select>
-    <input placeholder="Search MauMarket">
-    <button onclick="window.location.href='products.html'">Search</button>
+
+    <input id="detailsSearchInput" placeholder="Search MauMarket">
+
+    <button id="detailsSearchBtn" type="button">Search</button>
   </div>
 
   <nav>
@@ -35,18 +38,47 @@
   <a href="products.html?category=Fashion">Fashion</a>
   <a href="products.html?category=Food">Food</a>
   <a href="products.html?category=Hardware">Hardware</a>
+  <a href="products.html?category=Home">Home</a>
   <a href="products.html?category=Services">Services</a>
+  <a href="products.html?category=Other">Other</a>
 </div>
 
 <main class="product-page">
   <div id="detailsBox" class="pro-details-box">Loading...</div>
 
-  <section>
-    <h2>Related Items</h2>
+  <section class="related-section">
+    <div class="section-row-title">
+      <h2>Related Items</h2>
+      <a href="products.html">View all</a>
+    </div>
+
     <div id="relatedItems" class="pro-product-grid"></div>
   </section>
 </main>
 
+<script>
+  const detailsSearchInput = document.getElementById("detailsSearchInput");
+  const detailsSearchBtn = document.getElementById("detailsSearchBtn");
+
+  function runDetailsSearch() {
+    const search = detailsSearchInput.value.trim();
+
+    window.location.href = search
+      ? `products.html?search=${encodeURIComponent(search)}`
+      : "products.html";
+  }
+
+  detailsSearchBtn.addEventListener("click", runDetailsSearch);
+
+  detailsSearchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      runDetailsSearch();
+    }
+  });
+</script>
+
 <script type="module" src="js/product-details.js"></script>
+
 </body>
 </html>
