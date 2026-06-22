@@ -32,6 +32,7 @@ dashboardMenuBtn?.addEventListener("click", () => {
 
 dashboardSearchBtn?.addEventListener("click", () => {
   const search = dashboardSearchInput?.value?.trim() || "";
+
   window.location.href = search
     ? `products.html?search=${encodeURIComponent(search)}`
     : "products.html";
@@ -42,6 +43,7 @@ dashboardSearchInput?.addEventListener("keydown", (event) => {
     event.preventDefault();
 
     const search = dashboardSearchInput.value.trim();
+
     window.location.href = search
       ? `products.html?search=${encodeURIComponent(search)}`
       : "products.html";
@@ -123,38 +125,55 @@ async function renderCustomerDashboard(uid) {
   roleBadge.textContent = "Customer";
   statusText.textContent = "Shop local products, manage orders, wishlist items, and track deliveries.";
 
-  const cartSnap = await getDocs(collection(db, "carts", uid, "items"));
-
-  const wishlistSnap = await getDocs(
-    collection(db, "wishlists", uid, "items")
-  );
-
-  const ordersQ = query(
-    collection(db, "orders"),
-    where("customerId", "==", uid)
-  );
-
-  const ordersSnap = await getDocs(ordersQ);
-
+  let cartCount = 0;
+  let wishlistCount = 0;
+  let totalOrders = 0;
   let activeOrders = 0;
   let deliveredOrders = 0;
 
-  ordersSnap.forEach((docSnap) => {
-    const order = docSnap.data();
+  try {
+    const cartSnap = await getDocs(collection(db, "carts", uid, "items"));
+    cartCount = cartSnap.size;
+  } catch (error) {
+    console.warn("Cart stats unavailable:", error.message);
+  }
 
-    if (order.orderStatus === "Delivered") deliveredOrders++;
+  try {
+    const wishlistSnap = await getDocs(collection(db, "wishlists", uid, "items"));
+    wishlistCount = wishlistSnap.size;
+  } catch (error) {
+    console.warn("Wishlist stats unavailable:", error.message);
+  }
 
-    if (
-      order.orderStatus !== "Delivered" &&
-      order.orderStatus !== "Cancelled"
-    ) {
-      activeOrders++;
-    }
-  });
+  try {
+    const ordersQ = query(
+      collection(db, "orders"),
+      where("customerId", "==", uid)
+    );
+
+    const ordersSnap = await getDocs(ordersQ);
+
+    totalOrders = ordersSnap.size;
+
+    ordersSnap.forEach((docSnap) => {
+      const order = docSnap.data();
+
+      if (order.orderStatus === "Delivered") deliveredOrders++;
+
+      if (
+        order.orderStatus !== "Delivered" &&
+        order.orderStatus !== "Cancelled"
+      ) {
+        activeOrders++;
+      }
+    });
+  } catch (error) {
+    console.warn("Customer order stats unavailable:", error.message);
+  }
 
   quickStats.innerHTML = `
-    ${statCard(cartSnap.size, "Cart Items")}
-    ${statCard(wishlistSnap.size, "Wishlist")}
+    ${statCard(cartCount, "Cart Items")}
+    ${statCard(wishlistCount, "Wishlist")}
     ${statCard(activeOrders, "Active Orders")}
     ${statCard(deliveredOrders, "Delivered")}
   `;
@@ -172,38 +191,53 @@ async function renderSellerDashboard(uid, data) {
   roleBadge.textContent = "Seller";
   statusText.textContent = "Manage your shop, products, orders, earnings, and analytics.";
 
-  const productsQ = query(
-    collection(db, "products"),
-    where("sellerId", "==", uid)
-  );
-
-  const ordersQ = query(
-    collection(db, "orders"),
-    where("sellerIds", "array-contains", uid)
-  );
-
-  const productsSnap = await getDocs(productsQ);
-  const ordersSnap = await getDocs(ordersQ);
+  let productCount = 0;
+  let activeProducts = 0;
+  let sellerOrders = 0;
+  let deliveredOrders = 0;
 
   const productLimit = Number(data.productLimit || 50);
 
-  let activeProducts = 0;
-  let deliveredOrders = 0;
+  try {
+    const productsQ = query(
+      collection(db, "products"),
+      where("sellerId", "==", uid)
+    );
 
-  productsSnap.forEach((docSnap) => {
-    const product = docSnap.data();
-    if (product.active === true) activeProducts++;
-  });
+    const productsSnap = await getDocs(productsQ);
 
-  ordersSnap.forEach((docSnap) => {
-    const order = docSnap.data();
-    if (order.orderStatus === "Delivered") deliveredOrders++;
-  });
+    productCount = productsSnap.size;
+
+    productsSnap.forEach((docSnap) => {
+      const product = docSnap.data();
+      if (product.active === true) activeProducts++;
+    });
+  } catch (error) {
+    console.warn("Seller product stats unavailable:", error.message);
+  }
+
+  try {
+    const ordersQ = query(
+      collection(db, "orders"),
+      where("sellerIds", "array-contains", uid)
+    );
+
+    const ordersSnap = await getDocs(ordersQ);
+
+    sellerOrders = ordersSnap.size;
+
+    ordersSnap.forEach((docSnap) => {
+      const order = docSnap.data();
+      if (order.orderStatus === "Delivered") deliveredOrders++;
+    });
+  } catch (error) {
+    console.warn("Seller order stats unavailable:", error.message);
+  }
 
   quickStats.innerHTML = `
-    ${statCard(`${productsSnap.size}/${productLimit}`, "Product Slots")}
+    ${statCard(`${productCount}/${productLimit}`, "Product Slots")}
     ${statCard(activeProducts, "Visible Products")}
-    ${statCard(ordersSnap.size, "Seller Orders")}
+    ${statCard(sellerOrders, "Seller Orders")}
     ${statCard(deliveredOrders, "Delivered")}
   `;
 
@@ -256,7 +290,7 @@ async function renderDeliveryDashboard(uid) {
       }
     });
   } catch (error) {
-    console.error("Delivery jobs stats error:", error.message);
+    console.warn("Delivery jobs stats unavailable:", error.message);
   }
 
   quickStats.innerHTML = `
@@ -286,21 +320,31 @@ async function renderAdminDashboard() {
 
   try {
     const usersSnap = await getDocs(collection(db, "users"));
-    const productsSnap = await getDocs(collection(db, "products"));
-    const ordersSnap = await getDocs(collection(db, "orders"));
-
     usersCount = usersSnap.size;
-    productsCount = productsSnap.size;
-    ordersCount = ordersSnap.size;
 
     usersSnap.forEach((docSnap) => {
       const user = docSnap.data();
+
       if (user.role === "seller" && user.approved !== true) {
         pendingSellers++;
       }
     });
   } catch (error) {
-    console.warn("Admin stats unavailable:", error.message);
+    console.warn("Admin users stats unavailable:", error.message);
+  }
+
+  try {
+    const productsSnap = await getDocs(collection(db, "products"));
+    productsCount = productsSnap.size;
+  } catch (error) {
+    console.warn("Admin products stats unavailable:", error.message);
+  }
+
+  try {
+    const ordersSnap = await getDocs(collection(db, "orders"));
+    ordersCount = ordersSnap.size;
+  } catch (error) {
+    console.warn("Admin orders stats unavailable:", error.message);
   }
 
   quickStats.innerHTML = `
