@@ -29,10 +29,10 @@ let shopCache = {};
 
 const params = new URLSearchParams(window.location.search);
 const urlCategory = params.get("category");
+const urlSearch = params.get("search");
 
-if (urlCategory && categoryFilter) {
-  categoryFilter.value = urlCategory;
-}
+if (urlCategory && categoryFilter) categoryFilter.value = urlCategory;
+if (urlSearch && searchInput) searchInput.value = urlSearch;
 
 mobileMenuBtn?.addEventListener("click", () => {
   mobileNav?.classList.toggle("show");
@@ -42,11 +42,7 @@ async function loadTopBanner() {
   if (!topAdBanner) return;
 
   try {
-    const q = query(
-      collection(db, "banners"),
-      where("active", "==", true)
-    );
-
+    const q = query(collection(db, "banners"), where("active", "==", true));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
@@ -72,12 +68,12 @@ async function loadTopBanner() {
 
     topAdBanner.innerHTML = `
       <div class="top-ad-inner compact-ad">
-        <img src="${banner.imageUrl}" alt="${banner.title || "Featured shop"}">
+        <img src="${escapeHtml(banner.imageUrl)}" alt="${escapeHtml(banner.title || "Featured shop")}">
 
         <div class="top-ad-content">
           <span>Featured Shop</span>
-          <h2>${banner.title || banner.shopName || "Featured Seller"}</h2>
-          <p>${banner.subtitle || banner.shopName || "Discover this MauMarket seller."}</p>
+          <h2>${escapeHtml(banner.title || banner.shopName || "Featured Seller")}</h2>
+          <p>${escapeHtml(banner.subtitle || banner.shopName || "Discover this MauMarket seller.")}</p>
           <button type="button">Visit Shop</button>
         </div>
       </div>
@@ -92,7 +88,7 @@ async function loadTopBanner() {
         console.warn("Could not update banner clicks:", error.message);
       }
 
-      window.location.href = `shop.html?id=${banner.shopId}`;
+      window.location.href = `shop.html?id=${encodeURIComponent(banner.shopId)}`;
     };
   } catch (error) {
     console.warn("Banner not loaded:", error.message);
@@ -108,11 +104,7 @@ async function loadItems() {
   `;
 
   try {
-    const q = query(
-      collection(db, "products"),
-      where("active", "==", true)
-    );
-
+    const q = query(collection(db, "products"), where("active", "==", true));
     const snapshot = await getDocs(q);
 
     allItems = [];
@@ -133,7 +125,7 @@ async function loadItems() {
     productsGrid.innerHTML = `
       <div class="order-card">
         <h3>Marketplace could not load</h3>
-        <p>${error.message}</p>
+        <p>${escapeHtml(error.message)}</p>
       </div>
     `;
   }
@@ -144,7 +136,9 @@ async function getShop(sellerId) {
     return {
       id: "",
       shopName: "Unknown Shop",
-      verified: false
+      verified: false,
+      averageRating: 0,
+      totalReviews: 0
     };
   }
 
@@ -157,7 +151,8 @@ async function getShop(sellerId) {
       shopCache[sellerId] = {
         id: sellerId,
         verified: true,
-        rating: 4.8,
+        averageRating: 0,
+        totalReviews: 0,
         ...shopSnap.data()
       };
     } else {
@@ -165,7 +160,8 @@ async function getShop(sellerId) {
         id: sellerId,
         shopName: "Unknown Shop",
         verified: false,
-        rating: 4.8
+        averageRating: 0,
+        totalReviews: 0
       };
     }
   } catch (error) {
@@ -173,7 +169,8 @@ async function getShop(sellerId) {
       id: sellerId,
       shopName: "Unknown Shop",
       verified: false,
-      rating: 4.8
+      averageRating: 0,
+      totalReviews: 0
     };
   }
 
@@ -194,7 +191,9 @@ function renderFeaturedShops() {
     }
   });
 
-  const shops = Object.values(uniqueShops).slice(0, 12);
+  const shops = Object.values(uniqueShops)
+    .sort((a, b) => Number(b.averageRating || 0) - Number(a.averageRating || 0))
+    .slice(0, 12);
 
   if (shops.length === 0) {
     featuredShopsSection.style.display = "none";
@@ -205,19 +204,23 @@ function renderFeaturedShops() {
   featuredShops.innerHTML = "";
 
   shops.forEach((shop) => {
+    const rating = Number(shop.averageRating || 0);
+    const totalReviews = Number(shop.totalReviews || 0);
+
     const card = document.createElement("a");
     card.className = "featured-shop-card";
-    card.href = `shop.html?id=${shop.id}`;
+    card.href = `shop.html?id=${encodeURIComponent(shop.id)}`;
 
     card.innerHTML = `
       ${
         shop.logoUrl
-          ? `<img src="${shop.logoUrl}" alt="${shop.shopName || "Shop"}">`
+          ? `<img src="${escapeHtml(shop.logoUrl)}" alt="${escapeHtml(shop.shopName || "Shop")}">`
           : `<div class="shop-logo-fallback">Shop</div>`
       }
 
-      <strong>${shop.shopName || "Shop"}</strong>
+      <strong>${escapeHtml(shop.shopName || "Shop")}</strong>
       <span>✓ Verified</span>
+      <small>${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "No reviews yet"}</small>
     `;
 
     featuredShops.appendChild(card);
@@ -261,6 +264,12 @@ function renderItems(shouldScroll = false) {
     });
   }
 
+  if (sort === "rating") {
+    filtered.sort((a, b) => {
+      return Number(b.averageRating || 0) - Number(a.averageRating || 0);
+    });
+  }
+
   if (resultCount) {
     resultCount.textContent = search
       ? `${filtered.length} result(s) for "${search}"`
@@ -271,7 +280,7 @@ function renderItems(shouldScroll = false) {
     productsGrid.innerHTML = `
       <div class="order-card">
         <h3>No items found</h3>
-        <p>${search ? `No result for "${search}".` : "Try another search, category, or filter."}</p>
+        <p>${search ? `No result for "${escapeHtml(search)}".` : "Try another search, category, or filter."}</p>
       </div>
     `;
 
@@ -288,38 +297,48 @@ function renderItems(shouldScroll = false) {
   productsGrid.innerHTML = "";
 
   filtered.forEach((item) => {
-    const rating = item.rating || item.shop?.rating || "4.8";
+    const productRating = Number(item.averageRating || 0);
+    const productReviews = Number(item.totalReviews || 0);
+    const shopRating = Number(item.shop?.averageRating || 0);
+    const shopReviews = Number(item.shop?.totalReviews || 0);
     const sold = Number(item.soldCount || 0);
+
+    const ratingText = productRating > 0
+      ? `⭐ ${productRating.toFixed(1)} (${productReviews})`
+      : "⭐ No reviews yet";
+
+    const sellerRatingText = shopRating > 0
+      ? `Seller ⭐ ${shopRating.toFixed(1)} (${shopReviews})`
+      : "Seller not rated yet";
 
     const div = document.createElement("div");
     div.className = "market-product-card";
 
     div.innerHTML = `
-      <a class="market-product-img" href="product-details.html?id=${item.id}">
+      <a class="market-product-img" href="product-details.html?id=${encodeURIComponent(item.id)}">
         ${
           item.imageUrl
-            ? `<img src="${item.imageUrl}" alt="${item.title || "Product"}">`
+            ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
             : `<div class="no-img">No Image</div>`
         }
       </a>
 
       <div class="market-product-body">
-        <span class="badge">${item.type || "item"}</span>
+        <span class="badge">${escapeHtml(item.type || "item")}</span>
 
-        <h3>${item.title || "Untitled"}</h3>
+        <h3>${escapeHtml(item.title || "Untitled")}</h3>
 
         <p class="seller-line">
           <span>✓ Verified</span>
-          ${item.shop?.shopName || "Shop"}
+          ${escapeHtml(item.shop?.shopName || "Shop")}
         </p>
 
-        <p class="rating-line-small">
-          ⭐ ${rating}${sold > 0 ? ` • ${sold} sold` : ""}
-        </p>
+        <p class="rating-line-small">${ratingText}</p>
+        <p class="rating-line-small muted">${sellerRatingText}${sold > 0 ? ` • ${sold} sold` : ""}</p>
 
         <p class="price">Rs ${Number(item.price || 0)}</p>
 
-        <a class="btn product-main-btn" href="product-details.html?id=${item.id}">
+        <a class="btn product-main-btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
           View
         </a>
       </div>
@@ -359,6 +378,15 @@ searchBtn?.addEventListener("click", (event) => {
   event.preventDefault();
   runSearch();
 });
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 loadTopBanner();
 loadItems();
