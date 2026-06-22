@@ -24,6 +24,7 @@ const itemId = params.get("id");
 let currentUser = null;
 let currentItem = null;
 let currentShop = null;
+let productReviews = [];
 let shopReviews = [];
 
 onAuthStateChanged(auth, async (user) => {
@@ -49,19 +50,58 @@ async function loadDetails() {
     ...itemSnap.data()
   };
 
-  currentShop = { shopName: "Unknown Shop" };
+  currentShop = {
+    shopName: "Unknown Shop",
+    averageRating: 0,
+    totalReviews: 0
+  };
 
   if (currentItem.sellerId) {
     const shopSnap = await getDoc(doc(db, "shops", currentItem.sellerId));
-    if (shopSnap.exists()) currentShop = shopSnap.data();
+
+    if (shopSnap.exists()) {
+      currentShop = {
+        id: currentItem.sellerId,
+        ...shopSnap.data()
+      };
+    }
   }
 
+  await loadProductReviews();
   await loadShopReviews();
+
   renderDetails();
   await loadRelatedItems();
 }
 
+async function loadProductReviews() {
+  const q = query(
+    collection(db, "reviews"),
+    where("productIds", "array-contains", itemId)
+  );
+
+  const snapshot = await getDocs(q);
+
+  productReviews = [];
+
+  snapshot.forEach((docSnap) => {
+    productReviews.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  productReviews.sort((a, b) => {
+    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+  });
+}
+
 async function loadShopReviews() {
+  if (!currentItem.sellerId) {
+    shopReviews = [];
+    return;
+  }
+
   const q = query(
     collection(db, "reviews"),
     where("sellerIds", "array-contains", currentItem.sellerId)
@@ -72,38 +112,67 @@ async function loadShopReviews() {
   shopReviews = [];
 
   snapshot.forEach((docSnap) => {
-    shopReviews.push(docSnap.data());
+    shopReviews.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
   });
 }
 
 function renderDetails() {
-  const rating = getAverageRating();
+  const productAverageRating = Number(
+    currentItem.averageRating || getAverageRating(productReviews, "sellerRating") || 0
+  );
+
+  const productTotalReviews = Number(
+    currentItem.totalReviews || productReviews.length || 0
+  );
+
+  const shopAverageRating = Number(
+    currentShop.averageRating || getAverageRating(shopReviews, "sellerRating") || 0
+  );
+
+  const shopTotalReviews = Number(
+    currentShop.totalReviews || shopReviews.length || 0
+  );
+
+  const productRatingText = productAverageRating > 0
+    ? `⭐ ${productAverageRating.toFixed(1)} (${productTotalReviews} review${productTotalReviews === 1 ? "" : "s"})`
+    : "⭐ No product reviews yet";
+
+  const shopRatingText = shopAverageRating > 0
+    ? `⭐ ${shopAverageRating.toFixed(1)} (${shopTotalReviews} shop review${shopTotalReviews === 1 ? "" : "s"})`
+    : "⭐ No shop reviews yet";
+
+  const reviewsHtml = renderReviewsList();
 
   detailsBox.innerHTML = `
     <section class="pro-product-details">
       <div class="pro-gallery">
         ${
           currentItem.imageUrl
-            ? `<img class="main-product-img" src="${currentItem.imageUrl}" alt="${currentItem.title}">`
+            ? `<img class="main-product-img" src="${escapeHtml(currentItem.imageUrl)}" alt="${escapeHtml(currentItem.title || "Product")}">`
             : `<div class="main-product-img no-img">No Image</div>`
         }
       </div>
 
       <div class="pro-product-info">
-        <span class="badge">${currentItem.type || "item"}</span>
-        <h1>${currentItem.title || "Untitled"}</h1>
+        <span class="badge">${escapeHtml(currentItem.type || "item")}</span>
 
-        <p class="muted">${currentItem.category || "Other"}</p>
-        <p class="rating-line">${rating} ⭐ (${shopReviews.length} shop reviews)</p>
+        <h1>${escapeHtml(currentItem.title || "Untitled")}</h1>
+
+        <p class="muted">${escapeHtml(currentItem.category || "Other")}</p>
+
+        <p class="rating-line">${productRatingText}</p>
 
         <h2 class="product-price">Rs ${Number(currentItem.price || 0)}</h2>
 
-        <p>${currentItem.description || "No description provided."}</p>
+        <p>${escapeHtml(currentItem.description || "No description provided.")}</p>
 
         ${
           currentItem.type === "product"
             ? `<p><strong>Stock:</strong> ${Number(currentItem.stock || 0)}</p>`
-            : `<p><strong>Service Area:</strong> ${currentItem.serviceArea || "Not specified"}</p>`
+            : `<p><strong>Service Area:</strong> ${escapeHtml(currentItem.serviceArea || "Not specified")}</p>`
         }
 
         <div class="cart-actions">
@@ -116,28 +185,71 @@ function renderDetails() {
 
       <aside class="buy-box">
         <h3>Seller</h3>
+
         <div class="mini-shop">
-          ${currentShop.logoUrl ? `<img src="${currentShop.logoUrl}" alt="${currentShop.shopName}">` : ""}
+          ${
+            currentShop.logoUrl
+              ? `<img src="${escapeHtml(currentShop.logoUrl)}" alt="${escapeHtml(currentShop.shopName || "Shop")}">`
+              : ""
+          }
+
           <div>
-            <strong>${currentShop.shopName || "Shop"}</strong>
-            <p>${rating} ⭐</p>
+            <strong>${escapeHtml(currentShop.shopName || "Shop")}</strong>
+            <p>${shopRatingText}</p>
+            <p class="muted">✓ Verified Seller</p>
           </div>
         </div>
 
-        <p>📍 ${currentShop.location || "Mauritius"}</p>
-        <p>☎ ${currentShop.phone || "Not specified"}</p>
+        <p>📍 ${escapeHtml(currentShop.location || "Mauritius")}</p>
+        <p>☎ ${escapeHtml(currentShop.phone || "Not specified")}</p>
         <p>🚚 Delivery by MauMarket</p>
 
-        <a class="btn" href="shop.html?id=${currentItem.sellerId}">Visit Shop</a>
+        <a class="btn" href="shop.html?id=${encodeURIComponent(currentItem.sellerId || "")}">
+          Visit Shop
+        </a>
       </aside>
+    </section>
+
+    <section class="form-card product-reviews-section">
+      <div class="section-row-title">
+        <h2>Customer Reviews</h2>
+        <span>${productRatingText}</span>
+      </div>
+
+      ${reviewsHtml}
     </section>
   `;
 
-  document.getElementById("addToCartBtn").addEventListener("click", addToCart);
+  document.getElementById("addToCartBtn")?.addEventListener("click", addToCart);
+}
+
+function renderReviewsList() {
+  if (productReviews.length === 0) {
+    return `
+      <div class="order-card">
+        <h3>No reviews yet</h3>
+        <p class="muted">Be the first to review this product after a verified purchase.</p>
+      </div>
+    `;
+  }
+
+  return productReviews.slice(0, 8).map((review) => {
+    const rating = Number(review.sellerRating || review.rating || 0);
+    const stars = "⭐".repeat(Math.max(1, Math.min(5, rating)));
+
+    return `
+      <div class="order-card review-card">
+        <h3>${stars} ${rating ? rating.toFixed(1) : ""}</h3>
+        <p><strong>${escapeHtml(review.customerName || "Customer")}</strong></p>
+        <p>${escapeHtml(review.reviewText || "")}</p>
+        <p class="muted">Verified Purchase</p>
+      </div>
+    `;
+  }).join("");
 }
 
 async function loadRelatedItems() {
-  if (!currentItem.category) return;
+  if (!currentItem.category || !relatedItems) return;
 
   const q = query(
     collection(db, "products"),
@@ -166,20 +278,37 @@ async function loadRelatedItems() {
   relatedItems.innerHTML = "";
 
   items.slice(0, 8).forEach((item) => {
+    const rating = Number(item.averageRating || 0);
+    const totalReviews = Number(item.totalReviews || 0);
+
     const div = document.createElement("div");
     div.className = "pro-product-card";
 
     div.innerHTML = `
       <div class="pro-product-img">
-        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}">` : `<div class="no-img">No Image</div>`}
+        ${
+          item.imageUrl
+            ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
+            : `<div class="no-img">No Image</div>`
+        }
       </div>
 
       <div class="pro-product-body">
-        <span class="badge">${item.type || "item"}</span>
-        <h3>${item.title || "Untitled"}</h3>
-        <p class="muted">${item.category || ""}</p>
+        <span class="badge">${escapeHtml(item.type || "item")}</span>
+
+        <h3>${escapeHtml(item.title || "Untitled")}</h3>
+
+        <p class="muted">${escapeHtml(item.category || "")}</p>
+
+        <p class="rating-line-small">
+          ${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "⭐ No reviews yet"}
+        </p>
+
         <p class="pro-price">Rs ${Number(item.price || 0)}</p>
-        <a class="btn" href="product-details.html?id=${item.id}">View Details</a>
+
+        <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
+          View Details
+        </a>
       </div>
     `;
 
@@ -192,9 +321,11 @@ async function addToCart() {
 
   if (!currentUser) {
     cartMessage.textContent = "Please login first.";
+
     setTimeout(() => {
       window.location.href = "login.html";
     }, 800);
+
     return;
   }
 
@@ -205,7 +336,11 @@ async function addToCart() {
     return;
   }
 
-  if (currentItem.type === "product" && currentItem.stock > 0 && qty > currentItem.stock) {
+  if (
+    currentItem.type === "product" &&
+    Number(currentItem.stock || 0) > 0 &&
+    qty > Number(currentItem.stock || 0)
+  ) {
     cartMessage.textContent = "Quantity is higher than available stock.";
     return;
   }
@@ -226,12 +361,21 @@ async function addToCart() {
   cartMessage.textContent = "Added to cart.";
 }
 
-function getAverageRating() {
-  if (shopReviews.length === 0) return "0.0";
+function getAverageRating(reviews, fieldName) {
+  if (!reviews || reviews.length === 0) return 0;
 
-  const total = shopReviews.reduce((sum, review) => {
-    return sum + Number(review.sellerRating || 0);
+  const total = reviews.reduce((sum, review) => {
+    return sum + Number(review[fieldName] || review.rating || 0);
   }, 0);
 
-  return (total / shopReviews.length).toFixed(1);
+  return Number((total / reviews.length).toFixed(1));
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
