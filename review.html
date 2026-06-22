@@ -1,24 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Review Order | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<title>Review Order | MauMarket</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="styles.css">
+
+<style>
+.review-page-card{
+    max-width:900px;
+    margin:30px auto;
+}
+
+.review-header{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.review-header h1{
+    margin-bottom:8px;
+}
+
+.rating-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin-top:20px;
+}
+
+.rating-box{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:18px;
+}
+
+.rating-box h3{
+    margin-bottom:12px;
+}
+
+.rating-box select{
+    width:100%;
+}
+
+.review-text-box{
+    margin-top:20px;
+}
+
+.review-text-box textarea{
+    width:100%;
+    min-height:150px;
+    resize:vertical;
+}
+
+.review-benefits{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin:20px 0;
+}
+
+.review-benefit{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:15px;
+    text-align:center;
+}
+
+.review-benefit span{
+    font-size:24px;
+    display:block;
+    margin-bottom:8px;
+}
+
+#submitReviewBtn{
+    width:100%;
+    margin-top:20px;
+    padding:14px;
+    font-size:16px;
+    font-weight:700;
+}
+
+#reviewMessage{
+    text-align:center;
+    margin-top:15px;
+    font-weight:600;
+}
+
+.verified-review-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#ecfdf5;
+    color:#065f46;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:700;
+    margin-bottom:15px;
+}
+
+@media(max-width:768px){
+    .rating-grid{
+        grid-template-columns:1fr;
+    }
+}
+</style>
 </head>
+
 <body>
 
 <header class="amazon-topbar">
+
   <a class="brand logo-brand" href="index.html">
-  <img src="images/maumarketlogo.png" alt="MauMarket">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
   </a>
 
   <div class="amazon-search">
     <select>
       <option>All</option>
     </select>
+
     <input placeholder="Search MauMarket">
-    <button onclick="window.location.href='products.html'">Search</button>
+
+    <button onclick="window.location.href='products.html'">
+      Search
+    </button>
   </div>
 
   <nav>
@@ -26,6 +134,7 @@
     <a href="products.html">Marketplace</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
+
 </header>
 
 <div class="amazon-subnav">
@@ -39,38 +148,106 @@
 </div>
 
 <main class="container">
+
   <section class="form-card review-page-card">
-    <h1>Leave a Verified Review</h1>
-    <p class="muted">You can review this order because it has been delivered.</p>
 
-    <div id="orderBox">Loading...</div>
+    <div class="review-header">
 
-    <label>Seller Rating</label>
-    <select id="sellerRating">
-      <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
-      <option value="4">⭐⭐⭐⭐ Good</option>
-      <option value="3">⭐⭐⭐ Average</option>
-      <option value="2">⭐⭐ Poor</option>
-      <option value="1">⭐ Bad</option>
-    </select>
+      <div class="verified-review-badge">
+        ✅ Verified Purchase
+      </div>
 
-    <label>Delivery Rating</label>
-    <select id="deliveryRating">
-      <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
-      <option value="4">⭐⭐⭐⭐ Good</option>
-      <option value="3">⭐⭐⭐ Average</option>
-      <option value="2">⭐⭐ Poor</option>
-      <option value="1">⭐ Bad</option>
-    </select>
+      <h1>Leave Your Review</h1>
 
-    <label>Your Review</label>
-    <textarea id="reviewText" placeholder="Write your experience with the seller, product, and delivery..."></textarea>
+      <p class="muted">
+        Help other buyers by sharing your experience with the seller,
+        product quality and delivery service.
+      </p>
 
-    <button id="submitReviewBtn">Submit Review</button>
+    </div>
+
+    <div id="orderBox">
+      Loading order...
+    </div>
+
+    <div class="review-benefits">
+
+      <div class="review-benefit">
+        <span>⭐</span>
+        Product Quality
+      </div>
+
+      <div class="review-benefit">
+        <span>🏪</span>
+        Seller Service
+      </div>
+
+      <div class="review-benefit">
+        <span>🚚</span>
+        Delivery Experience
+      </div>
+
+      <div class="review-benefit">
+        <span>🛡️</span>
+        Verified Review
+      </div>
+
+    </div>
+
+    <div class="rating-grid">
+
+      <div class="rating-box">
+
+        <h3>Seller Rating</h3>
+
+        <select id="sellerRating">
+          <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+          <option value="4">⭐⭐⭐⭐ Good</option>
+          <option value="3">⭐⭐⭐ Average</option>
+          <option value="2">⭐⭐ Poor</option>
+          <option value="1">⭐ Bad</option>
+        </select>
+
+      </div>
+
+      <div class="rating-box">
+
+        <h3>Delivery Rating</h3>
+
+        <select id="deliveryRating">
+          <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+          <option value="4">⭐⭐⭐⭐ Good</option>
+          <option value="3">⭐⭐⭐ Average</option>
+          <option value="2">⭐⭐ Poor</option>
+          <option value="1">⭐ Bad</option>
+        </select>
+
+      </div>
+
+    </div>
+
+    <div class="review-text-box">
+
+      <label>Your Review</label>
+
+      <textarea
+        id="reviewText"
+        placeholder="Tell other buyers about the product quality, seller communication, packaging, and delivery experience...">
+      </textarea>
+
+    </div>
+
+    <button id="submitReviewBtn">
+      Submit Verified Review
+    </button>
+
     <p id="reviewMessage"></p>
+
   </section>
+
 </main>
 
 <script type="module" src="js/review.js"></script>
+
 </body>
 </html>
