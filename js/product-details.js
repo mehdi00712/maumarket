@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   serverTimestamp,
   collection,
   query,
@@ -26,6 +27,7 @@ let currentItem = null;
 let currentShop = null;
 let productReviews = [];
 let shopReviews = [];
+let isWishlisted = false;
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
@@ -69,9 +71,26 @@ async function loadDetails() {
 
   await loadProductReviews();
   await loadShopReviews();
+  await checkWishlistStatus();
 
   renderDetails();
   await loadRelatedItems();
+}
+
+async function checkWishlistStatus() {
+  isWishlisted = false;
+
+  if (!currentUser || !itemId) return;
+
+  try {
+    const wishSnap = await getDoc(
+      doc(db, "wishlists", currentUser.uid, "items", itemId)
+    );
+
+    isWishlisted = wishSnap.exists();
+  } catch (error) {
+    console.warn("Wishlist check failed:", error.message);
+  }
 }
 
 async function loadProductReviews() {
@@ -178,9 +197,13 @@ function renderDetails() {
         <div class="cart-actions">
           <input id="qtyInput" type="number" min="1" value="1">
           <button id="addToCartBtn">Add to Cart</button>
+          <button id="wishlistBtn" class="secondary-btn" type="button">
+            ${isWishlisted ? "♥ Saved" : "♡ Save"}
+          </button>
         </div>
 
         <p id="cartMessage"></p>
+        <p id="wishlistMessage"></p>
       </div>
 
       <aside class="buy-box">
@@ -207,6 +230,10 @@ function renderDetails() {
         <a class="btn" href="shop.html?id=${encodeURIComponent(currentItem.sellerId || "")}">
           Visit Shop
         </a>
+
+        <a class="secondary-btn" href="wishlist.html">
+          View Wishlist
+        </a>
       </aside>
     </section>
 
@@ -221,6 +248,7 @@ function renderDetails() {
   `;
 
   document.getElementById("addToCartBtn")?.addEventListener("click", addToCart);
+  document.getElementById("wishlistBtn")?.addEventListener("click", toggleWishlist);
 }
 
 function renderReviewsList() {
@@ -235,7 +263,7 @@ function renderReviewsList() {
 
   return productReviews.slice(0, 8).map((review) => {
     const rating = Number(review.sellerRating || review.rating || 0);
-    const stars = "⭐".repeat(Math.max(1, Math.min(5, rating)));
+    const stars = "⭐".repeat(Math.max(1, Math.min(5, Math.round(rating))));
 
     return `
       <div class="order-card review-card">
@@ -314,6 +342,54 @@ async function loadRelatedItems() {
 
     relatedItems.appendChild(div);
   });
+}
+
+async function toggleWishlist() {
+  const wishlistMessage = document.getElementById("wishlistMessage");
+  const wishlistBtn = document.getElementById("wishlistBtn");
+
+  if (!currentUser) {
+    wishlistMessage.textContent = "Please login first.";
+
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 800);
+
+    return;
+  }
+
+  wishlistBtn.disabled = true;
+
+  try {
+    const wishlistRef = doc(db, "wishlists", currentUser.uid, "items", currentItem.id);
+
+    if (isWishlisted) {
+      await deleteDoc(wishlistRef);
+      isWishlisted = false;
+      wishlistBtn.textContent = "♡ Save";
+      wishlistMessage.textContent = "Removed from wishlist.";
+    } else {
+      await setDoc(wishlistRef, {
+        productId: currentItem.id,
+        sellerId: currentItem.sellerId || "",
+        title: currentItem.title || "",
+        price: Number(currentItem.price || 0),
+        imageUrl: currentItem.imageUrl || "",
+        category: currentItem.category || "",
+        type: currentItem.type || "",
+        shopName: currentShop.shopName || "",
+        addedAt: serverTimestamp()
+      }, { merge: true });
+
+      isWishlisted = true;
+      wishlistBtn.textContent = "♥ Saved";
+      wishlistMessage.textContent = "Saved to wishlist.";
+    }
+  } catch (error) {
+    wishlistMessage.textContent = error.message;
+  }
+
+  wishlistBtn.disabled = false;
 }
 
 async function addToCart() {
