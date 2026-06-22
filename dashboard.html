@@ -28,33 +28,66 @@
 
   <nav id="dashboardNav" class="mobile-nav">
     <a href="products.html">Marketplace</a>
-    <a href="cart.html">Cart</a>
-    <a href="my-orders.html">Orders</a>
+    <a href="wishlist.html">❤️ Wishlist</a>
+    <a href="cart.html">🛒 Cart</a>
+    <a href="my-orders.html">📦 Orders</a>
     <button id="logoutBtn" type="button">Logout</button>
   </nav>
 </header>
 
 <main class="dashboard-page">
+
   <section class="dashboard-hero">
     <div>
       <span id="roleBadge" class="hero-badge">Account</span>
-      <h1 id="welcome">Loading...</h1>
-      <p id="status">Manage your MauMarket account from one place.</p>
+
+      <h1 id="welcome">
+        Loading...
+      </h1>
+
+      <p id="status">
+        Manage your MauMarket account from one place.
+      </p>
     </div>
   </section>
 
-  <section id="quickStats" class="dashboard-stats"></section>
+  <section id="quickStats" class="dashboard-stats">
+
+    <!-- dashboard.js will populate -->
+
+  </section>
 
   <section>
+
     <div class="dashboard-section-title">
       <h2>Your Control Center</h2>
       <p>Choose what you want to manage.</p>
     </div>
 
-    <div id="actions" class="dashboard-grid"></div>
+    <div id="actions" class="dashboard-grid">
+
+      <!-- dashboard.js will populate -->
+
+    </div>
+
+    <!-- Wishlist shortcut -->
+    <div class="form-card" style="margin-top:20px;">
+      <h3>❤️ Wishlist</h3>
+
+      <p>
+        Save products and services you want to buy later.
+      </p>
+
+      <a href="wishlist.html" class="btn">
+        Open Wishlist
+      </a>
+    </div>
+
   </section>
+
 </main>
 
 <script type="module" src="js/dashboard.js"></script>
+
 </body>
 </html>
