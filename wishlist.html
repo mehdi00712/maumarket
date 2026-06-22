@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wishlist | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="amazon-topbar">
+  <a class="brand logo-brand" href="index.html">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
+  </a>
+
+  <div class="amazon-search">
+    <select><option>All</option></select>
+    <input id="wishlistSearchInput" placeholder="Search MauMarket">
+    <button id="wishlistSearchBtn" type="button">Search</button>
+  </div>
+
+  <nav>
+    <a href="products.html">Marketplace</a>
+    <a href="cart.html">Cart</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="form-card">
+    <h1>My Wishlist</h1>
+    <p class="muted">Products you saved for later.</p>
+  </section>
+
+  <section id="wishlistItems" class="pro-product-grid">
+    Loading wishlist...
+  </section>
+</main>
+
+<script type="module" src="js/wishlist.js"></script>
+</body>
+</html>
