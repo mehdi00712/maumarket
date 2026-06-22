@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reviews | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header class="amazon-topbar">
+  <a class="brand logo-brand" href="index.html">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
+  </a>
+
+  <div class="amazon-search">
+    <select>
+      <option>All</option>
+    </select>
+
+    <input id="reviewsSearchInput" placeholder="Search MauMarket">
+    <button id="reviewsSearchBtn" type="button">Search</button>
+  </div>
+
+  <nav>
+    <a href="products.html">Marketplace</a>
+    <a href="cart.html">Cart</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<div class="amazon-subnav">
+  <a href="products.html">All</a>
+  <a href="products.html?category=Beauty">Beauty</a>
+  <a href="products.html?category=Electronics">Electronics</a>
+  <a href="products.html?category=Fashion">Fashion</a>
+  <a href="products.html?category=Food">Food</a>
+  <a href="products.html?category=Hardware">Hardware</a>
+  <a href="products.html?category=Home">Home</a>
+  <a href="products.html?category=Services">Services</a>
+</div>
+
+<main class="container">
+
+  <section class="form-card">
+    <h1>Customer Reviews</h1>
+    <p class="muted">Verified MauMarket reviews from delivered orders.</p>
+
+    <div class="review-summary-card">
+      <div class="review-score">
+        <h2 id="averageRating">0.0</h2>
+        <p>Average Rating</p>
+      </div>
+
+      <div class="review-stats">
+        <p>Total Reviews: <strong id="totalReviews">0</strong></p>
+        <p>Verified Purchases: <strong id="verifiedReviews">0</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="shop-section-head">
+    <div>
+      <h2>All Reviews</h2>
+      <p id="reviewCount" class="muted"></p>
+    </div>
+
+    <select id="reviewSort">
+      <option value="newest">Newest</option>
+      <option value="highest">Highest Rated</option>
+      <option value="lowest">Lowest Rated</option>
+    </select>
+  </section>
+
+  <section id="reviewsList" class="reviews-list">
+    Loading reviews...
+  </section>
+
+</main>
+
+<script>
+const reviewsSearchInput = document.getElementById("reviewsSearchInput");
+const reviewsSearchBtn = document.getElementById("reviewsSearchBtn");
+
+function runReviewsSearch() {
+  const search = reviewsSearchInput.value.trim();
+
+  window.location.href = search
+    ? `products.html?search=${encodeURIComponent(search)}`
+    : "products.html";
+}
+
+reviewsSearchBtn?.addEventListener("click", runReviewsSearch);
+
+reviewsSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    runReviewsSearch();
+  }
+});
+</script>
+
+<script type="module" src="js/reviews.js"></script>
+
+</body>
+</html>
