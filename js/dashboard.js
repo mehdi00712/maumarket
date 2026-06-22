@@ -121,9 +121,13 @@ onAuthStateChanged(auth, async (user) => {
 
 async function renderCustomerDashboard(uid) {
   roleBadge.textContent = "Customer";
-  statusText.textContent = "Shop local products, manage orders, and track deliveries.";
+  statusText.textContent = "Shop local products, manage orders, wishlist items, and track deliveries.";
 
   const cartSnap = await getDocs(collection(db, "carts", uid, "items"));
+
+  const wishlistSnap = await getDocs(
+    collection(db, "wishlists", uid, "items")
+  );
 
   const ordersQ = query(
     collection(db, "orders"),
@@ -150,16 +154,17 @@ async function renderCustomerDashboard(uid) {
 
   quickStats.innerHTML = `
     ${statCard(cartSnap.size, "Cart Items")}
-    ${statCard(ordersSnap.size, "Total Orders")}
+    ${statCard(wishlistSnap.size, "Wishlist")}
     ${statCard(activeOrders, "Active Orders")}
     ${statCard(deliveredOrders, "Delivered")}
   `;
 
   actions.innerHTML = `
     ${dashboardCard("🛒", "Marketplace", "Browse products and services from local sellers.", "products.html")}
+    ${dashboardCard("❤️", "Wishlist", "Save products and services for later.", "wishlist.html")}
     ${dashboardCard("🧺", "My Cart", "Review your selected items before checkout.", "cart.html")}
     ${dashboardCard("📦", "My Orders", "Track deliveries and leave verified reviews.", "my-orders.html")}
-    ${dashboardCard("⭐", "Reviews", "Review delivered orders and support trusted sellers.", "my-orders.html")}
+    ${dashboardCard("⭐", "Reviews", "Read and manage marketplace reviews.", "reviews.html")}
   `;
 }
 
