@@ -32,6 +32,9 @@ const orderStatusBox = document.getElementById("orderStatusBox");
 const productRevenueBox = document.getElementById("productRevenueBox");
 const reviewSummaryText = document.getElementById("reviewSummaryText");
 
+const revenueChart = document.getElementById("revenueChart");
+const statusChart = document.getElementById("statusChart");
+
 let currentUser = null;
 
 onAuthStateChanged(auth, async (user) => {
@@ -74,6 +77,8 @@ async function loadSellerAnalytics() {
   renderRecentOrders(stats.verifiedOrders);
   renderOrderStatusBreakdown(stats.statusCounts);
   renderProductRevenue(stats.productRevenueList);
+  renderRevenueChart(stats.productRevenueList);
+  renderStatusChart(stats.statusCounts);
   renderReviews(reviews, stats);
 }
 
@@ -81,18 +86,15 @@ async function loadSellerProducts() {
   const products = [];
 
   try {
-    const productsQ = query(
+    const q = query(
       collection(db, "products"),
       where("sellerId", "==", currentUser.uid)
     );
 
-    const productsSnap = await getDocs(productsQ);
+    const snap = await getDocs(q);
 
-    productsSnap.forEach((docSnap) => {
-      products.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
+    snap.forEach((docSnap) => {
+      products.push({ id: docSnap.id, ...docSnap.data() });
     });
   } catch (error) {
     console.warn("Products analytics unavailable:", error.message);
@@ -105,40 +107,20 @@ async function loadSellerOrdersSafely() {
   const orders = [];
 
   try {
-    const ordersQ = query(
+    const q = query(
       collection(db, "orders"),
       where("sellerIds", "array-contains", currentUser.uid)
     );
 
-    const ordersSnap = await getDocs(ordersQ);
+    const snap = await getDocs(q);
 
-    ordersSnap.forEach((docSnap) => {
-      orders.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
+    snap.forEach((docSnap) => {
+      orders.push({ id: docSnap.id, ...docSnap.data() });
     });
 
     return orders;
   } catch (error) {
-    console.warn("Seller filtered orders unavailable. Trying safe fallback...");
-  }
-
-  try {
-    const allOrdersSnap = await getDocs(collection(db, "orders"));
-
-    allOrdersSnap.forEach((docSnap) => {
-      const order = {
-        id: docSnap.id,
-        ...docSnap.data()
-      };
-
-      if ((order.sellerIds || []).includes(currentUser.uid)) {
-        orders.push(order);
-      }
-    });
-  } catch (error) {
-    console.warn("Orders analytics unavailable:", error.message);
+    console.warn("Seller filtered orders unavailable:", error.message);
   }
 
   return orders;
@@ -148,13 +130,10 @@ async function loadSellerReviewsSafely() {
   const reviews = [];
 
   try {
-    const reviewsSnap = await getDocs(collection(db, "reviews"));
+    const snap = await getDocs(collection(db, "reviews"));
 
-    reviewsSnap.forEach((docSnap) => {
-      const review = {
-        id: docSnap.id,
-        ...docSnap.data()
-      };
+    snap.forEach((docSnap) => {
+      const review = { id: docSnap.id, ...docSnap.data() };
 
       if ((review.sellerIds || []).includes(currentUser.uid)) {
         reviews.push(review);
@@ -183,10 +162,7 @@ function calculateStats(products, orders, reviews) {
 
     if (order.orderStatus === "Delivered") deliveredOrders++;
 
-    if (
-      order.orderStatus !== "Delivered" &&
-      order.orderStatus !== "Cancelled"
-    ) {
+    if (order.orderStatus !== "Delivered" && order.orderStatus !== "Cancelled") {
       pendingOrders++;
     }
 
@@ -202,7 +178,6 @@ function calculateStats(products, orders, reviews) {
       const subtotal = Number(item.price || 0) * qty;
 
       revenue += subtotal;
-
       productSalesMap[title] = (productSalesMap[title] || 0) + qty;
       productRevenueMap[title] = (productRevenueMap[title] || 0) + subtotal;
     });
@@ -246,10 +221,7 @@ function calculateStats(products, orders, reviews) {
     .sort((a, b) => b.sold - a.sold);
 
   const productRevenueList = Object.entries(productRevenueMap)
-    .map(([title, amount]) => ({
-      title,
-      amount
-    }))
+    .map(([title, amount]) => ({ title, amount }))
     .sort((a, b) => b.amount - a.amount);
 
   return {
@@ -273,9 +245,7 @@ function updateMainCards(stats) {
   sellerProducts.textContent = stats.products.length;
   sellerOrders.textContent = stats.verifiedOrders.length;
   sellerRevenue.textContent = `Rs ${formatMoney(stats.revenue)}`;
-  sellerRatingAvg.textContent = stats.averageRating
-    ? stats.averageRating.toFixed(1)
-    : "0.0";
+  sellerRatingAvg.textContent = stats.averageRating ? stats.averageRating.toFixed(1) : "0.0";
 
   if (sellerDeliveredOrders) sellerDeliveredOrders.textContent = stats.deliveredOrders;
   if (sellerPendingOrders) sellerPendingOrders.textContent = stats.pendingOrders;
@@ -296,19 +266,16 @@ function renderPerformanceSummary(stats) {
         <strong>${badge}</strong>
         <p class="muted">Seller status</p>
       </div>
-
       <div class="review-benefit">
         <span>⭐</span>
         <strong>${stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"}</strong>
         <p class="muted">Seller rating</p>
       </div>
-
       <div class="review-benefit">
         <span>🚚</span>
         <strong>${stats.averageDeliveryRating ? stats.averageDeliveryRating.toFixed(1) : "0.0"}</strong>
         <p class="muted">Delivery rating</p>
       </div>
-
       <div class="review-benefit">
         <span>💰</span>
         <strong>Rs ${formatMoney(stats.averageOrderValue)}</strong>
@@ -354,9 +321,7 @@ function renderRecentOrders(orders) {
   }
 
   recentOrdersBox.innerHTML = orders.slice(0, 5).map((order) => {
-    const sellerItems = (order.items || []).filter((item) => {
-      return item.sellerId === currentUser.uid;
-    });
+    const sellerItems = (order.items || []).filter((item) => item.sellerId === currentUser.uid);
 
     const total = sellerItems.reduce((sum, item) => {
       return sum + Number(item.price || 0) * Number(item.quantity || 1);
@@ -397,11 +362,60 @@ function renderProductRevenue(productRevenueList) {
   }
 
   productRevenueBox.innerHTML = productRevenueList.slice(0, 6).map((item) => `
-    <p>
-      <strong>${escapeHtml(item.title)}:</strong>
-      Rs ${formatMoney(item.amount)}
-    </p>
+    <p><strong>${escapeHtml(item.title)}:</strong> Rs ${formatMoney(item.amount)}</p>
   `).join("");
+}
+
+function renderRevenueChart(productRevenueList) {
+  if (!revenueChart) return;
+
+  if (productRevenueList.length === 0) {
+    revenueChart.innerHTML = "<p>No revenue data yet.</p>";
+    return;
+  }
+
+  const max = Math.max(...productRevenueList.map(item => Number(item.amount || 0)));
+
+  revenueChart.innerHTML = productRevenueList.slice(0, 6).map((item) => {
+    const width = max > 0 ? (Number(item.amount || 0) / max) * 100 : 0;
+
+    return `
+      <div class="chart-row">
+        <span>${escapeHtml(item.title)}</span>
+        <div class="chart-bar-wrap">
+          <div class="chart-bar" style="width:${width}%"></div>
+        </div>
+        <strong>Rs ${formatMoney(item.amount)}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderStatusChart(statusCounts) {
+  if (!statusChart) return;
+
+  const entries = Object.entries(statusCounts);
+
+  if (entries.length === 0) {
+    statusChart.innerHTML = "<p>No order status data yet.</p>";
+    return;
+  }
+
+  const max = Math.max(...entries.map((entry) => Number(entry[1] || 0)));
+
+  statusChart.innerHTML = entries.map(([status, count]) => {
+    const width = max > 0 ? (Number(count || 0) / max) * 100 : 0;
+
+    return `
+      <div class="chart-row">
+        <span>${escapeHtml(status)}</span>
+        <div class="chart-bar-wrap">
+          <div class="chart-bar alt" style="width:${width}%"></div>
+        </div>
+        <strong>${count}</strong>
+      </div>
+    `;
+  }).join("");
 }
 
 function renderReviews(reviews, stats) {
@@ -437,11 +451,7 @@ function renderReviews(reviews, stats) {
       <p>${escapeHtml(review.reviewText || "")}</p>
       <p class="muted">
         Delivery:
-        ${
-          deliveryRating > 0
-            ? `${stars(deliveryRating)} ${deliveryRating.toFixed(1)}`
-            : "Not rated"
-        }
+        ${deliveryRating > 0 ? `${stars(deliveryRating)} ${deliveryRating.toFixed(1)}` : "Not rated"}
       </p>
       <p class="muted">Verified Purchase</p>
     `;
@@ -451,22 +461,10 @@ function renderReviews(reviews, stats) {
 }
 
 function getSellerBadge(stats) {
-  if (stats.averageRating >= 4.8 && stats.reviews.length >= 10) {
-    return "🏆 Top Rated Seller";
-  }
-
-  if (stats.averageRating >= 4.5 && stats.reviews.length >= 3) {
-    return "⭐ Trusted Seller";
-  }
-
-  if (stats.verifiedOrders.length >= 5) {
-    return "📈 Rising Seller";
-  }
-
-  if (stats.products.length > 0) {
-    return "✅ Active Seller";
-  }
-
+  if (stats.averageRating >= 4.8 && stats.reviews.length >= 10) return "🏆 Top Rated Seller";
+  if (stats.averageRating >= 4.5 && stats.reviews.length >= 3) return "⭐ Trusted Seller";
+  if (stats.verifiedOrders.length >= 5) return "📈 Rising Seller";
+  if (stats.products.length > 0) return "✅ Active Seller";
   return "New Seller";
 }
 
