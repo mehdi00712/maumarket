@@ -62,9 +62,23 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 async function loadSellerAnalytics() {
-  let products = [];
-  let orders = [];
-  let reviews = [];
+  const products = await loadSellerProducts();
+  const orders = await loadSellerOrdersSafely();
+  const reviews = await loadSellerReviewsSafely();
+
+  const stats = calculateStats(products, orders, reviews);
+
+  updateMainCards(stats);
+  renderPerformanceSummary(stats);
+  renderBestProducts(stats.bestProducts);
+  renderRecentOrders(stats.verifiedOrders);
+  renderOrderStatusBreakdown(stats.statusCounts);
+  renderProductRevenue(stats.productRevenueList);
+  renderReviews(reviews, stats);
+}
+
+async function loadSellerProducts() {
+  const products = [];
 
   try {
     const productsQ = query(
@@ -81,8 +95,14 @@ async function loadSellerAnalytics() {
       });
     });
   } catch (error) {
-    console.warn("Products analytics error:", error.message);
+    console.warn("Products analytics unavailable:", error.message);
   }
+
+  return products;
+}
+
+async function loadSellerOrdersSafely() {
+  const orders = [];
 
   try {
     const ordersQ = query(
@@ -98,9 +118,34 @@ async function loadSellerAnalytics() {
         ...docSnap.data()
       });
     });
+
+    return orders;
   } catch (error) {
-    console.warn("Orders analytics error:", error.message);
+    console.warn("Seller filtered orders unavailable. Trying safe fallback...");
   }
+
+  try {
+    const allOrdersSnap = await getDocs(collection(db, "orders"));
+
+    allOrdersSnap.forEach((docSnap) => {
+      const order = {
+        id: docSnap.id,
+        ...docSnap.data()
+      };
+
+      if ((order.sellerIds || []).includes(currentUser.uid)) {
+        orders.push(order);
+      }
+    });
+  } catch (error) {
+    console.warn("Orders analytics unavailable:", error.message);
+  }
+
+  return orders;
+}
+
+async function loadSellerReviewsSafely() {
+  const reviews = [];
 
   try {
     const reviewsSnap = await getDocs(collection(db, "reviews"));
@@ -116,22 +161,14 @@ async function loadSellerAnalytics() {
       }
     });
   } catch (error) {
-    console.warn("Reviews analytics error:", error.message);
+    console.warn("Reviews analytics unavailable:", error.message);
   }
 
-  const stats = calculateStats(products, orders, reviews);
-
-  updateMainCards(stats);
-  renderPerformanceSummary(stats);
-  renderBestProducts(stats.bestProducts);
-  renderRecentOrders(stats.verifiedOrders);
-  renderOrderStatusBreakdown(stats.statusCounts);
-  renderProductRevenue(stats.productRevenueList);
-  renderReviews(reviews, stats);
+  return reviews;
 }
 
 function calculateStats(products, orders, reviews) {
-  let verifiedOrders = [];
+  const verifiedOrders = [];
   let revenue = 0;
   let deliveredOrders = 0;
   let pendingOrders = 0;
@@ -184,19 +221,14 @@ function calculateStats(products, orders, reviews) {
     }
   });
 
-  reviews.sort((a, b) => {
-    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-  });
+  reviews.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
   verifiedOrders.sort((a, b) => {
     return (b.createdAt?.seconds || b.updatedAt?.seconds || 0) -
       (a.createdAt?.seconds || a.updatedAt?.seconds || 0);
   });
 
-  const averageRating = reviews.length
-    ? ratingTotal / reviews.length
-    : 0;
-
+  const averageRating = reviews.length ? ratingTotal / reviews.length : 0;
   const averageDeliveryRating = deliveryRatingCount
     ? deliveryRatingTotal / deliveryRatingCount
     : 0;
@@ -255,7 +287,6 @@ function renderPerformanceSummary(stats) {
   const badge = getSellerBadge(stats);
 
   if (sellerBadge) sellerBadge.textContent = badge;
-
   if (!sellerPerformanceSummary) return;
 
   sellerPerformanceSummary.innerHTML = `
@@ -375,7 +406,8 @@ function renderProductRevenue(productRevenueList) {
 
 function renderReviews(reviews, stats) {
   if (reviewSummaryText) {
-    reviewSummaryText.textContent = `${reviews.length} review(s) • ${stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"} ⭐`;
+    reviewSummaryText.textContent =
+      `${reviews.length} review(s) • ${stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"} ⭐`;
   }
 
   if (!sellerReviews) return;
