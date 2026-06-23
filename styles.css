@@ -2431,3 +2431,16 @@ label {
     grid-template-columns: 1fr;
   }
 }
+
+.analytics-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 22px;
+  margin: 24px 0;
+}
+
+.analytics-charts-grid canvas {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+}
