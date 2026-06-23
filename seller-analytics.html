@@ -24,7 +24,7 @@
 
   <section class="dashboard-section-title">
     <h1>Your Shop Analytics</h1>
-    <p>Track your sales, products, orders, ratings, best products, and customer feedback.</p>
+    <p>Track your sales, orders, product performance, ratings, and customer feedback.</p>
   </section>
 
   <section class="cards">
@@ -80,26 +80,40 @@
     </div>
   </section>
 
-  <section class="form-card">
-    <div class="section-row-title">
-      <h2>Revenue Chart</h2>
-      <span>Sales by product</span>
+  <section class="analytics-charts-grid">
+
+    <div class="form-card">
+      <div class="section-row-title">
+        <h2>Sales Trend</h2>
+        <span>Revenue from verified orders</span>
+      </div>
+      <canvas id="salesTrendChart" height="180"></canvas>
     </div>
 
-    <div id="revenueChart" class="mini-chart">
-      Loading revenue chart...
-    </div>
-  </section>
-
-  <section class="form-card">
-    <div class="section-row-title">
-      <h2>Order Status Chart</h2>
-      <span>Order breakdown</span>
+    <div class="form-card">
+      <div class="section-row-title">
+        <h2>Orders Trend</h2>
+        <span>Verified orders over time</span>
+      </div>
+      <canvas id="ordersTrendChart" height="180"></canvas>
     </div>
 
-    <div id="statusChart" class="mini-chart">
-      Loading order chart...
+    <div class="form-card">
+      <div class="section-row-title">
+        <h2>Top Products Sold</h2>
+        <span>Quantity sold</span>
+      </div>
+      <canvas id="productsSoldChart" height="180"></canvas>
     </div>
+
+    <div class="form-card">
+      <div class="section-row-title">
+        <h2>Order Status</h2>
+        <span>Current order breakdown</span>
+      </div>
+      <canvas id="orderStatusCanvas" height="180"></canvas>
+    </div>
+
   </section>
 
   <section class="shop-content-layout">
@@ -159,7 +173,7 @@
 
 </main>
 
-<script type="module" src="js/seller-analytics.js?v=3.3-pro3"></script>
+<script type="module" src="js/seller-analytics.js?v=3.3-graphs"></script>
 
 </body>
 </html>
