@@ -6,21 +6,104 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <header class="navbar">
   <h2>Manage Users</h2>
+
   <nav>
     <a href="admin.html">Admin</a>
+    <a href="admin-analytics.html">Analytics</a>
+    <a href="admin-products.html">Products</a>
+    <a href="admin-delivery.html">Delivery</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
 </header>
 
 <main class="container">
-  <h1>Users</h1>
-  <div id="usersList">Loading users...</div>
+
+  <section class="dashboard-section-title">
+    <h1>User Management</h1>
+    <p>Approve sellers, approve delivery drivers, block users, and monitor platform accounts.</p>
+  </section>
+
+  <section class="cards">
+    <div class="card">
+      <h3>Total Users</h3>
+      <h2 id="totalUsersCount">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Customers</h3>
+      <h2 id="customersCount">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Sellers</h3>
+      <h2 id="sellersCount">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Delivery Drivers</h3>
+      <h2 id="deliveryCount">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Pending Approval</h3>
+      <h2 id="pendingCount">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Blocked</h3>
+      <h2 id="blockedCount">0</h2>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <div class="section-row-title">
+      <h2>Filter Users</h2>
+      <span>Search and manage accounts</span>
+    </div>
+
+    <div class="admin-filter-row">
+      <input id="userSearchInput" placeholder="Search by name, email, phone, role...">
+
+      <select id="roleFilter">
+        <option value="">All Roles</option>
+        <option value="customer">Customers</option>
+        <option value="seller">Sellers</option>
+        <option value="delivery">Delivery</option>
+        <option value="admin">Admins</option>
+      </select>
+
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="approved">Approved</option>
+        <option value="pending">Pending Approval</option>
+        <option value="blocked">Blocked</option>
+      </select>
+
+      <button id="clearFiltersBtn" type="button" class="secondary-btn">
+        Clear
+      </button>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <div class="section-row-title">
+      <h2>Users</h2>
+      <span id="usersResultCount">Loading...</span>
+    </div>
+
+    <div id="usersList">
+      Loading users...
+    </div>
+  </section>
+
 </main>
 
-<script type="module" src="js/admin-users.js"></script>
+<script type="module" src="js/admin-users.js?v=3.5"></script>
+
 </body>
 </html>
