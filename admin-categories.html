@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Categories | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header class="navbar">
+  <h2>Manage Categories</h2>
+
+  <nav>
+    <a href="admin.html">Admin</a>
+    <a href="admin-users.html">Users</a>
+    <a href="admin-products.html">Products</a>
+    <a href="admin-analytics.html">Analytics</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<main class="container">
+
+  <section class="dashboard-section-title">
+    <h1>Marketplace Categories</h1>
+    <p>Create, edit, activate and manage all marketplace categories.</p>
+  </section>
+
+  <section class="cards">
+
+    <div class="card">
+      <h3>Total Categories</h3>
+      <h2 id="totalCategories">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Active Categories</h3>
+      <h2 id="activeCategories">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Hidden Categories</h3>
+      <h2 id="hiddenCategories">0</h2>
+    </div>
+
+  </section>
+
+  <section class="form-card">
+
+    <div class="section-row-title">
+      <h2>Add New Category</h2>
+      <span>Visible throughout the marketplace</span>
+    </div>
+
+    <form id="categoryForm">
+
+      <div class="form-group">
+        <label>Category Name</label>
+        <input
+          id="categoryName"
+          type="text"
+          placeholder="Example: Electronics"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea
+          id="categoryDescription"
+          rows="3"
+          placeholder="Optional category description"
+        ></textarea>
+      </div>
+
+      <button type="submit" class="btn">
+        Add Category
+      </button>
+
+    </form>
+
+  </section>
+
+  <section class="form-card">
+
+    <div class="section-row-title">
+      <h2>Categories</h2>
+      <span id="categoryCountText">Loading...</span>
+    </div>
+
+    <div id="categoriesList">
+      Loading categories...
+    </div>
+
+  </section>
+
+</main>
+
+<script type="module" src="js/admin-categories.js?v=3.5"></script>
+
+</body>
+</html>
