@@ -127,7 +127,6 @@ async function renderCustomerDashboard(uid) {
 
   let cartCount = 0;
   let wishlistCount = 0;
-  let totalOrders = 0;
   let activeOrders = 0;
   let deliveredOrders = 0;
 
@@ -152,8 +151,6 @@ async function renderCustomerDashboard(uid) {
     );
 
     const ordersSnap = await getDocs(ordersQ);
-
-    totalOrders = ordersSnap.size;
 
     ordersSnap.forEach((docSnap) => {
       const order = docSnap.data();
@@ -311,7 +308,7 @@ async function renderDeliveryDashboard(uid) {
 
 async function renderAdminDashboard() {
   roleBadge.textContent = "Admin";
-  statusText.textContent = "Manage sellers, payments, delivery, products, banners, payouts, and analytics.";
+  statusText.textContent = "Manage sellers, payments, delivery, products, banners, payouts, reviews, categories, and analytics.";
 
   let usersCount = 0;
   let productsCount = 0;
@@ -363,6 +360,8 @@ async function renderAdminDashboard() {
     ${dashboardCard("🏦", "Payouts", "Mark seller payouts as paid.", "admin-payouts.html")}
     ${dashboardCard("👥", "Users", "Approve, block, or manage users.", "admin-users.html")}
     ${dashboardCard("🛍️", "Products", "Hide or delete bad products.", "admin-products.html")}
+    ${dashboardCard("⭐", "Reviews", "Moderate customer reviews and ratings.", "admin-reviews.html")}
+    ${dashboardCard("🏷️", "Categories", "Create, edit, hide, and delete marketplace categories.", "admin-categories.html")}
     ${dashboardCard("🎯", "Ad Banners", "Manage paid featured shop banners.", "admin-banners.html")}
     ${dashboardCard("📦", "Slot Requests", "Approve sellers requesting more product slots.", "admin-quota.html")}
   `;
