@@ -6,22 +6,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <header class="navbar">
   <h2>Manage Products</h2>
+
   <nav>
     <a href="admin.html">Admin</a>
+    <a href="admin-users.html">Users</a>
+    <a href="admin-analytics.html">Analytics</a>
     <a href="products.html">Marketplace</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
 </header>
 
 <main class="container">
-  <h1>Products & Services</h1>
-  <div id="adminProductsList">Loading products...</div>
+
+  <section class="dashboard-section-title">
+    <h1>Marketplace Product Management</h1>
+    <p>Review, moderate, hide, activate and manage all products and services listed on MauMarket.</p>
+  </section>
+
+  <section class="cards">
+
+    <div class="card">
+      <h3>Total Listings</h3>
+      <h2 id="totalListings">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Active Listings</h3>
+      <h2 id="activeListings">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Hidden Listings</h3>
+      <h2 id="hiddenListings">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Products</h3>
+      <h2 id="productListings">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Services</h3>
+      <h2 id="serviceListings">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Out Of Stock</h3>
+      <h2 id="outOfStockListings">0</h2>
+    </div>
+
+  </section>
+
+  <section class="form-card">
+
+    <div class="section-row-title">
+      <h2>Filter Listings</h2>
+      <span>Search and moderate products</span>
+    </div>
+
+    <div class="admin-filter-row">
+
+      <input
+        id="productSearchInput"
+        type="text"
+        placeholder="Search title, category, seller..."
+      >
+
+      <select id="typeFilter">
+        <option value="">All Types</option>
+        <option value="product">Products</option>
+        <option value="service">Services</option>
+      </select>
+
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="hidden">Hidden</option>
+      </select>
+
+      <button
+        id="clearProductFiltersBtn"
+        class="secondary-btn"
+        type="button"
+      >
+        Clear Filters
+      </button>
+
+    </div>
+
+  </section>
+
+  <section class="form-card">
+
+    <div class="section-row-title">
+      <h2>Marketplace Listings</h2>
+      <span id="productsResultCount">Loading...</span>
+    </div>
+
+    <div id="adminProductsList">
+      Loading products...
+    </div>
+
+  </section>
+
 </main>
 
-<script type="module" src="js/admin-products.js"></script>
+<script type="module" src="js/admin-products.js?v=3.5"></script>
+
 </body>
 </html>
