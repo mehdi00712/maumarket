@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Reviews | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header class="navbar">
+  <h2>Manage Reviews</h2>
+
+  <nav>
+    <a href="admin.html">Admin</a>
+    <a href="admin-users.html">Users</a>
+    <a href="admin-products.html">Products</a>
+    <a href="admin-analytics.html">Analytics</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<main class="container">
+
+  <section class="dashboard-section-title">
+    <h1>Review Moderation</h1>
+    <p>Monitor customer reviews, ratings, seller feedback, and delivery feedback.</p>
+  </section>
+
+  <section class="cards">
+    <div class="card">
+      <h3>Total Reviews</h3>
+      <h2 id="totalReviews">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Avg Seller Rating</h3>
+      <h2><span id="averageSellerRating">0.0</span> ⭐</h2>
+    </div>
+
+    <div class="card">
+      <h3>Avg Delivery Rating</h3>
+      <h2><span id="averageDeliveryRating">0.0</span> ⭐</h2>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <div class="section-row-title">
+      <h2>Filter Reviews</h2>
+      <span>Search and moderate feedback</span>
+    </div>
+
+    <div class="admin-filter-row">
+      <input id="reviewSearchInput" placeholder="Search customer, email, order ID, review text...">
+
+      <select id="ratingFilter">
+        <option value="">All Ratings</option>
+        <option value="5">5 Stars</option>
+        <option value="4">4 Stars</option>
+        <option value="3">3 Stars</option>
+        <option value="2">2 Stars</option>
+        <option value="1">1 Star</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <div class="section-row-title">
+      <h2>Reviews</h2>
+      <span id="reviewsResultCount">Loading...</span>
+    </div>
+
+    <div id="reviewsList">
+      Loading reviews...
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="js/admin-reviews.js?v=3.5"></script>
+
+</body>
+</html>
