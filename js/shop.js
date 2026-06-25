@@ -62,6 +62,7 @@ async function loadShop() {
     await loadReviews();
 
     renderShopHeader();
+    renderTrustStrip();
     renderSidebar();
     renderProducts();
     renderReviews();
@@ -124,37 +125,38 @@ function renderShopHeader() {
   const rating = getAverageSellerRating();
   const reviewCount = shopReviews.length;
   const deliveryRating = getAverageDeliveryRating();
+  const area = safeArea(currentShop.location);
 
   shopHeader.innerHTML = `
-    <div class="pro-shop-banner" style="${banner ? `background-image:url('${escapeAttr(banner)}')` : ""}">
-      <div class="pro-shop-overlay"></div>
+    <div class="pro-shop-banner shop-wow-banner" style="${banner ? `background-image:url('${escapeAttr(banner)}')` : ""}">
+      <div class="pro-shop-overlay shop-wow-overlay"></div>
 
-      <div class="pro-shop-info">
+      <div class="pro-shop-info shop-wow-info">
         ${
           logo
-            ? `<img class="pro-shop-logo" src="${escapeAttr(logo)}" alt="${escapeAttr(currentShop.shopName || "Shop")}">`
-            : `<div class="pro-shop-logo empty-logo">Shop</div>`
+            ? `<img class="pro-shop-logo shop-wow-logo" src="${escapeAttr(logo)}" alt="${escapeAttr(currentShop.shopName || "Shop")}">`
+            : `<div class="pro-shop-logo empty-logo shop-wow-logo">Shop</div>`
         }
 
-        <div>
+        <div class="shop-wow-main">
           <div class="shop-title-row">
             <h1>${escapeHtml(currentShop.shopName || "Shop")}</h1>
             <span class="online-badge">✓ Verified Seller</span>
           </div>
 
-          <p>${escapeHtml(currentShop.description || "Local MauMarket seller.")}</p>
+          <p>${escapeHtml(currentShop.description || "Trusted MauMarket seller.")}</p>
 
           <div class="shop-meta">
-            <span>📍 ${escapeHtml(currentShop.location || "Mauritius")}</span>
-            <span>☎ ${escapeHtml(currentShop.phone || "Not specified")}</span>
+            <span>📍 ${escapeHtml(area)}</span>
             <span>⭐ ${rating} (${reviewCount})</span>
-            <span>🚚 ${deliveryRating} delivery</span>
+            <span>🚚 ${deliveryRating} Delivery</span>
+            <span>🛡️ Protected by MauMarket</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="pro-shop-stats">
+    <div class="pro-shop-stats shop-wow-stats">
       <div>
         <strong>${shopProducts.length}</strong>
         <span>Products</span>
@@ -176,6 +178,52 @@ function renderShopHeader() {
       </div>
 
       <a class="btn" href="products.html">Continue Shopping</a>
+    </div>
+  `;
+}
+
+function renderTrustStrip() {
+  let trustStrip = document.getElementById("shopTrustStrip");
+
+  if (!trustStrip) {
+    trustStrip = document.createElement("section");
+    trustStrip.id = "shopTrustStrip";
+    trustStrip.className = "shop-trust-strip";
+
+    shopHeader.insertAdjacentElement("afterend", trustStrip);
+  }
+
+  trustStrip.innerHTML = `
+    <div class="shop-trust-item">
+      <span>🛡️</span>
+      <div>
+        <strong>Verified MauMarket Seller</strong>
+        <small>Seller identity checked by MauMarket.</small>
+      </div>
+    </div>
+
+    <div class="shop-trust-item">
+      <span>🔒</span>
+      <div>
+        <strong>Secure Payments</strong>
+        <small>Payments stay protected through MauMarket.</small>
+      </div>
+    </div>
+
+    <div class="shop-trust-item">
+      <span>🚚</span>
+      <div>
+        <strong>Delivery Through MauMarket</strong>
+        <small>Delivery is handled and tracked by the platform.</small>
+      </div>
+    </div>
+
+    <div class="shop-trust-item">
+      <span>⭐</span>
+      <div>
+        <strong>Verified Reviews</strong>
+        <small>Reviews come from real buyers.</small>
+      </div>
     </div>
   `;
 }
@@ -241,29 +289,32 @@ function renderProducts() {
     const totalReviews = Number(item.totalReviews || 0);
 
     const div = document.createElement("div");
-    div.className = "pro-product-card";
+    div.className = "pro-product-card shop-wow-product-card";
 
     div.innerHTML = `
-      <div class="pro-product-img">
+      <a class="pro-product-img" href="product-details.html?id=${encodeURIComponent(item.id)}">
         ${
           item.imageUrl
             ? `<img src="${escapeAttr(item.imageUrl)}" alt="${escapeAttr(item.title || "Product")}">`
             : `<div class="no-img">No Image</div>`
         }
-      </div>
+      </a>
 
       <div class="pro-product-body">
-        <span class="badge">${escapeHtml(item.type || "item")}</span>
+        <div class="product-card-top-row">
+          <span class="badge">${escapeHtml(item.type || "item")}</span>
+          <span class="product-heart">♡</span>
+        </div>
 
         <h3>${escapeHtml(item.title || "Untitled")}</h3>
 
-        <p class="muted">${escapeHtml(item.category || "Other")}</p>
+        <p class="muted">✅ Verified Product</p>
 
         <p class="rating-line-small">
           ${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "⭐ No reviews yet"}
         </p>
 
-        <p class="pro-price">Rs ${Number(item.price || 0)}</p>
+        <p class="pro-price">Rs ${Number(item.price || 0).toLocaleString("en-US")}</p>
 
         <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
           View Details
@@ -278,24 +329,36 @@ function renderProducts() {
 function renderSidebar() {
   const rating = getAverageSellerRating();
   const deliveryRating = getAverageDeliveryRating();
+  const area = safeArea(currentShop.location);
 
   shopAboutCard.innerHTML = `
     <h3>About this shop</h3>
     <p>${escapeHtml(currentShop.description || "This seller has not added a description yet.")}</p>
-    <p>📍 ${escapeHtml(currentShop.location || "Mauritius")}</p>
-    <p>☎ ${escapeHtml(currentShop.phone || "Not specified")}</p>
-    <p>✅ Verified MauMarket seller</p>
+
+    <div class="shop-safe-info">
+      <p>📍 ${escapeHtml(area)}</p>
+      <p>🗓️ Shop on MauMarket since ${getShopSinceText()}</p>
+    </div>
+
+    <div class="verified-box">
+      <strong>✅ Verified MauMarket Seller</strong>
+      <p>This seller has been checked by the MauMarket team.</p>
+    </div>
+
+    <p class="muted">
+      Contact is handled safely through MauMarket after checkout.
+    </p>
   `;
 
   if (shopPolicyCard) {
     shopPolicyCard.innerHTML = `
       <h3>MauMarket Protection</h3>
-      <ul class="policy-list">
-        <li>✓ Verified Seller</li>
-        <li>✓ Secure Checkout</li>
-        <li>✓ Delivery Tracking</li>
-        <li>✓ Verified Reviews</li>
-        <li>✓ Customer Support</li>
+      <ul class="policy-list shop-policy-list">
+        <li>✅ Verified Seller</li>
+        <li>✅ Secure Checkout</li>
+        <li>✅ Delivery Tracking</li>
+        <li>✅ Verified Reviews</li>
+        <li>✅ Customer Support</li>
       </ul>
     `;
   }
@@ -304,6 +367,15 @@ function renderSidebar() {
     <h3>Shop Rating</h3>
     <h2>${rating} ⭐</h2>
     <p>Based on ${shopReviews.length} review(s)</p>
+
+    <div class="rating-bars">
+      ${ratingBar(5)}
+      ${ratingBar(4)}
+      ${ratingBar(3)}
+      ${ratingBar(2)}
+      ${ratingBar(1)}
+    </div>
+
     <hr>
     <p><strong>Delivery:</strong> ${deliveryRating} ⭐</p>
     <p><strong>Products:</strong> ${shopProducts.length}</p>
@@ -312,11 +384,11 @@ function renderSidebar() {
   aboutShopBox.innerHTML = `
     <h3>${escapeHtml(currentShop.shopName || "Shop")}</h3>
     <p>${escapeHtml(currentShop.description || "This seller has not added a description yet.")}</p>
-    <p>📍 ${escapeHtml(currentShop.location || "Mauritius")}</p>
-    <p>☎ ${escapeHtml(currentShop.phone || "Not specified")}</p>
+    <p>📍 ${escapeHtml(area)}</p>
     <p>⭐ Seller Rating: ${rating}</p>
     <p>🚚 Delivery Rating: ${deliveryRating}</p>
     <p>✅ Verified MauMarket Seller</p>
+    <p>🛡️ Payment and delivery protected by MauMarket.</p>
   `;
 }
 
@@ -392,6 +464,58 @@ function getAverageDeliveryRating() {
   }, 0);
 
   return (total / validReviews.length).toFixed(1);
+}
+
+function getReviewCountByRating(ratingValue) {
+  return shopReviews.filter((review) => {
+    const rating = Math.round(Number(review.sellerRating || review.rating || 0));
+    return rating === ratingValue;
+  }).length;
+}
+
+function ratingBar(ratingValue) {
+  const count = getReviewCountByRating(ratingValue);
+  const total = shopReviews.length || 1;
+  const width = Math.round((count / total) * 100);
+
+  return `
+    <div class="rating-bar-row">
+      <span>${ratingValue} ⭐</span>
+      <div class="rating-bar-track">
+        <div class="rating-bar-fill" style="width:${width}%"></div>
+      </div>
+      <strong>${count}</strong>
+    </div>
+  `;
+}
+
+function getShopSinceText() {
+  const createdAt = currentShop?.createdAt?.seconds;
+
+  if (!createdAt) return "recently";
+
+  const date = new Date(createdAt * 1000);
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function safeArea(location) {
+  const raw = String(location || "Mauritius").trim();
+
+  if (!raw) return "Mauritius Area";
+
+  const cleaned = raw
+    .replace(/\d+/g, "")
+    .replace(/street|road|avenue|lane|house|building|flat|apartment/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return "Mauritius Area";
+
+  return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
 }
 
 function stars(value) {
