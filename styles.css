@@ -2709,8 +2709,7 @@ label {
   padding: 22px;
   box-shadow: var(--shadow-soft);
   border: 1px solid #e5e7eb;
-  position: sticky;
-  top: 110px;
+  position: static;
 }
 
 .market-pro-sidebar select {
@@ -2830,3 +2829,193 @@ label {
   gap: 14px;
 }
 
+
+/* =========================================================
+   MAUMARKET MARKETPLACE WOW FIX
+   - Non-sticky filters
+   - Premium ad banner
+   - Cleaner product layout spacing
+   ========================================================= */
+
+.market-pro-sidebar,
+.market-sidebar,
+.amazon-sidebar {
+  position: static !important;
+  top: auto !important;
+}
+
+#topAdBanner {
+  width: 100%;
+  margin: 26px 0 28px !important;
+  display: block;
+  cursor: pointer;
+}
+
+#topAdBanner[style*="display: none"] {
+  display: none !important;
+}
+
+#topAdBanner .top-ad-inner {
+  height: 330px !important;
+  border-radius: 30px !important;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 32px 90px rgba(15, 23, 42, 0.24) !important;
+  background:
+    radial-gradient(circle at right, rgba(63, 52, 209, 0.45), transparent 35%),
+    linear-gradient(135deg, #0f172a, #21178f) !important;
+}
+
+#topAdBanner .top-ad-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.02);
+}
+
+#topAdBanner .top-ad-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.45), rgba(63, 52, 209, 0.25)),
+    radial-gradient(circle at 78% 50%, rgba(255, 255, 255, 0.16), transparent 28%);
+}
+
+#topAdBanner .top-ad-content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(26px, 5vw, 58px);
+  max-width: 680px;
+}
+
+#topAdBanner .top-ad-content span {
+  width: fit-content;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 900;
+  backdrop-filter: blur(12px);
+}
+
+#topAdBanner .top-ad-content h2 {
+  font-size: clamp(42px, 7vw, 76px) !important;
+  line-height: 0.98;
+  margin: 16px 0 10px;
+  letter-spacing: -2px;
+}
+
+#topAdBanner .top-ad-content p {
+  font-size: clamp(16px, 2vw, 22px);
+  color: #eef2ff;
+  max-width: 560px;
+  margin: 0 0 22px;
+}
+
+#topAdBanner .top-ad-content button {
+  width: fit-content;
+  background: #f59e0b !important;
+  color: #111827 !important;
+  border-radius: 15px;
+  padding: 15px 30px;
+  font-weight: 1000;
+  box-shadow: 0 18px 35px rgba(245, 158, 11, 0.28);
+}
+
+.market-pro-products-layout {
+  align-items: start;
+}
+
+.market-pro-products-main .market-heading {
+  margin-bottom: 18px;
+}
+
+.market-product-grid {
+  align-items: start;
+}
+
+.market-product-card {
+  border-radius: 18px !important;
+}
+
+.market-product-img {
+  height: 180px;
+}
+
+.market-product-body {
+  padding: 14px;
+}
+
+.product-card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.product-heart {
+  color: #64748b;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.product-location {
+  font-size: 13px;
+  color: #475569;
+  margin: 8px 0;
+}
+
+@media (max-width: 900px) {
+  #topAdBanner .top-ad-inner {
+    height: 250px !important;
+    border-radius: 22px !important;
+  }
+
+  #topAdBanner .top-ad-content h2 {
+    font-size: 38px !important;
+  }
+
+  #topAdBanner .top-ad-content p {
+    font-size: 15px;
+  }
+
+  .market-product-img {
+    height: 145px;
+  }
+}
+
+@media (max-width: 600px) {
+  #topAdBanner {
+    margin: 18px 0 22px !important;
+  }
+
+  #topAdBanner .top-ad-inner {
+    height: 210px !important;
+    border-radius: 18px !important;
+  }
+
+  #topAdBanner .top-ad-content {
+    padding: 22px;
+  }
+
+  #topAdBanner .top-ad-content h2 {
+    font-size: 30px !important;
+    letter-spacing: -1px;
+  }
+
+  #topAdBanner .top-ad-content p {
+    display: none;
+  }
+
+  #topAdBanner .top-ad-content button {
+    padding: 12px 20px;
+  }
+}
