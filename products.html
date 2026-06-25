@@ -39,6 +39,7 @@
   <section class="market-pro-control-panel">
     <div>
       <label>Search</label>
+
       <div class="control-search-box">
         <input id="searchInput2" placeholder="Search products, services, or shops...">
         <button id="searchBtn2" type="button">🔍</button>
@@ -47,6 +48,7 @@
 
     <div>
       <label>Category</label>
+
       <select id="categoryFilter">
         <option value="">All Categories</option>
       </select>
@@ -54,10 +56,12 @@
 
     <div>
       <label>Sort By</label>
+
       <select id="sortFilter">
         <option value="newest">Newest</option>
         <option value="low-high">Price Low to High</option>
         <option value="high-low">Price High to Low</option>
+        <option value="rating">Highest Rated</option>
       </select>
     </div>
   </section>
@@ -68,6 +72,7 @@
 
   <section class="market-pro-hero">
     <div>
+      <span class="hero-mini-label">Mauritius Local Marketplace</span>
       <h1>Discover Mauritius Marketplace</h1>
       <p>Shop local products and services from trusted MauMarket sellers across Mauritius.</p>
       <a href="#marketProducts" class="hero-shop-btn">Shop Now</a>
@@ -90,6 +95,8 @@
     </div>
   </section>
 
+  <section id="topAdBanner" class="market-premium-ad" style="display:none;"></section>
+
   <section id="marketProducts" class="market-pro-products-layout">
 
     <aside class="market-pro-sidebar">
@@ -105,16 +112,17 @@
         <option value="newest">Newest</option>
         <option value="low-high">Price Low to High</option>
         <option value="high-low">Price High to Low</option>
+        <option value="rating">Highest Rated</option>
       </select>
     </aside>
 
     <section class="market-pro-products-main">
       <div class="market-heading compact-heading">
-        <h2>Featured Products & Services</h2>
-        <p id="resultCount">Loading...</p>
+        <div>
+          <h2>Featured Products & Services</h2>
+          <p id="resultCount">Loading...</p>
+        </div>
       </div>
-
-      <div id="topAdBanner" style="display:none;"></div>
 
       <div id="productsGrid" class="market-product-grid">
         Loading marketplace...
@@ -125,7 +133,7 @@
 
 </main>
 
-<script type="module" src="js/products.js?v=4.0-market-redesign"></script>
+<script type="module" src="js/products.js?v=4.1-market-wow"></script>
 
 </body>
 </html>
