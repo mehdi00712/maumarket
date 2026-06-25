@@ -79,13 +79,35 @@
       </div>
 
       <div class="form-group">
-        <label>Emoji/Icon</label>
-        <input
-          id="categoryIcon"
-          type="text"
-          placeholder="Example: 📱"
-          maxlength="4"
-        >
+        <label>Choose Icon</label>
+        <select id="categoryIcon" required>
+          <option value="grid">General / All</option>
+          <option value="electronics">Electronics</option>
+          <option value="phone">Phones</option>
+          <option value="laptop">Computers & Laptops</option>
+          <option value="fashion">Fashion</option>
+          <option value="beauty">Beauty</option>
+          <option value="food">Food</option>
+          <option value="grocery">Groceries</option>
+          <option value="home">Home</option>
+          <option value="furniture">Furniture</option>
+          <option value="hardware">Hardware</option>
+          <option value="tools">Tools</option>
+          <option value="services">Services</option>
+          <option value="vehicles">Vehicles</option>
+          <option value="baby">Baby & Kids</option>
+          <option value="sports">Sports</option>
+          <option value="books">Books</option>
+          <option value="pets">Pets</option>
+          <option value="health">Health</option>
+          <option value="gift">Gifts</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div id="iconPreviewBox" class="category-icon-preview-box">
+        <div id="iconPreview" class="category-admin-icon-preview"></div>
+        <span id="iconPreviewText">General / All</span>
       </div>
 
       <div class="form-group">
@@ -139,7 +161,7 @@
 
 </main>
 
-<script type="module" src="js/admin-categories.js?v=3.6"></script>
+<script type="module" src="js/admin-categories.js?v=3.7-icons"></script>
 
 </body>
 </html>
