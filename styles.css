@@ -635,7 +635,7 @@ label {
 /* Amazon / Marketplace Header */
 
 .amazon-topbar {
-  background: #131921;
+  background: #3f34d1;
   color: white;
   padding: 10px 5%;
   display: grid;
@@ -683,7 +683,7 @@ label {
 }
 
 .amazon-subnav {
-  background: #232f3e;
+  background: #3f34d1;
   color: white;
   padding: 9px 5%;
   display: flex;
@@ -1571,7 +1571,7 @@ label {
 /* FINAL MARKETPLACE MOBILE UPGRADE */
 
 .market-mobile-header {
-  background: #131921;
+  background: #3f34d1;
   color: white;
   padding: 12px 5%;
 }
@@ -1590,7 +1590,7 @@ label {
 }
 
 .hamburger-btn {
-  background: #232f3e;
+  background: #3027a8;
   color: white;
   width: 46px;
   height: 42px;
@@ -1635,7 +1635,7 @@ label {
 }
 
 .mobile-nav a {
-  background: #232f3e;
+  background: #3027a8;
   color: white;
   padding: 12px 10px;
   border-radius: 12px;
@@ -1644,7 +1644,7 @@ label {
 }
 
 .market-category-strip {
-  background: #232f3e;
+  background: #3f34d1;
   color: white;
   padding: 10px 5%;
   display: flex;
@@ -1980,7 +1980,7 @@ label {
 }
 
 .market-mobile-header {
-  background: #131921;
+  background: #3f34d1;
   color: white;
   padding: 14px 7% 12px;
 }
@@ -2003,7 +2003,7 @@ label {
 }
 
 .hamburger-btn {
-  background: #232f3e;
+  background: #3027a8;
   color: white;
   width: 52px;
   height: 48px;
@@ -2054,7 +2054,7 @@ label {
 }
 
 .mobile-nav a {
-  background: #232f3e;
+  background: #3027a8;
   color: white;
   padding: 12px 10px;
   border-radius: 12px;
@@ -2063,7 +2063,7 @@ label {
 }
 
 .market-category-strip {
-  background: #232f3e;
+  background: #3f34d1;
   color: white;
   padding: 10px 7%;
   display: flex;
