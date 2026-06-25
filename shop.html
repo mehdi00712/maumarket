@@ -9,20 +9,20 @@
 
 <body>
 
-<header class="amazon-topbar">
+<header class="amazon-topbar shop-wow-topbar">
   <a class="brand logo-brand" href="index.html">
     <img src="images/maumarketlogo.png" alt="MauMarket">
   </a>
 
   <div class="amazon-search">
     <select>
-      <option>All</option>
+      <option>All Categories</option>
     </select>
 
     <input
       id="shopSearchInput"
       type="text"
-      placeholder="Search MauMarket">
+      placeholder="Search products, services, or shops...">
 
     <button
       id="shopSearchBtn"
@@ -38,7 +38,7 @@
   </nav>
 </header>
 
-<div class="amazon-subnav">
+<div class="amazon-subnav shop-wow-subnav">
   <a href="products.html">All</a>
   <a href="products.html?category=Beauty">Beauty</a>
   <a href="products.html?category=Electronics">Electronics</a>
@@ -50,9 +50,9 @@
   <a href="products.html?category=Other">Other</a>
 </div>
 
-<main class="shop-page">
+<main class="shop-page shop-wow-page">
 
-  <div class="breadcrumbs">
+  <div class="breadcrumbs shop-wow-breadcrumbs">
     <a href="index.html">Home</a>
     <span>/</span>
     <a href="products.html">Marketplace</a>
@@ -60,11 +60,45 @@
     <span id="breadcrumbShop">Shop</span>
   </div>
 
-  <section id="shopHeader" class="pro-shop-header">
+  <section id="shopHeader" class="pro-shop-header shop-wow-header">
     Loading shop...
   </section>
 
-  <section class="shop-highlight-bar">
+  <section class="shop-highlight-bar shop-wow-trust-row" id="shopTrustStrip">
+    <div class="shop-trust-item">
+      <span>🛡️</span>
+      <div>
+        <strong>Verified MauMarket Seller</strong>
+        <small>Seller identity checked by MauMarket</small>
+      </div>
+    </div>
+
+    <div class="shop-trust-item">
+      <span>🔒</span>
+      <div>
+        <strong>Secure Payments</strong>
+        <small>All payments protected through MauMarket</small>
+      </div>
+    </div>
+
+    <div class="shop-trust-item">
+      <span>🚚</span>
+      <div>
+        <strong>Delivery Through MauMarket</strong>
+        <small>Safe and tracked delivery</small>
+      </div>
+    </div>
+
+    <div class="shop-trust-item">
+      <span>⭐</span>
+      <div>
+        <strong>Verified Reviews</strong>
+        <small>Real reviews from buyers</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="shop-highlight-bar legacy-shop-highlight" style="display:none;">
     <div class="highlight-item">
       <strong id="shopProductCount">0</strong>
       <span>Products</span>
@@ -86,7 +120,7 @@
     </div>
   </section>
 
-  <div class="shop-tabs">
+  <div class="shop-tabs shop-wow-tabs">
     <button class="tab-btn active" data-tab="products">
       Shop Products
     </button>
@@ -100,20 +134,20 @@
     </button>
   </div>
 
-  <section class="shop-content-layout">
+  <section class="shop-content-layout shop-wow-layout">
 
     <div>
 
       <div id="productsTab" class="tab-content active">
 
-        <div class="shop-section-head">
+        <div class="shop-section-head shop-wow-section-head">
 
           <div>
             <h2>Shop Products</h2>
             <p id="shopResultCount" class="muted"></p>
           </div>
 
-          <div class="shop-filter-row">
+          <div class="shop-filter-row shop-wow-filter-row">
 
             <input
               type="text"
@@ -124,6 +158,7 @@
               <option value="newest">Newest</option>
               <option value="low-high">Price Low to High</option>
               <option value="high-low">Price High to Low</option>
+              <option value="rating">Highest Rated</option>
             </select>
 
           </div>
@@ -132,7 +167,7 @@
 
         <div
           id="shopItems"
-          class="pro-product-grid">
+          class="pro-product-grid shop-wow-products-grid">
           Loading items...
         </div>
 
@@ -140,14 +175,14 @@
 
       <div id="aboutTab" class="tab-content">
 
-        <div id="aboutShopBox" class="pro-side-card">
+        <div id="aboutShopBox" class="pro-side-card shop-wow-card">
         </div>
 
       </div>
 
       <div id="reviewsTab" class="tab-content">
 
-        <div class="review-summary-card">
+        <div class="review-summary-card shop-wow-card">
 
           <div class="review-score">
             <h2 id="reviewsAverageRating">0.0</h2>
@@ -165,7 +200,7 @@
 
         <div
           id="reviewsBox"
-          class="pro-side-card">
+          class="pro-side-card shop-wow-card">
           Loading reviews...
         </div>
 
@@ -173,36 +208,40 @@
 
     </div>
 
-    <aside class="shop-sidebar">
+    <aside class="shop-sidebar shop-wow-sidebar">
 
-      <div id="shopAboutCard" class="pro-side-card">
+      <div id="shopAboutCard" class="pro-side-card shop-wow-card">
       </div>
 
-      <div id="shopPolicyCard" class="pro-side-card">
+      <div id="shopPolicyCard" class="pro-side-card shop-wow-card">
 
         <h3>MauMarket Protection</h3>
 
-        <ul class="policy-list">
-          <li>✓ Verified Seller</li>
-          <li>✓ Secure Checkout</li>
-          <li>✓ Delivery Tracking</li>
-          <li>✓ Verified Reviews</li>
-          <li>✓ Customer Support</li>
+        <ul class="policy-list shop-policy-list">
+          <li>✅ Verified Seller</li>
+          <li>✅ Secure Checkout</li>
+          <li>✅ Delivery Tracking</li>
+          <li>✅ Verified Reviews</li>
+          <li>✅ Customer Support</li>
         </ul>
 
       </div>
 
-      <div id="shopRatingCard" class="pro-side-card">
+      <div id="shopRatingCard" class="pro-side-card shop-wow-card">
       </div>
 
-      <div class="pro-side-card">
+      <div class="pro-side-card shop-wow-card">
 
         <h3>Need Help?</h3>
 
         <p>
-          Contact the seller directly through their shop details
-          or reach MauMarket support for assistance.
+          Contact the seller safely through MauMarket after checkout.
+          We keep payment, delivery and support inside the platform.
         </p>
+
+        <a class="btn" href="dashboard.html">
+          Contact Support
+        </a>
 
       </div>
 
@@ -238,7 +277,7 @@ shopSearchInput?.addEventListener("keydown", (e) => {
 });
 </script>
 
-<script type="module" src="js/shop.js"></script>
+<script type="module" src="js/shop.js?v=4.1-shop-wow"></script>
 
 </body>
 </html>
