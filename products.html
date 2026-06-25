@@ -6,100 +6,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="market-mobile-header">
-  <div class="mobile-top-row">
-    <a class="logo-brand" href="index.html">
-      <img src="images/maumarketlogo.png" alt="MauMarket">
-    </a>
+<header class="market-pro-header">
+  <a href="index.html" class="market-pro-logo">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
+  </a>
 
-    <button id="mobileMenuBtn" class="hamburger-btn" type="button">☰</button>
-  </div>
-
-  <div class="mobile-search">
-    <select id="typeFilter">
-      <option value="">All</option>
-      <option value="product">Products</option>
-      <option value="service">Services</option>
+  <div class="market-pro-search">
+    <select id="topCategoryFilter">
+      <option value="">All Categories</option>
     </select>
 
-    <input id="searchInput" placeholder="Search products, services, or shops">
-    <button id="searchBtn" type="button">Search</button>
+    <input id="searchInput" placeholder="Search products, services, or shops...">
+
+    <button id="searchBtn" type="button">
+      Search
+    </button>
   </div>
 
-  <nav id="mobileNav" class="mobile-nav">
+  <nav class="market-pro-nav">
     <a href="dashboard.html">Account</a>
     <a href="my-orders.html">Orders</a>
     <a href="cart.html">Cart</a>
-    <a href="register.html">Sell</a>
+    <a href="seller.html">Sell</a>
   </nav>
 </header>
 
-<div class="market-category-strip">
-  <a href="products.html">All</a>
-  <a href="products.html?category=Beauty">💄 Beauty</a>
-  <a href="products.html?category=Electronics">📱 Electronics</a>
-  <a href="products.html?category=Fashion">👕 Fashion</a>
-  <a href="products.html?category=Food">🍔 Food</a>
-  <a href="products.html?category=Hardware">🔨 Hardware</a>
-  <a href="products.html?category=Home">🏠 Home</a>
-  <a href="products.html?category=Services">🧰 Services</a>
-  <a href="products.html?category=Other">✨ Other</a>
-</div>
+<main class="market-pro-page">
 
-<section id="topAdBanner" class="top-ad-banner"></section>
-
-<section class="compact-hero">
-  <h1>Shop local deals in Mauritius</h1>
-  <p>Discover trusted products and services from approved MauMarket sellers.</p>
-</section>
-
-<section id="featuredShopsSection" class="featured-shops-section">
-  <div class="section-row-title">
-    <h2>Featured Shops</h2>
-    <a href="products.html">View all</a>
-  </div>
-  <div id="featuredShops" class="featured-shops-row"></div>
-</section>
-
-<main class="market-layout">
-
-  <aside class="market-sidebar">
-    <h3>Filters</h3>
-
-    <label>Category</label>
-    <select id="categoryFilter">
-      <option value="">All Categories</option>
-      <option value="Beauty">Beauty</option>
-      <option value="Electronics">Electronics</option>
-      <option value="Fashion">Fashion</option>
-      <option value="Food">Food</option>
-      <option value="Hardware">Hardware</option>
-      <option value="Home">Home</option>
-      <option value="Services">Services</option>
-      <option value="Other">Other</option>
-    </select>
-
-    <label>Sort</label>
-    <select id="sortFilter">
-      <option value="newest">Newest</option>
-      <option value="low-high">Price Low to High</option>
-      <option value="high-low">Price High to Low</option>
-    </select>
-  </aside>
-
-  <section>
-    <div class="market-heading compact-heading">
-      <h2>Featured Products & Services</h2>
-      <p id="resultCount">Loading...</p>
+  <section class="market-pro-control-panel">
+    <div>
+      <label>Search</label>
+      <div class="control-search-box">
+        <input id="searchInput2" placeholder="Search products, services, or shops...">
+        <button id="searchBtn2" type="button">🔍</button>
+      </div>
     </div>
 
-    <div id="productsGrid" class="market-product-grid"></div>
+    <div>
+      <label>Category</label>
+      <select id="categoryFilter">
+        <option value="">All Categories</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Sort By</label>
+      <select id="sortFilter">
+        <option value="newest">Newest</option>
+        <option value="low-high">Price Low to High</option>
+        <option value="high-low">Price High to Low</option>
+      </select>
+    </div>
+  </section>
+
+  <section id="categoryIconGrid" class="category-icon-grid">
+    Loading categories...
+  </section>
+
+  <section class="market-pro-hero">
+    <div>
+      <h1>Discover Mauritius Marketplace</h1>
+      <p>Shop local products and services from trusted MauMarket sellers across Mauritius.</p>
+      <a href="#marketProducts" class="hero-shop-btn">Shop Now</a>
+    </div>
+
+    <div class="hero-illustration">
+      <div class="hero-island"></div>
+      <div class="hero-bag">m</div>
+    </div>
+  </section>
+
+  <section id="featuredShopsSection" class="featured-shops-section market-pro-featured">
+    <div class="section-row-title">
+      <h2>Featured Shops</h2>
+      <a href="products.html">View all</a>
+    </div>
+
+    <div id="featuredShops" class="featured-shops-row">
+      Loading featured shops...
+    </div>
+  </section>
+
+  <section id="marketProducts" class="market-pro-products-layout">
+
+    <aside class="market-pro-sidebar">
+      <h3>Filters</h3>
+
+      <label>Category</label>
+      <select id="sideCategoryFilter">
+        <option value="">All Categories</option>
+      </select>
+
+      <label>Sort</label>
+      <select id="sideSortFilter">
+        <option value="newest">Newest</option>
+        <option value="low-high">Price Low to High</option>
+        <option value="high-low">Price High to Low</option>
+      </select>
+    </aside>
+
+    <section class="market-pro-products-main">
+      <div class="market-heading compact-heading">
+        <h2>Featured Products & Services</h2>
+        <p id="resultCount">Loading...</p>
+      </div>
+
+      <div id="topAdBanner" style="display:none;"></div>
+
+      <div id="productsGrid" class="market-product-grid">
+        Loading marketplace...
+      </div>
+    </section>
+
   </section>
 
 </main>
 
-<script type="module" src="js/products.js"></script>
+<script type="module" src="js/products.js?v=4.0-market-redesign"></script>
+
 </body>
 </html>
