@@ -3022,10 +3022,8 @@ label {
 
 
 /* =========================================================
-   MAUMARKET FINAL MARKETPLACE FIX
-   Put this at the VERY END of styles.css
-   Fixes mobile content going down, duplicate filters, sidebar sticky,
-   product grid, premium banner, category icons, and header.
+   MAUMARKET MARKETPLACE CORRECTED FINAL
+   Keep this block at the VERY END of styles.css
    ========================================================= */
 
 :root {
@@ -3034,45 +3032,51 @@ label {
   --market-orange: #f59e0b;
 }
 
-/* ---------- Desktop marketplace header ---------- */
+/* MAIN MARKETPLACE HEADER */
 
 .market-pro-header {
   background: var(--market-purple) !important;
   color: #fff !important;
-  padding: 16px 7% !important;
+  padding: 18px 5% !important;
   display: grid !important;
-  grid-template-columns: 250px minmax(420px, 1fr) auto !important;
+  grid-template-columns: 210px minmax(420px, 1fr) auto !important;
   align-items: center !important;
-  gap: 24px !important;
-  box-shadow: 0 12px 35px rgba(63, 52, 209, 0.28) !important;
+  gap: 22px !important;
+  box-shadow: 0 14px 35px rgba(63, 52, 209, 0.25) !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 100 !important;
 }
 
+/* LOGO FIX - no crop, no tiny logo */
 .market-pro-logo {
-  width: 250px !important;
-  height: 72px !important;
+  width: 210px !important;
+  height: 64px !important;
   display: flex !important;
   align-items: center !important;
-  overflow: hidden !important;
+  justify-content: flex-start !important;
+  overflow: visible !important;
   position: relative !important;
+  flex-shrink: 0 !important;
 }
 
 .market-pro-logo img {
-  height: 230px !important;
+  height: 60px !important;
   width: auto !important;
-  max-width: none !important;
-  transform: translateX(-62px) !important;
+  max-width: 205px !important;
+  object-fit: contain !important;
+  transform: none !important;
+  position: static !important;
 }
 
+/* SEARCH */
 .market-pro-search {
   display: grid !important;
-  grid-template-columns: 170px 1fr 120px !important;
+  grid-template-columns: 165px 1fr 120px !important;
   background: #fff !important;
   border-radius: 14px !important;
   overflow: hidden !important;
-  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.16) !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18) !important;
 }
 
 .market-pro-search select,
@@ -3090,13 +3094,15 @@ label {
   background: var(--market-orange) !important;
   color: #111827 !important;
   box-shadow: none !important;
+  font-weight: 900 !important;
 }
 
+/* NAV */
 .market-pro-nav {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  gap: 20px !important;
+  gap: 19px !important;
   font-weight: 900 !important;
   white-space: nowrap !important;
 }
@@ -3105,23 +3111,21 @@ label {
   color: #fff !important;
 }
 
-/* ---------- Marketplace page ---------- */
-
+/* PAGE */
 .market-pro-page {
-  width: min(1500px, 92%) !important;
-  margin: 24px auto 70px !important;
+  width: min(1450px, 92%) !important;
+  margin: 28px auto 70px !important;
 }
 
-/* This panel was pushing everything down on mobile */
+/* Remove the duplicated filter/search cards that pushed mobile down */
 .market-pro-control-panel {
   display: none !important;
 }
 
-/* ---------- Category icons ---------- */
-
+/* CATEGORY ICONS */
 .category-icon-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
   gap: 18px !important;
   margin: 22px 0 28px !important;
 }
@@ -3155,8 +3159,8 @@ label {
 }
 
 .category-icon-circle {
-  width: 48px !important;
-  height: 48px !important;
+  width: 50px !important;
+  height: 50px !important;
   display: grid !important;
   place-items: center !important;
   margin: 0 auto !important;
@@ -3168,8 +3172,7 @@ label {
   color: var(--market-purple) !important;
 }
 
-/* ---------- Hero ---------- */
-
+/* HERO */
 .market-pro-hero {
   min-height: 330px !important;
   border-radius: 30px !important;
@@ -3180,9 +3183,9 @@ label {
   gap: 30px !important;
   align-items: center !important;
   background:
-    radial-gradient(circle at 90% 20%, rgba(255,255,255,.22), transparent 32%),
-    linear-gradient(135deg, var(--market-purple), #21178f) !important;
-  color: white !important;
+    radial-gradient(circle at 88% 22%, rgba(255,255,255,.18), transparent 32%),
+    linear-gradient(135deg, var(--market-purple), #24179c) !important;
+  color: #fff !important;
   overflow: hidden !important;
   box-shadow: 0 28px 70px rgba(63, 52, 209, 0.30) !important;
 }
@@ -3263,8 +3266,7 @@ label {
   border-radius: 40px 40px 0 0 !important;
 }
 
-/* ---------- Featured shops ---------- */
-
+/* FEATURED SHOPS */
 .market-pro-featured,
 .featured-shops-section {
   width: 100% !important;
@@ -3284,7 +3286,7 @@ label {
 }
 
 .featured-shop-card {
-  min-width: 160px !important;
+  min-width: 165px !important;
   background: #f8fafc !important;
   border: 1px solid #e5e7eb !important;
   border-radius: 20px !important;
@@ -3308,8 +3310,7 @@ label {
   margin: 0 auto 10px !important;
 }
 
-/* ---------- Premium ad ---------- */
-
+/* PREMIUM AD */
 .market-premium-ad,
 #topAdBanner {
   margin: 26px 0 !important;
@@ -3338,8 +3339,7 @@ label {
   padding: 14px 28px !important;
 }
 
-/* ---------- Products layout ---------- */
-
+/* PRODUCTS */
 .market-pro-products-layout {
   display: grid !important;
   grid-template-columns: 260px 1fr !important;
@@ -3482,8 +3482,7 @@ label {
   color: #fff !important;
 }
 
-/* ---------- Mobile marketplace final ---------- */
-
+/* MOBILE */
 @media (max-width: 900px) {
   .market-pro-header {
     position: static !important;
@@ -3496,12 +3495,14 @@ label {
 
   .market-pro-logo {
     width: 260px !important;
-    height: 76px !important;
+    height: 82px !important;
+    align-self: flex-start !important;
   }
 
   .market-pro-logo img {
-    height: 238px !important;
-    transform: translateX(-64px) !important;
+    height: 78px !important;
+    max-width: 255px !important;
+    transform: none !important;
   }
 
   .market-pro-search {
@@ -3539,7 +3540,6 @@ label {
   }
 
   .category-icon-grid {
-    display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 16px !important;
     margin: 0 0 24px !important;
@@ -3657,7 +3657,13 @@ label {
   }
 
   .market-pro-logo {
-    align-self: flex-start !important;
+    width: 245px !important;
+    height: 78px !important;
+  }
+
+  .market-pro-logo img {
+    height: 74px !important;
+    max-width: 240px !important;
   }
 
   .market-pro-nav a {
@@ -3674,32 +3680,5 @@ label {
 
   .market-pro-hero h1 {
     font-size: 36px !important;
-  }
-}
-
-
-/* FIX MARKETPLACE LOGO CROP */
-.market-pro-logo {
-  width: 260px !important;
-  height: 86px !important;
-  overflow: visible !important;
-}
-
-.market-pro-logo img {
-  height: 86px !important;
-  width: auto !important;
-  max-width: 100% !important;
-  transform: none !important;
-  object-fit: contain !important;
-}
-
-/* Better mobile category spacing */
-@media (max-width: 900px) {
-  .category-icon-grid {
-    margin-top: -4px !important;
-  }
-
-  .category-icon-card {
-    min-height: 108px !important;
   }
 }
