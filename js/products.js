@@ -107,8 +107,9 @@ function renderCategoryDropdowns() {
 
     allCategories.forEach((category) => {
       const option = document.createElement("option");
+
       option.value = category.name || "";
-      option.textContent = `${category.icon || ""} ${category.name || "Category"}`.trim();
+      option.textContent = category.name || "Category";
 
       if (activeCategory === category.name) {
         option.selected = true;
@@ -128,35 +129,28 @@ function renderCategoryIcons() {
     {
       name: "",
       icon: "grid",
-      label: "All Categories"
+      label: "All"
     },
     ...allCategories.map((category) => ({
       name: category.name || "",
-      icon: getCategoryIconKey(category.name, category.icon),
+      icon: normalizeIcon(category.icon || category.name),
       label: category.name || "Category"
     }))
   ];
-
-  if (baseCategories.length === 1) {
-    categoryIconGrid.innerHTML = `
-      <button class="category-icon-card active" type="button" data-category="">
-        ${svgIcon("grid")}
-        <span>All Categories</span>
-      </button>
-    `;
-    return;
-  }
 
   categoryIconGrid.innerHTML = "";
 
   baseCategories.forEach((category) => {
     const btn = document.createElement("button");
+
     btn.type = "button";
     btn.className = `category-icon-card ${activeCategory === category.name ? "active" : ""}`;
     btn.dataset.category = category.name;
 
     btn.innerHTML = `
-      ${svgIcon(category.icon)}
+      <span class="category-icon-circle">
+        ${svgIcon(category.icon)}
+      </span>
       <span>${escapeHtml(category.label)}</span>
     `;
 
@@ -173,12 +167,14 @@ function renderFallbackCategories() {
   allCategories = [
     { name: "Beauty", icon: "beauty", sortOrder: 1 },
     { name: "Electronics", icon: "electronics", sortOrder: 2 },
-    { name: "Fashion", icon: "fashion", sortOrder: 3 },
-    { name: "Food", icon: "food", sortOrder: 4 },
-    { name: "Hardware", icon: "hardware", sortOrder: 5 },
-    { name: "Home", icon: "home", sortOrder: 6 },
-    { name: "Services", icon: "services", sortOrder: 7 },
-    { name: "Other", icon: "other", sortOrder: 8 }
+    { name: "Phones", icon: "phone", sortOrder: 3 },
+    { name: "Fashion", icon: "fashion", sortOrder: 4 },
+    { name: "Food", icon: "food", sortOrder: 5 },
+    { name: "Hardware", icon: "hardware", sortOrder: 6 },
+    { name: "Home", icon: "home", sortOrder: 7 },
+    { name: "Services", icon: "services", sortOrder: 8 },
+    { name: "Vehicles", icon: "vehicles", sortOrder: 9 },
+    { name: "Other", icon: "other", sortOrder: 10 }
   ];
 
   renderCategoryDropdowns();
@@ -218,12 +214,13 @@ async function loadTopBanner() {
     }
 
     topAdBanner.style.display = "block";
+    topAdBanner.classList.add("market-premium-ad");
 
     topAdBanner.innerHTML = `
-      <div class="top-ad-inner compact-ad">
+      <div class="top-ad-inner compact-ad premium-ad-inner">
         <img src="${escapeHtml(banner.imageUrl)}" alt="${escapeHtml(banner.title || "Featured shop")}">
 
-        <div class="top-ad-content">
+        <div class="top-ad-content premium-ad-content">
           <span>Featured Shop</span>
           <h2>${escapeHtml(banner.title || banner.shopName || "Featured Seller")}</h2>
           <p>${escapeHtml(banner.subtitle || banner.shopName || "Discover this MauMarket seller.")}</p>
@@ -252,11 +249,7 @@ async function loadTopBanner() {
 async function loadItems() {
   if (!productsGrid) return;
 
-  productsGrid.innerHTML = `
-    <div class="order-card">
-      Loading marketplace...
-    </div>
-  `;
+  renderSkeletonGrid();
 
   try {
     const q = query(
@@ -290,15 +283,23 @@ async function loadItems() {
   }
 }
 
+function renderSkeletonGrid() {
+  productsGrid.innerHTML = Array.from({ length: 8 }).map(() => `
+    <div class="market-product-card skeleton-card">
+      <div class="market-product-img skeleton-box"></div>
+      <div class="market-product-body">
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+  `).join("");
+}
+
 async function getShop(sellerId) {
   if (!sellerId) {
-    return {
-      id: "",
-      shopName: "Unknown Shop",
-      verified: false,
-      averageRating: 0,
-      totalReviews: 0
-    };
+    return emptyShop("");
   }
 
   if (shopCache[sellerId]) return shopCache[sellerId];
@@ -315,25 +316,24 @@ async function getShop(sellerId) {
         ...shopSnap.data()
       };
     } else {
-      shopCache[sellerId] = {
-        id: sellerId,
-        shopName: "Unknown Shop",
-        verified: false,
-        averageRating: 0,
-        totalReviews: 0
-      };
+      shopCache[sellerId] = emptyShop(sellerId);
     }
   } catch (error) {
-    shopCache[sellerId] = {
-      id: sellerId,
-      shopName: "Unknown Shop",
-      verified: false,
-      averageRating: 0,
-      totalReviews: 0
-    };
+    shopCache[sellerId] = emptyShop(sellerId);
   }
 
   return shopCache[sellerId];
+}
+
+function emptyShop(id) {
+  return {
+    id,
+    shopName: "Unknown Shop",
+    verified: false,
+    averageRating: 0,
+    totalReviews: 0,
+    location: "Mauritius"
+  };
 }
 
 function renderFeaturedShops() {
@@ -351,7 +351,11 @@ function renderFeaturedShops() {
   });
 
   const shops = Object.values(uniqueShops)
-    .sort((a, b) => Number(b.averageRating || 0) - Number(a.averageRating || 0))
+    .sort((a, b) => {
+      const aScore = Number(a.averageRating || 0) + Number(a.totalReviews || 0) * 0.05;
+      const bScore = Number(b.averageRating || 0) + Number(b.totalReviews || 0) * 0.05;
+      return bScore - aScore;
+    })
     .slice(0, 12);
 
   if (shops.length === 0) {
@@ -367,7 +371,7 @@ function renderFeaturedShops() {
     const totalReviews = Number(shop.totalReviews || 0);
 
     const card = document.createElement("a");
-    card.className = "featured-shop-card";
+    card.className = "featured-shop-card featured-shop-wow";
     card.href = `shop.html?id=${encodeURIComponent(shop.id)}`;
 
     card.innerHTML = `
@@ -403,6 +407,7 @@ function renderItems(shouldScroll = false) {
       ${item.shop?.shopName || ""}
       ${item.price || ""}
       ${item.serviceArea || ""}
+      ${item.shop?.location || ""}
     `.toLowerCase();
 
     const matchesSearch = !search || searchableText.includes(search);
@@ -412,44 +417,33 @@ function renderItems(shouldScroll = false) {
     return matchesSearch && matchesType && matchesCategory;
   });
 
-  if (sort === "low-high") {
-    filtered.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
-  }
-
-  if (sort === "high-low") {
-    filtered.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
-  }
-
-  if (sort === "newest") {
-    filtered.sort((a, b) => {
-      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-    });
-  }
-
-  if (sort === "rating") {
-    filtered.sort((a, b) => {
-      return Number(b.averageRating || 0) - Number(a.averageRating || 0);
-    });
-  }
+  filtered = sortItems(filtered, sort);
 
   if (resultCount) {
+    const categoryText = activeCategory ? ` in ${activeCategory}` : "";
+
     resultCount.textContent = search
-      ? `${filtered.length} result(s) for "${escapeHtml(search)}"`
-      : `${filtered.length} result(s) found`;
+      ? `${filtered.length} result(s) for "${escapeHtml(search)}"${categoryText}`
+      : `${filtered.length} result(s) found${categoryText}`;
   }
 
   if (filtered.length === 0) {
     productsGrid.innerHTML = `
-      <div class="order-card">
+      <div class="order-card empty-market-card">
         <h3>No items found</h3>
         <p>${search ? `No result for "${escapeHtml(search)}".` : "Try another search, category, or filter."}</p>
+        <button type="button" id="clearMarketplaceSearch" class="secondary-btn">Clear Search</button>
       </div>
     `;
 
-    if (shouldScroll) {
-      scrollToProducts();
-    }
+    document.getElementById("clearMarketplaceSearch")?.addEventListener("click", () => {
+      setSearch("");
+      setCategory("");
+      setSort("newest");
+      runSearch(true);
+    });
 
+    if (shouldScroll) scrollToProducts();
     return;
   }
 
@@ -459,9 +453,36 @@ function renderItems(shouldScroll = false) {
     productsGrid.appendChild(createProductCard(item));
   });
 
-  if (shouldScroll) {
-    scrollToProducts();
+  if (shouldScroll) scrollToProducts();
+}
+
+function sortItems(items, sort) {
+  const copy = [...items];
+
+  if (sort === "low-high") {
+    copy.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
   }
+
+  if (sort === "high-low") {
+    copy.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+  }
+
+  if (sort === "newest") {
+    copy.sort((a, b) => {
+      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+    });
+  }
+
+  if (sort === "rating") {
+    copy.sort((a, b) => {
+      const aRating = Number(a.averageRating || a.shop?.averageRating || 0);
+      const bRating = Number(b.averageRating || b.shop?.averageRating || 0);
+
+      return bRating - aRating;
+    });
+  }
+
+  return copy;
 }
 
 function createProductCard(item) {
@@ -470,6 +491,7 @@ function createProductCard(item) {
   const shopRating = Number(item.shop?.averageRating || 0);
   const shopReviews = Number(item.shop?.totalReviews || 0);
   const sold = Number(item.soldCount || 0);
+  const location = safeArea(item.shop?.location || item.serviceArea || "Mauritius");
 
   const ratingText = productRating > 0
     ? `⭐ ${productRating.toFixed(1)} (${productReviews})`
@@ -479,10 +501,8 @@ function createProductCard(item) {
     ? `Seller ⭐ ${shopRating.toFixed(1)} (${shopReviews})`
     : "Seller not rated yet";
 
-  const location = item.shop?.location || item.serviceArea || "Mauritius";
-
   const div = document.createElement("div");
-  div.className = "market-product-card";
+  div.className = "market-product-card market-wow-product-card";
 
   div.innerHTML = `
     <a class="market-product-img" href="product-details.html?id=${encodeURIComponent(item.id)}">
@@ -491,12 +511,15 @@ function createProductCard(item) {
           ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
           : `<div class="no-img">No Image</div>`
       }
+
+      ${getDiscountBadge(item)}
+      ${getStockBadge(item)}
     </a>
 
     <div class="market-product-body">
       <div class="product-card-top-row">
         <span class="badge">${escapeHtml(item.type || "item")}</span>
-        <span class="product-heart">♡</span>
+        <button class="product-heart" type="button" aria-label="Save product">♡</button>
       </div>
 
       <h3>${escapeHtml(item.title || "Untitled")}</h3>
@@ -518,7 +541,42 @@ function createProductCard(item) {
     </div>
   `;
 
+  div.querySelector(".product-heart")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    alert("Open the product page to save this item to your wishlist.");
+  });
+
   return div;
+}
+
+function getDiscountBadge(item) {
+  const oldPrice = Number(item.oldPrice || item.compareAtPrice || 0);
+  const price = Number(item.price || 0);
+
+  if (!oldPrice || !price || oldPrice <= price) return "";
+
+  const discount = Math.round(((oldPrice - price) / oldPrice) * 100);
+
+  if (discount <= 0) return "";
+
+  return `<span class="product-discount-badge">-${discount}%</span>`;
+}
+
+function getStockBadge(item) {
+  if (item.type === "service") return "";
+
+  const stock = Number(item.stock || 0);
+
+  if (stock <= 0) {
+    return `<span class="product-stock-badge danger">Out of stock</span>`;
+  }
+
+  if (stock <= 5) {
+    return `<span class="product-stock-badge">Only ${stock} left</span>`;
+  }
+
+  return "";
 }
 
 function runSearch(shouldScroll = true) {
@@ -532,10 +590,21 @@ function runSearch(shouldScroll = true) {
 }
 
 function getSearchValue() {
-  return (searchInput2?.value || searchInput?.value || "").trim();
+  const focused = document.activeElement;
+
+  if (focused === searchInput2) return (searchInput2?.value || "").trim();
+  if (focused === searchInput) return (searchInput?.value || "").trim();
+
+  return (searchInput2?.value || searchInput?.value || activeSearch || "").trim();
 }
 
 function getCategoryValue() {
+  const focused = document.activeElement;
+
+  if (focused === categoryFilter) return categoryFilter?.value || "";
+  if (focused === sideCategoryFilter) return sideCategoryFilter?.value || "";
+  if (focused === topCategoryFilter) return topCategoryFilter?.value || "";
+
   return (
     categoryFilter?.value ||
     sideCategoryFilter?.value ||
@@ -546,6 +615,11 @@ function getCategoryValue() {
 }
 
 function getSortValue() {
+  const focused = document.activeElement;
+
+  if (focused === sortFilter) return sortFilter?.value || "newest";
+  if (focused === sideSortFilter) return sideSortFilter?.value || "newest";
+
   return (
     sortFilter?.value ||
     sideSortFilter?.value ||
@@ -671,21 +745,61 @@ function attachFilterEvents() {
   });
 }
 
-function getCategoryIconKey(name, icon) {
-  const value = String(icon || name || "").toLowerCase();
+function normalizeIcon(icon) {
+  const value = String(icon || "other").toLowerCase().trim();
 
-  if (value.includes("beauty")) return "beauty";
+  if (ICON_LABELS[value]) return value;
+
   if (value.includes("elect")) return "electronics";
-  if (value.includes("fashion")) return "fashion";
+  if (value.includes("phone")) return "phone";
+  if (value.includes("laptop") || value.includes("computer")) return "laptop";
+  if (value.includes("fashion") || value.includes("clothes")) return "fashion";
+  if (value.includes("beauty")) return "beauty";
   if (value.includes("food")) return "food";
-  if (value.includes("hardware")) return "hardware";
+  if (value.includes("grocery")) return "grocery";
   if (value.includes("home")) return "home";
+  if (value.includes("furniture")) return "furniture";
+  if (value.includes("hardware")) return "hardware";
+  if (value.includes("tool")) return "tools";
   if (value.includes("service")) return "services";
-  if (value.includes("car")) return "vehicles";
-  if (value.includes("phone")) return "electronics";
+  if (value.includes("vehicle") || value.includes("car")) return "vehicles";
+  if (value.includes("baby") || value.includes("kid")) return "baby";
+  if (value.includes("sport")) return "sports";
+  if (value.includes("book")) return "books";
+  if (value.includes("pet")) return "pets";
+  if (value.includes("health")) return "health";
+  if (value.includes("gift")) return "gift";
 
   return "other";
 }
+
+function getCategoryIconKey(name, icon) {
+  return normalizeIcon(icon || name);
+}
+
+const ICON_LABELS = {
+  grid: "All",
+  electronics: "Electronics",
+  phone: "Phones",
+  laptop: "Computers",
+  fashion: "Fashion",
+  beauty: "Beauty",
+  food: "Food",
+  grocery: "Groceries",
+  home: "Home",
+  furniture: "Furniture",
+  hardware: "Hardware",
+  tools: "Tools",
+  services: "Services",
+  vehicles: "Vehicles",
+  baby: "Baby & Kids",
+  sports: "Sports",
+  books: "Books",
+  pets: "Pets",
+  health: "Health",
+  gift: "Gifts",
+  other: "Other"
+};
 
 function svgIcon(type) {
   const icons = {
@@ -697,12 +811,6 @@ function svgIcon(type) {
         <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
       </svg>
     `,
-    beauty: `
-      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
-        <path d="M8 21h8M9 21V9a3 3 0 0 1 6 0v12M7 11h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M6 5c2-3 4-3 6 0 2-3 4-3 6 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    `,
     electronics: `
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
         <rect x="3" y="5" width="13" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
@@ -710,9 +818,27 @@ function svgIcon(type) {
         <rect x="18" y="8" width="3" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
       </svg>
     `,
+    phone: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <rect x="8" y="2.5" width="8" height="19" rx="2" stroke="currentColor" stroke-width="2"/>
+        <path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `,
+    laptop: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="4" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+        <path d="M3 19h18l-2-5H5l-2 5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    `,
     fashion: `
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
         <path d="M9 4 6 6l-3 5 4 2 2-3v10h10V10l2 3 4-2-3-5-3-2-3 3h-4L9 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    `,
+    beauty: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M8 21h8M9 21V9a3 3 0 0 1 6 0v12M7 11h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M6 5c2-3 4-3 6 0 2-3 4-3 6 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     `,
     food: `
@@ -722,10 +848,11 @@ function svgIcon(type) {
         <path d="M9 9h.01M13 7h.01M16 10h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
       </svg>
     `,
-    hardware: `
+    grocery: `
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
-        <path d="m14 7 3-3 3 3-3 3M4 20l8-8M12 12l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="m5 5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M6 7h15l-2 8H8L6 7ZM6 7 5 3H2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="20" r="1.5" stroke="currentColor" stroke-width="2"/>
+        <circle cx="18" cy="20" r="1.5" stroke="currentColor" stroke-width="2"/>
       </svg>
     `,
     home: `
@@ -733,6 +860,24 @@ function svgIcon(type) {
         <path d="M3 11 12 4l9 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M5 10v10h14V10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
         <path d="M10 20v-6h4v6" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    `,
+    furniture: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M5 11V7a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v4" stroke="currentColor" stroke-width="2"/>
+        <path d="M4 11h16v8H4v-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M7 19v2M17 19v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `,
+    hardware: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <path d="m14 7 3-3 3 3-3 3M4 20l8-8M12 12l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="m5 5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `,
+    tools: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M14 6a4 4 0 0 0 5 5L11 19a3 3 0 0 1-4-4l8-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
       </svg>
     `,
     services: `
@@ -758,6 +903,22 @@ function svgIcon(type) {
   };
 
   return icons[type] || icons.other;
+}
+
+function safeArea(location) {
+  const raw = String(location || "Mauritius").trim();
+
+  if (!raw) return "Mauritius Area";
+
+  const cleaned = raw
+    .replace(/\d+/g, "")
+    .replace(/street|road|avenue|lane|house|building|flat|apartment/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return "Mauritius Area";
+
+  return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
 }
 
 function escapeHtml(value) {
