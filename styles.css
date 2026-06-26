@@ -3676,3 +3676,30 @@ label {
     font-size: 36px !important;
   }
 }
+
+
+/* FIX MARKETPLACE LOGO CROP */
+.market-pro-logo {
+  width: 260px !important;
+  height: 86px !important;
+  overflow: visible !important;
+}
+
+.market-pro-logo img {
+  height: 86px !important;
+  width: auto !important;
+  max-width: 100% !important;
+  transform: none !important;
+  object-fit: contain !important;
+}
+
+/* Better mobile category spacing */
+@media (max-width: 900px) {
+  .category-icon-grid {
+    margin-top: -4px !important;
+  }
+
+  .category-icon-card {
+    min-height: 108px !important;
+  }
+}
