@@ -354,6 +354,7 @@ function renderFeaturedShops() {
     .sort((a, b) => {
       const aScore = Number(a.averageRating || 0) + Number(a.totalReviews || 0) * 0.05;
       const bScore = Number(b.averageRating || 0) + Number(b.totalReviews || 0) * 0.05;
+
       return bScore - aScore;
     })
     .slice(0, 12);
@@ -891,6 +892,46 @@ function svgIcon(type) {
         <path d="M5 16h14l-1.5-5h-11L5 16Z" stroke="currentColor" stroke-width="2"/>
         <circle cx="8" cy="18" r="1.5" stroke="currentColor" stroke-width="2"/>
         <circle cx="16" cy="18" r="1.5" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    `,
+    baby: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="7" r="3" stroke="currentColor" stroke-width="2"/>
+        <path d="M6 21a6 6 0 0 1 12 0M9 13l-3 3M15 13l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `,
+    sports: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+        <path d="M5 9c4 1 9 1 14 0M5 15c4-1 9-1 14 0M12 3c2 5 2 13 0 18" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    `,
+    books: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3-3V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 8h7M8 12h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `,
+    pets: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <circle cx="7" cy="8" r="2" stroke="currentColor" stroke-width="2"/>
+        <circle cx="17" cy="8" r="2" stroke="currentColor" stroke-width="2"/>
+        <circle cx="9" cy="15" r="2" stroke="currentColor" stroke-width="2"/>
+        <circle cx="15" cy="15" r="2" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 12c2 0 4 3 4 5s-2 3-4 3-4-1-4-3 2-5 4-5Z" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    `,
+    health: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M12 21s-8-5-8-11a5 5 0 0 1 8-4 5 5 0 0 1 8 4c0 6-8 11-8 11Z" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 8v6M9 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `,
+    gift: `
+      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M4 10h16v10H4V10Z" stroke="currentColor" stroke-width="2"/>
+        <path d="M3 7h18v3H3V7ZM12 7v13" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 7C8 7 7 3 9 3s3 4 3 4Zm0 0c4 0 5-4 3-4s-3 4-3 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
       </svg>
     `,
     other: `
