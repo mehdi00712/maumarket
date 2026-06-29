@@ -6,12 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <header class="navbar">
   <a class="brand logo-brand" href="index.html">
-  <img src="images/maumarketlogo.png" alt="MauMarket">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
   </a>
+
   <nav>
     <a href="dashboard.html">Dashboard</a>
     <a href="seller-orders.html">Orders</a>
@@ -23,72 +25,168 @@
 
 <main class="container">
 
+  <section class="dashboard-section-title">
+    <h1>Seller Dashboard</h1>
+    <p>Manage your shop, products, services, prices, and MauMarket commission.</p>
+  </section>
+
   <section class="form-card">
-    <h1>Your Shop</h1>
+    <div class="section-row-title">
+      <h2>Your Shop</h2>
+      <span>Shop profile shown to customers</span>
+    </div>
 
-    <input id="shopName" placeholder="Shop name">
-    <textarea id="shopDescription" placeholder="Shop description"></textarea>
-    <input id="shopPhone" placeholder="Shop phone">
-    <input id="shopLocation" placeholder="Shop location">
+    <div class="form-group">
+      <label>Shop Name</label>
+      <input id="shopName" placeholder="Example: Mehdi Electronics">
+    </div>
 
-    <label>Shop Logo</label>
-    <input id="shopLogo" type="file" accept="image/*">
+    <div class="form-group">
+      <label>Shop Description</label>
+      <textarea id="shopDescription" placeholder="Tell customers what your shop sells"></textarea>
+    </div>
 
-    <label>Shop Banner</label>
-    <input id="shopBanner" type="file" accept="image/*">
+    <div class="form-group">
+      <label>Shop Phone</label>
+      <input id="shopPhone" placeholder="Example: 57750662">
+    </div>
 
-    <button id="saveShopBtn">Save Shop</button>
+    <div class="form-group">
+      <label>Shop Location</label>
+      <input id="shopLocation" placeholder="Example: Beau Bassin">
+    </div>
+
+    <div class="form-group">
+      <label>Shop Logo</label>
+      <input id="shopLogo" type="file" accept="image/*">
+    </div>
+
+    <div class="form-group">
+      <label>Shop Banner</label>
+      <input id="shopBanner" type="file" accept="image/*">
+    </div>
+
+    <button id="saveShopBtn" type="button">Save Shop</button>
     <p id="shopMessage"></p>
   </section>
 
   <section class="form-card">
-    <h1>Product Slots</h1>
+    <div class="section-row-title">
+      <h2>Product Slots</h2>
+      <span>Limit for seller listings</span>
+    </div>
+
     <p id="slotInfo">Loading slots...</p>
-    <button id="requestSlotsBtn">Request More Slots</button>
+    <button id="requestSlotsBtn" type="button">Request More Slots</button>
     <p id="slotMessage"></p>
   </section>
 
   <section class="form-card">
-    <h1 id="formTitle">Add Product / Service</h1>
+    <div class="section-row-title">
+      <h2 id="formTitle">Add Product / Service</h2>
+      <span>10% MauMarket commission is added automatically</span>
+    </div>
 
-    <select id="itemType">
-      <option value="product">Product</option>
-      <option value="service">Service</option>
-    </select>
+    <div class="commission-info-box">
+      <h3>How pricing works</h3>
+      <p>
+        Enter the price you want to receive. MauMarket will automatically add
+        10% commission on top. Customers will see the final price.
+      </p>
 
-    <input id="itemTitle" placeholder="Title">
-    <textarea id="itemDescription" placeholder="Description"></textarea>
-    <input id="itemPrice" type="number" placeholder="Price in Rs">
-    <input id="itemStock" type="number" placeholder="Stock quantity">
+      <div class="commission-example">
+        <div>
+          <strong>Seller Price</strong>
+          <span id="sellerPricePreview">Rs 0</span>
+        </div>
 
-    <select id="itemCategory">
-      <option value="Beauty">Beauty</option>
-      <option value="Electronics">Electronics</option>
-      <option value="Fashion">Fashion</option>
-      <option value="Food">Food</option>
-      <option value="Hardware">Hardware</option>
-      <option value="Home">Home</option>
-      <option value="Services">Services</option>
-      <option value="Other">Other</option>
-    </select>
+        <div>
+          <strong>MauMarket 10%</strong>
+          <span id="commissionPreview">Rs 0</span>
+        </div>
 
-    <input id="serviceArea" placeholder="Service area, example: Port Louis, Curepipe">
+        <div>
+          <strong>Buyer Price</strong>
+          <span id="buyerPricePreview">Rs 0</span>
+        </div>
+      </div>
+    </div>
 
-    <label>Image</label>
-    <input id="itemImage" type="file" accept="image/*">
+    <div class="form-group">
+      <label>Item Type</label>
+      <select id="itemType">
+        <option value="product">Product</option>
+        <option value="service">Service</option>
+      </select>
+    </div>
 
-    <button id="saveItemBtn">Add Item</button>
-    <button id="cancelEditBtn" class="secondary-btn" style="display:none;">Cancel Edit</button>
+    <div class="form-group">
+      <label>Title</label>
+      <input id="itemTitle" placeholder="Example: Wireless Headphones">
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="itemDescription" placeholder="Describe the product or service"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Seller Price</label>
+      <input id="itemPrice" type="number" min="0" step="0.01" placeholder="Price you want to receive">
+      <small class="muted">
+        The customer price will include MauMarket's 10% commission automatically.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label>Stock Quantity</label>
+      <input id="itemStock" type="number" min="0" placeholder="Stock quantity">
+    </div>
+
+    <div class="form-group">
+      <label>Category</label>
+      <select id="itemCategory">
+        <option value="Beauty">Beauty</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Fashion">Fashion</option>
+        <option value="Food">Food</option>
+        <option value="Hardware">Hardware</option>
+        <option value="Home">Home</option>
+        <option value="Services">Services</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Service Area</label>
+      <input id="serviceArea" placeholder="Example: Port Louis, Curepipe">
+    </div>
+
+    <div class="form-group">
+      <label>Image</label>
+      <input id="itemImage" type="file" accept="image/*">
+    </div>
+
+    <div class="seller-actions">
+      <button id="saveItemBtn" type="button">Add Item</button>
+      <button id="cancelEditBtn" type="button" class="secondary-btn" style="display:none;">Cancel Edit</button>
+    </div>
+
     <p id="itemMessage"></p>
   </section>
 
   <section>
-    <h1>Your Items</h1>
+    <div class="section-row-title">
+      <h1>Your Items</h1>
+      <span>Prices include the buyer-facing commission</span>
+    </div>
+
     <div id="myItems" class="cards"></div>
   </section>
 
 </main>
 
-<script type="module" src="js/seller.js"></script>
+<script type="module" src="js/seller.js?v=4.5-commission"></script>
+
 </body>
 </html>
