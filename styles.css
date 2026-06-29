@@ -3020,125 +3020,285 @@ label {
   }
 }
 
-
 /* =========================================================
-   MAUMARKET MARKETPLACE CORRECTED FINAL
-   Keep this block at the VERY END of styles.css
+   MAUMARKET FINAL PERFECT CSS
+   Purple brand, better mobile header, bigger logo,
+   smaller mobile category cards, cleaner dashboard colours.
+   KEEP THIS BLOCK AT THE VERY END OF styles.css
    ========================================================= */
 
 :root {
-  --market-purple: #3f34d1;
-  --market-purple-dark: #3027a8;
-  --market-orange: #f59e0b;
+  --primary: #3f34d1;
+  --primary-dark: #3027a8;
+  --primary-light: #6366f1;
+  --accent: #f59e0b;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --blue: #2563eb;
+  --dark: #111827;
+  --text: #111827;
+  --muted: #6b7280;
+  --bg: #f4f5ff;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 8px 25px rgba(15, 23, 42, 0.06);
+  --radius: 18px;
 }
 
-/* MAIN MARKETPLACE HEADER */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.14), transparent 32%),
+    radial-gradient(circle at top right, rgba(63, 52, 209, 0.10), transparent 28%),
+    var(--bg) !important;
+  color: var(--text) !important;
+}
+
+/* GLOBAL BRAND COLOURS */
+
+.navbar h2,
+.small-link,
+.section-row-title a,
+.dashboard-card span,
+.dash-stat strong,
+.dash-icon,
+.empty-logo,
+.tab-btn.active,
+.seller-line span,
+.featured-shop-card span,
+#message,
+#status,
+#shopMessage,
+#itemMessage,
+#checkoutMessage,
+#paymentMessage,
+#reviewMessage,
+#slotMessage {
+  color: var(--primary) !important;
+}
+
+.navbar a:hover {
+  background: #eef2ff !important;
+  color: var(--primary) !important;
+}
+
+.btn,
+button {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(63, 52, 209, 0.18) !important;
+}
+
+.btn:hover,
+button:hover {
+  box-shadow: 0 14px 28px rgba(63, 52, 209, 0.24) !important;
+}
+
+.btn.secondary {
+  background: #ffffff !important;
+  color: var(--primary) !important;
+}
+
+.secondary-btn {
+  background: #6b7280 !important;
+  color: #ffffff !important;
+}
+
+.toggle-btn,
+.hero-shop-btn,
+.amazon-search button,
+.market-pro-search button,
+.mobile-search button,
+.mobile-search-box button,
+.top-ad-content button,
+.premium-ad-content button {
+  background: #f59e0b !important;
+  color: #111827 !important;
+}
+
+.danger-btn {
+  background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+}
+
+.approve-btn {
+  background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+}
+
+.edit-btn,
+.ready-btn {
+  background: linear-gradient(135deg, #2563eb, #60a5fa) !important;
+}
+
+.badge,
+.dash-icon,
+.shop-logo-fallback {
+  background: #eef2ff !important;
+  color: var(--primary-dark) !important;
+}
+
+/* DASHBOARD / ADMIN HERO FIX */
+
+.dashboard-hero,
+.admin-hero,
+.admin-dashboard-hero,
+.dashboard-page .dashboard-hero,
+.home-hero,
+.auth-body,
+.market-hero,
+.hero,
+.compact-hero,
+.seller-cta {
+  background:
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.24), transparent 35%),
+    linear-gradient(135deg, #111827, #3f34d1) !important;
+  color: #ffffff !important;
+}
+
+.dashboard-hero h1,
+.admin-hero h1,
+.admin-dashboard-hero h1,
+.dashboard-page .dashboard-hero h1 {
+  color: #ffffff !important;
+}
+
+.dashboard-hero p,
+.admin-hero p,
+.admin-dashboard-hero p,
+.dashboard-page .dashboard-hero p,
+.home-hero-content p,
+.market-hero p,
+.hero p,
+.compact-hero p {
+  color: #dbeafe !important;
+  opacity: 1 !important;
+}
+
+.dashboard-hero .muted,
+.admin-hero .muted,
+.admin-dashboard-hero .muted {
+  color: #dbeafe !important;
+  opacity: 1 !important;
+}
+
+.dashboard-hero .hero-badge,
+.admin-hero .hero-badge,
+.admin-dashboard-hero .hero-badge,
+.dashboard-hero .badge,
+.admin-hero .badge,
+.admin-dashboard-hero .badge {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* DESKTOP MARKETPLACE HEADER */
 
 .market-pro-header {
-  background: var(--market-purple) !important;
-  color: #fff !important;
-  padding: 18px 5% !important;
+  background: #3f34d1 !important;
+  color: #ffffff !important;
+  padding: 16px 5% !important;
   display: grid !important;
-  grid-template-columns: 210px minmax(420px, 1fr) auto !important;
+  grid-template-columns: 220px minmax(480px, 1fr) auto !important;
   align-items: center !important;
-  gap: 22px !important;
-  box-shadow: 0 14px 35px rgba(63, 52, 209, 0.25) !important;
+  gap: 24px !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 100 !important;
+  box-shadow: 0 14px 35px rgba(63, 52, 209, 0.24) !important;
 }
 
-/* LOGO FIX - no crop, no tiny logo */
 .market-pro-logo {
-  width: 210px !important;
-  height: 64px !important;
+  width: 220px !important;
+  height: 72px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
   overflow: visible !important;
-  position: relative !important;
   flex-shrink: 0 !important;
 }
 
 .market-pro-logo img {
-  height: 60px !important;
+  height: 70px !important;
   width: auto !important;
-  max-width: 205px !important;
+  max-width: 220px !important;
   object-fit: contain !important;
   transform: none !important;
   position: static !important;
 }
 
-/* SEARCH */
 .market-pro-search {
   display: grid !important;
-  grid-template-columns: 165px 1fr 120px !important;
-  background: #fff !important;
-  border-radius: 14px !important;
+  grid-template-columns: 170px 1fr 135px !important;
+  background: #ffffff !important;
+  border-radius: 16px !important;
   overflow: hidden !important;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18) !important;
 }
 
 .market-pro-search select,
 .market-pro-search input {
-  height: 52px !important;
+  height: 56px !important;
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  font-size: 16px !important;
 }
 
 .market-pro-search button {
-  height: 52px !important;
+  height: 56px !important;
   border-radius: 0 !important;
-  background: var(--market-orange) !important;
-  color: #111827 !important;
   box-shadow: none !important;
   font-weight: 900 !important;
 }
 
-/* NAV */
 .market-pro-nav {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  gap: 19px !important;
-  font-weight: 900 !important;
+  gap: 20px !important;
   white-space: nowrap !important;
 }
 
 .market-pro-nav a {
-  color: #fff !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  font-size: 17px !important;
 }
 
-/* PAGE */
+/* MARKETPLACE PAGE */
+
 .market-pro-page {
   width: min(1450px, 92%) !important;
   margin: 28px auto 70px !important;
 }
 
-/* Remove the duplicated filter/search cards that pushed mobile down */
 .market-pro-control-panel {
   display: none !important;
 }
 
 /* CATEGORY ICONS */
+
 .category-icon-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)) !important;
   gap: 18px !important;
   margin: 22px 0 28px !important;
 }
 
 .category-icon-card {
   min-height: 118px !important;
-  background: #fff !important;
+  background: #ffffff !important;
   border: 1px solid #e5e7eb !important;
   border-radius: 24px !important;
   padding: 18px 12px !important;
   text-align: center !important;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08) !important;
-  color: var(--market-purple) !important;
+  color: var(--primary) !important;
   transition: 0.2s ease !important;
   display: grid !important;
   place-items: center !important;
@@ -3147,7 +3307,7 @@ label {
 
 .category-icon-card:hover,
 .category-icon-card.active {
-  border-color: var(--market-purple) !important;
+  border-color: var(--primary) !important;
   box-shadow: 0 18px 45px rgba(63, 52, 209, 0.18) !important;
   transform: translateY(-4px) !important;
 }
@@ -3159,20 +3319,21 @@ label {
 }
 
 .category-icon-circle {
-  width: 50px !important;
-  height: 50px !important;
+  width: 48px !important;
+  height: 48px !important;
   display: grid !important;
   place-items: center !important;
   margin: 0 auto !important;
 }
 
 .category-svg-icon {
-  width: 42px !important;
-  height: 42px !important;
-  color: var(--market-purple) !important;
+  width: 40px !important;
+  height: 40px !important;
+  color: var(--primary) !important;
 }
 
 /* HERO */
+
 .market-pro-hero {
   min-height: 330px !important;
   border-radius: 30px !important;
@@ -3183,9 +3344,9 @@ label {
   gap: 30px !important;
   align-items: center !important;
   background:
-    radial-gradient(circle at 88% 22%, rgba(255,255,255,.18), transparent 32%),
-    linear-gradient(135deg, var(--market-purple), #24179c) !important;
-  color: #fff !important;
+    radial-gradient(circle at 88% 22%, rgba(255, 255, 255, 0.18), transparent 32%),
+    linear-gradient(135deg, #3f34d1, #24179c) !important;
+  color: #ffffff !important;
   overflow: hidden !important;
   box-shadow: 0 28px 70px rgba(63, 52, 209, 0.30) !important;
 }
@@ -3198,9 +3359,11 @@ label {
   border-radius: 999px !important;
   font-weight: 900 !important;
   margin-bottom: 14px !important;
+  color: #ffffff !important;
 }
 
 .market-pro-hero h1 {
+  color: #ffffff !important;
   font-size: clamp(40px, 6vw, 72px) !important;
   line-height: 0.98 !important;
   margin: 0 0 14px !important;
@@ -3216,8 +3379,6 @@ label {
 .hero-shop-btn {
   display: inline-block !important;
   margin-top: 18px !important;
-  background: var(--market-orange) !important;
-  color: #111827 !important;
   padding: 14px 28px !important;
   border-radius: 14px !important;
   font-weight: 900 !important;
@@ -3234,9 +3395,9 @@ label {
   top: 22px !important;
   width: 270px !important;
   height: 210px !important;
-  background: linear-gradient(135deg, #6366f1, #22c55e) !important;
+  background: linear-gradient(135deg, #8b5cf6, #f59e0b) !important;
   border-radius: 46% 54% 51% 49% / 52% 45% 55% 48% !important;
-  opacity: .95 !important;
+  opacity: 0.95 !important;
 }
 
 .hero-bag {
@@ -3245,14 +3406,14 @@ label {
   bottom: 15px !important;
   width: 150px !important;
   height: 150px !important;
-  background: linear-gradient(135deg, #21178f, var(--market-purple)) !important;
+  background: linear-gradient(135deg, #21178f, #3f34d1) !important;
   border-radius: 22px !important;
   display: grid !important;
   place-items: center !important;
-  color: #fff !important;
+  color: #ffffff !important;
   font-size: 72px !important;
   font-weight: 900 !important;
-  box-shadow: 0 22px 45px rgba(0,0,0,.25) !important;
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.25) !important;
 }
 
 .hero-bag::before {
@@ -3266,12 +3427,13 @@ label {
   border-radius: 40px 40px 0 0 !important;
 }
 
-/* FEATURED SHOPS */
-.market-pro-featured,
-.featured-shops-section {
+/* FEATURED SHOPS / BANNERS */
+
+.featured-shops-section,
+.market-pro-featured {
   width: 100% !important;
   margin: 24px 0 !important;
-  background: #fff !important;
+  background: #ffffff !important;
   border-radius: 24px !important;
   padding: 22px !important;
   box-shadow: 0 16px 45px rgba(15, 23, 42, 0.08) !important;
@@ -3310,7 +3472,6 @@ label {
   margin: 0 auto 10px !important;
 }
 
-/* PREMIUM AD */
 .market-premium-ad,
 #topAdBanner {
   margin: 26px 0 !important;
@@ -3326,20 +3487,8 @@ label {
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22) !important;
 }
 
-#topAdBanner .top-ad-content h2,
-.premium-ad-content h2 {
-  font-size: clamp(38px, 6vw, 74px) !important;
-}
-
-#topAdBanner .top-ad-content button,
-.premium-ad-content button {
-  background: var(--market-orange) !important;
-  color: #111827 !important;
-  border-radius: 14px !important;
-  padding: 14px 28px !important;
-}
-
 /* PRODUCTS */
+
 .market-pro-products-layout {
   display: grid !important;
   grid-template-columns: 260px 1fr !important;
@@ -3348,7 +3497,7 @@ label {
 }
 
 .market-pro-sidebar {
-  background: #fff !important;
+  background: #ffffff !important;
   border-radius: 22px !important;
   padding: 22px !important;
   box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08) !important;
@@ -3357,19 +3506,11 @@ label {
   height: fit-content !important;
 }
 
-.market-pro-sidebar h3 {
-  margin-top: 0 !important;
-}
-
-.market-pro-products-main {
-  min-width: 0 !important;
-}
-
 .market-heading.compact-heading {
   border-radius: 22px !important;
   padding: 20px 22px !important;
   margin-bottom: 18px !important;
-  background: #fff !important;
+  background: #ffffff !important;
   box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08) !important;
 }
 
@@ -3380,7 +3521,7 @@ label {
 }
 
 .market-product-card {
-  background: #fff !important;
+  background: #ffffff !important;
   border: 1px solid #e5e7eb !important;
   border-radius: 22px !important;
   overflow: hidden !important;
@@ -3456,115 +3597,241 @@ label {
   margin-top: 9px !important;
 }
 
-.product-discount-badge,
-.product-stock-badge {
-  position: absolute !important;
-  left: 10px !important;
-  top: 10px !important;
-  z-index: 3 !important;
-  background: #ef4444 !important;
-  color: #fff !important;
-  border-radius: 999px !important;
-  padding: 6px 10px !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
+/* SHOP PAGE BANNERS */
+.amazon-hero,
+.pro-shop-banner {
+  background:
+    linear-gradient(90deg, rgba(17, 24, 39, 0.88), rgba(63, 52, 209, 0.48)),
+    linear-gradient(135deg, #111827, #3f34d1) !important;
 }
 
-.product-stock-badge {
-  top: auto !important;
-  bottom: 10px !important;
-  background: var(--market-orange) !important;
-  color: #111827 !important;
+.pro-shop-overlay {
+  background: linear-gradient(90deg, rgba(17, 24, 39, 0.84), rgba(63, 52, 209, 0.35)) !important;
 }
 
-.product-stock-badge.danger {
-  background: #dc2626 !important;
-  color: #fff !important;
+.online-badge {
+  background: #3f34d1 !important;
+  color: #ffffff !important;
 }
 
-/* MOBILE */
+/* FORM FOCUS */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary-light) !important;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16) !important;
+}
+
+/* MOBILE HAMBURGER MARKETPLACE */
+
+.mobile-market-header,
+.mobile-search-area,
+.mobile-side-menu,
+.mobile-menu-overlay {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .market-pro-header {
-    position: static !important;
-    display: flex !important;
-    flex-direction: column !important;
+    display: none !important;
+  }
+
+  .mobile-market-header {
+    display: grid !important;
+    grid-template-columns: 54px 1fr 54px !important;
     align-items: center !important;
-    gap: 18px !important;
-    padding: 20px 18px 18px !important;
+    gap: 12px !important;
+    background: #3f34d1 !important;
+    color: #ffffff !important;
+    padding: 16px 18px 12px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 999 !important;
+    box-shadow: 0 14px 35px rgba(63, 52, 209, 0.25) !important;
   }
 
-  .market-pro-logo {
-    width: 260px !important;
-    height: 82px !important;
-    align-self: flex-start !important;
+  .mobile-market-logo {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
   }
 
-  .market-pro-logo img {
+  .mobile-market-logo img {
     height: 78px !important;
-    max-width: 255px !important;
+    width: auto !important;
+    max-width: 240px !important;
+    object-fit: contain !important;
     transform: none !important;
   }
 
-  .market-pro-search {
-    width: 100% !important;
-    grid-template-columns: 1fr !important;
+  .mobile-hamburger,
+  .mobile-cart-link {
+    width: 54px !important;
+    height: 54px !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 16px !important;
+    background: #3027a8 !important;
+    color: #ffffff !important;
+    font-size: 28px !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .mobile-search-area {
+    display: block !important;
+    background: #3f34d1 !important;
+    padding: 0 18px 18px !important;
+  }
+
+  .mobile-search-box {
+    display: grid !important;
+    grid-template-columns: 1fr 58px !important;
+    background: #ffffff !important;
     border-radius: 18px !important;
+    overflow: hidden !important;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18) !important;
   }
 
-  .market-pro-search select,
-  .market-pro-search input,
-  .market-pro-search button {
-    height: 52px !important;
-    font-size: 15px !important;
-  }
-
-  .market-pro-search input {
-    border-top: 1px solid #e5e7eb !important;
-  }
-
-  .market-pro-nav {
-    width: 100% !important;
-    justify-content: space-evenly !important;
-    gap: 8px !important;
-    margin-top: 2px !important;
-  }
-
-  .market-pro-nav a {
+  .mobile-search-box input {
+    height: 58px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
     font-size: 17px !important;
+  }
+
+  .mobile-search-box button {
+    height: 58px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    font-size: 20px !important;
+    box-shadow: none !important;
+  }
+
+  .mobile-side-menu {
+    position: fixed !important;
+    top: 0 !important;
+    left: -330px !important;
+    width: 310px !important;
+    max-width: 84vw !important;
+    height: 100vh !important;
+    background: #ffffff !important;
+    z-index: 1001 !important;
+    padding: 18px !important;
+    box-shadow: 24px 0 60px rgba(15, 23, 42, 0.24) !important;
+    transition: left 0.25s ease !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .mobile-side-menu.show {
+    left: 0 !important;
+    display: flex !important;
+  }
+
+  .mobile-menu-overlay.show {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.42) !important;
+    z-index: 1000 !important;
+  }
+
+  .mobile-menu-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 14px !important;
+  }
+
+  .mobile-menu-head img {
+    height: 62px !important;
+    width: auto !important;
+    object-fit: contain !important;
+  }
+
+  .mobile-menu-head button {
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    font-size: 28px !important;
+  }
+
+  .mobile-side-menu a {
+    color: #111827 !important;
+    background: #f8fafc !important;
+    padding: 14px 16px !important;
+    border-radius: 14px !important;
+    font-weight: 900 !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  .mobile-side-menu a:hover {
+    color: #ffffff !important;
+    background: #3f34d1 !important;
+  }
+
+  body.menu-open {
+    overflow: hidden !important;
   }
 
   .market-pro-page {
     width: 100% !important;
     margin: 0 auto 50px !important;
-    padding: 0 14px !important;
+    padding: 0 12px !important;
   }
 
+  /* smaller mobile categories */
   .category-icon-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 16px !important;
-    margin: 0 0 24px !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin: 14px 0 18px !important;
     padding: 0 !important;
   }
 
   .category-icon-card {
-    min-height: 112px !important;
-    border-radius: 22px !important;
+    min-height: 88px !important;
+    height: 88px !important;
+    border-radius: 18px !important;
+    padding: 9px 6px !important;
+    gap: 4px !important;
+  }
+
+  .category-icon-circle {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .category-svg-icon {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .category-icon-card span:last-child {
+    font-size: 12px !important;
+    line-height: 1.1 !important;
   }
 
   .market-pro-hero {
     grid-template-columns: 1fr !important;
     min-height: auto !important;
-    margin: 0 0 24px !important;
-    padding: 34px 28px !important;
+    margin: 0 0 22px !important;
+    padding: 30px 24px !important;
     border-radius: 24px !important;
   }
 
   .market-pro-hero h1 {
-    font-size: 42px !important;
+    font-size: 38px !important;
+    letter-spacing: -1px !important;
   }
 
   .market-pro-hero p {
-    font-size: 17px !important;
+    font-size: 16px !important;
   }
 
   .hero-illustration {
@@ -3575,38 +3842,11 @@ label {
   .market-pro-featured {
     width: 100% !important;
     border-radius: 22px !important;
-    padding: 18px !important;
+    padding: 16px !important;
   }
 
   .featured-shop-card {
-    min-width: 170px !important;
-  }
-
-  .market-premium-ad,
-  #topAdBanner {
-    margin: 22px 0 !important;
-  }
-
-  #topAdBanner .top-ad-inner,
-  .market-premium-ad .top-ad-inner,
-  .premium-ad-inner {
-    height: 230px !important;
-    border-radius: 22px !important;
-  }
-
-  #topAdBanner .top-ad-content,
-  .premium-ad-content {
-    padding: 24px !important;
-  }
-
-  #topAdBanner .top-ad-content h2,
-  .premium-ad-content h2 {
-    font-size: 34px !important;
-  }
-
-  #topAdBanner .top-ad-content p,
-  .premium-ad-content p {
-    font-size: 15px !important;
+    min-width: 150px !important;
   }
 
   .market-pro-products-layout {
@@ -3619,11 +3859,11 @@ label {
 
   .market-product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 14px !important;
+    gap: 12px !important;
   }
 
   .market-product-img {
-    height: 165px !important;
+    height: 150px !important;
   }
 
   .market-product-body {
@@ -3651,417 +3891,43 @@ label {
   }
 }
 
-@media (max-width: 480px) {
-  .market-pro-page {
-    padding: 0 12px !important;
+@media (max-width: 520px) {
+  .mobile-market-logo img {
+    height: 72px !important;
+    max-width: 215px !important;
   }
 
-  .market-pro-logo {
-    width: 245px !important;
-    height: 78px !important;
+  .category-icon-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 9px !important;
   }
 
-  .market-pro-logo img {
-    height: 74px !important;
-    max-width: 240px !important;
+  .category-icon-card {
+    height: 82px !important;
+    min-height: 82px !important;
+    border-radius: 17px !important;
   }
 
-  .market-pro-nav a {
-    font-size: 16px !important;
+  .category-svg-icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .category-icon-card span:last-child {
+    font-size: 11px !important;
   }
 
   .market-product-img {
-    height: 140px !important;
-  }
-
-  .market-product-body h3 {
-    font-size: 13px !important;
+    height: 135px !important;
   }
 
   .market-pro-hero h1 {
-    font-size: 36px !important;
-  }
-}
-
-/* =========================================================
-   MAUMARKET PURPLE BRAND OVERRIDE
-   Keep this block at the VERY END of styles.css
-   ========================================================= */
-
-:root {
-  --primary: #3f34d1;
-  --primary-dark: #3027a8;
-  --primary-light: #6366f1;
-  --accent: #f59e0b;
-  --danger: #dc2626;
-  --success: #16a34a;
-  --blue: #2563eb;
-  --dark: #111827;
-  --text: #111827;
-  --muted: #6b7280;
-  --bg: #f3f4ff;
-  --card: #ffffff;
-  --border: #e5e7eb;
-  --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-  --shadow-soft: 0 8px 25px rgba(15, 23, 42, 0.06);
-  --radius: 18px;
-}
-
-body {
-  background:
-    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 32%),
-    radial-gradient(circle at top right, rgba(63, 52, 209, 0.08), transparent 28%),
-    var(--bg) !important;
-}
-
-.navbar h2,
-.small-link,
-.section-row-title a,
-.dashboard-card span,
-#message,
-#status,
-#shopMessage,
-#itemMessage,
-#checkoutMessage,
-#paymentMessage,
-#reviewMessage,
-#slotMessage {
-  color: var(--primary) !important;
-}
-
-.navbar a:hover {
-  background: #eef2ff !important;
-  color: var(--primary) !important;
-}
-
-.btn,
-button {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
-  box-shadow: 0 10px 22px rgba(63, 52, 209, 0.18) !important;
-}
-
-.btn:hover,
-button:hover {
-  box-shadow: 0 14px 28px rgba(63, 52, 209, 0.24) !important;
-}
-
-.btn.secondary {
-  background: white !important;
-  color: var(--primary) !important;
-}
-
-.toggle-btn {
-  background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
-  color: #111827 !important;
-}
-
-.danger-btn {
-  background: linear-gradient(135deg, #dc2626, #ef4444) !important;
-}
-
-.approve-btn {
-  background: linear-gradient(135deg, #16a34a, #22c55e) !important;
-}
-
-.edit-btn,
-.ready-btn {
-  background: linear-gradient(135deg, #2563eb, #60a5fa) !important;
-}
-
-/* Admin/dashboard hero: replaces green/turquoise with MauMarket purple */
-.dashboard-hero,
-.admin-hero,
-.admin-dashboard-hero,
-.dashboard-page .dashboard-hero,
-.home-hero,
-.auth-body,
-.market-hero,
-.hero,
-.compact-hero,
-.seller-cta {
-  background:
-    radial-gradient(circle at top right, rgba(245, 158, 11, 0.24), transparent 35%),
-    linear-gradient(135deg, #111827, #3f34d1) !important;
-  color: #ffffff !important;
-}
-
-.dashboard-hero p,
-.admin-hero p,
-.admin-dashboard-hero p,
-.dashboard-page .dashboard-hero p,
-.home-hero-content p,
-.market-hero p,
-.hero p,
-.compact-hero p {
-  color: #eef2ff !important;
-}
-
-.dashboard-hero .muted,
-.dashboard-hero p,
-.dashboard-hero .dashboard-subtitle,
-.admin-hero .muted,
-.admin-hero p,
-.admin-dashboard-hero .muted,
-.admin-dashboard-hero p {
-  color: #dbeafe !important;
-  opacity: 1 !important;
-}
-
-.dashboard-hero .hero-badge,
-.admin-hero .hero-badge,
-.admin-dashboard-hero .hero-badge,
-.dashboard-hero .badge,
-.admin-hero .badge,
-.admin-dashboard-hero .badge {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: #ffffff !important;
-}
-
-.dash-stat strong,
-.dash-icon,
-.empty-logo,
-.online-badge,
-.tab-btn.active,
-.seller-line span,
-.featured-shop-card span {
-  color: var(--primary) !important;
-}
-
-.dash-icon,
-.badge,
-.featured-shop-card img,
-.shop-logo-fallback {
-  background: #eef2ff !important;
-}
-
-.tab-btn.active {
-  border-bottom-color: var(--primary) !important;
-}
-
-.amazon-topbar,
-.amazon-subnav,
-.market-mobile-header,
-.market-category-strip,
-.market-pro-header,
-.mobile-market-header {
-  background: #3f34d1 !important;
-  color: #ffffff !important;
-}
-
-.amazon-search button,
-.mobile-search button,
-.market-pro-search button,
-.hero-shop-btn,
-.top-ad-content button,
-.premium-ad-content button {
-  background: #f59e0b !important;
-  color: #111827 !important;
-}
-
-.hamburger-btn,
-.mobile-nav a,
-.mobile-side-menu a:hover {
-  background: #3027a8 !important;
-  color: #ffffff !important;
-}
-
-.market-pro-hero {
-  background:
-    radial-gradient(circle at 88% 22%, rgba(255,255,255,.18), transparent 32%),
-    linear-gradient(135deg, #3f34d1, #24179c) !important;
-  color: #ffffff !important;
-}
-
-.amazon-hero,
-.pro-shop-banner {
-  background:
-    linear-gradient(90deg, rgba(17, 24, 39, 0.88), rgba(63, 52, 209, 0.48)),
-    linear-gradient(135deg, #111827, #3f34d1) !important;
-}
-
-.pro-shop-overlay {
-  background: linear-gradient(90deg, rgba(17,24,39,0.84), rgba(63,52,209,0.35)) !important;
-}
-
-.online-badge {
-  background: #3f34d1 !important;
-  color: #ffffff !important;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--primary-light) !important;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16) !important;
-}
-
-.category-card:hover,
-.category-icon-card,
-.category-svg-icon {
-  color: var(--primary) !important;
-}
-
-.category-icon-card:hover,
-.category-icon-card.active {
-  border-color: var(--primary) !important;
-  box-shadow: 0 18px 45px rgba(63, 52, 209, 0.18) !important;
-}
-
-.category-icon-card span:last-child {
-  color: #111827 !important;
-}
-
-.market-pro-logo,
-.mobile-market-logo {
-  overflow: visible !important;
-}
-
-.market-pro-logo img,
-.mobile-market-logo img {
-  transform: none !important;
-  object-fit: contain !important;
-}
-
-/* Mobile hamburger layout */
-.mobile-market-header {
-  display: none;
-}
-
-.mobile-menu-overlay {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  .market-pro-header {
-    display: none !important;
-  }
-
-  .mobile-market-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 14px 18px !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 999 !important;
-  }
-
-  .mobile-market-logo img {
-    height: 58px !important;
-    width: auto !important;
-    max-width: 210px !important;
-  }
-
-  .mobile-hamburger,
-  .mobile-cart-link {
-    width: 46px !important;
-    height: 46px !important;
-    display: grid !important;
-    place-items: center !important;
-    border-radius: 14px !important;
-    background: #3027a8 !important;
-    color: #fff !important;
-    font-size: 24px !important;
-    box-shadow: none !important;
-  }
-
-  .mobile-search-area {
-    display: block !important;
-    background: #3f34d1 !important;
-    padding: 0 18px 16px !important;
-  }
-
-  .mobile-search-box {
-    display: grid !important;
-    grid-template-columns: 1fr 54px !important;
-    background: #fff !important;
-    border-radius: 16px !important;
-    overflow: hidden !important;
-  }
-
-  .mobile-search-box input {
-    margin: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    height: 54px !important;
-  }
-
-  .mobile-search-box button {
-    margin: 0 !important;
-    border-radius: 0 !important;
-    height: 54px !important;
-    padding: 0 !important;
-  }
-
-  .mobile-side-menu {
-    position: fixed !important;
-    top: 0 !important;
-    left: -330px !important;
-    width: 310px !important;
-    max-width: 84vw !important;
-    height: 100vh !important;
-    background: #ffffff !important;
-    z-index: 1001 !important;
-    padding: 18px !important;
-    box-shadow: 24px 0 60px rgba(15, 23, 42, 0.24) !important;
-    transition: left 0.25s ease !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-  }
-
-  .mobile-side-menu.show {
-    left: 0 !important;
-  }
-
-  .mobile-menu-overlay.show {
-    display: block !important;
-    position: fixed !important;
-    inset: 0 !important;
-    background: rgba(15, 23, 42, 0.42) !important;
-    z-index: 1000 !important;
-  }
-
-  .mobile-menu-head {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    margin-bottom: 14px !important;
-  }
-
-  .mobile-menu-head img {
-    height: 56px !important;
-  }
-
-  .mobile-menu-head button {
-    width: 42px !important;
-    height: 42px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    font-size: 28px !important;
-  }
-
-  .mobile-side-menu a {
-    color: #111827 !important;
-    background: #f8fafc !important;
-    padding: 14px 16px !important;
-    border-radius: 14px !important;
-    font-weight: 900 !important;
-    border: 1px solid #e5e7eb !important;
-  }
-
-  .mobile-side-menu a:hover {
-    color: #ffffff !important;
-    background: #3f34d1 !important;
-  }
-
-  .market-pro-page {
-    margin-top: 0 !important;
+    font-size: 34px !important;
   }
 }
 
 @media (min-width: 901px) {
+  .mobile-market-header,
   .mobile-search-area,
   .mobile-side-menu,
   .mobile-menu-overlay {
