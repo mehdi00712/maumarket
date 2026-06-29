@@ -10,13 +10,11 @@
 <body>
 
 <header class="market-pro-header">
-
   <a href="index.html" class="market-pro-logo">
     <img src="images/maumarketlogo.png" alt="MauMarket">
   </a>
 
   <div class="market-pro-search">
-
     <select id="topCategoryFilter">
       <option value="">All Categories</option>
     </select>
@@ -26,10 +24,7 @@
       type="text"
       placeholder="Search products, services, shops...">
 
-    <button id="searchBtn" type="button">
-      Search
-    </button>
-
+    <button id="searchBtn" type="button">Search</button>
   </div>
 
   <nav class="market-pro-nav">
@@ -38,209 +33,124 @@
     <a href="cart.html">Cart</a>
     <a href="seller.html">Sell</a>
   </nav>
-
 </header>
 
+<header class="mobile-market-header">
+  <button id="mobileMenuBtn" class="mobile-hamburger" type="button">☰</button>
+
+  <a href="index.html" class="mobile-market-logo">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
+  </a>
+
+  <a href="cart.html" class="mobile-cart-link">🛒</a>
+</header>
+
+<div id="mobileMenuOverlay" class="mobile-menu-overlay"></div>
+
+<nav id="mobileNav" class="mobile-side-menu">
+  <div class="mobile-menu-head">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
+    <button id="mobileMenuClose" type="button">×</button>
+  </div>
+
+  <a href="index.html">🏠 Home</a>
+  <a href="products.html">🛍 Marketplace</a>
+  <a href="my-orders.html">📦 Orders</a>
+  <a href="cart.html">🛒 Cart</a>
+  <a href="dashboard.html">👤 Dashboard</a>
+  <a href="seller.html">💼 Sell</a>
+  <a href="wishlist.html">❤️ Wishlist</a>
+</nav>
+
+<section class="mobile-search-area">
+  <div class="mobile-search-box">
+    <input
+      id="searchInput2"
+      type="text"
+      placeholder="Search MauMarket...">
+    <button id="searchBtn2" type="button">🔍</button>
+  </div>
+</section>
 
 <main class="market-pro-page">
 
+  <section id="categoryIconGrid" class="category-icon-grid">
+    Loading categories...
+  </section>
 
-
-
-<!-- CATEGORY ICONS -->
-
-<section
-id="categoryIconGrid"
-class="category-icon-grid">
-
-Loading categories...
-
-</section>
-
-
-
-
-
-<!-- HERO -->
-
-<section class="market-pro-hero">
-
+  <section class="market-pro-hero">
     <div class="hero-content">
+      <span class="hero-mini-label">Mauritius Local Marketplace</span>
 
-        <span class="hero-mini-label">
-            Mauritius Local Marketplace
-        </span>
+      <h1>Discover Mauritius Marketplace</h1>
 
-        <h1>
-            Discover Mauritius Marketplace
-        </h1>
+      <p>
+        Shop local products and services from trusted MauMarket sellers across Mauritius.
+      </p>
 
-        <p>
-            Shop local products and services from trusted MauMarket sellers across Mauritius.
-        </p>
-
-        <a href="#marketProducts"
-           class="hero-shop-btn">
-            Shop Now
-        </a>
-
+      <a href="#marketProducts" class="hero-shop-btn">Shop Now</a>
     </div>
 
     <div class="hero-illustration">
-
-        <div class="hero-island"></div>
-
-        <div class="hero-bag">
-            m
-        </div>
-
+      <div class="hero-island"></div>
+      <div class="hero-bag">m</div>
     </div>
+  </section>
 
-</section>
-
-
-
-
-
-<!-- FEATURED SHOPS -->
-
-<section
-id="featuredShopsSection"
-class="featured-shops-section market-pro-featured">
-
+  <section id="featuredShopsSection" class="featured-shops-section market-pro-featured">
     <div class="section-row-title">
-
-        <h2>
-            Featured Shops
-        </h2>
-
-        <a href="products.html">
-            View all
-        </a>
-
+      <h2>Featured Shops</h2>
+      <a href="products.html">View all</a>
     </div>
 
-    <div
-        id="featuredShops"
-        class="featured-shops-row">
-
-        Loading featured shops...
-
+    <div id="featuredShops" class="featured-shops-row">
+      Loading featured shops...
     </div>
+  </section>
 
-</section>
+  <section
+    id="topAdBanner"
+    class="market-premium-ad"
+    style="display:none;">
+  </section>
 
-
-
-
-
-<!-- PREMIUM AD -->
-
-<section
-id="topAdBanner"
-class="market-premium-ad"
-style="display:none;">
-
-</section>
-
-
-
-
-
-<!-- PRODUCTS -->
-
-<section
-id="marketProducts"
-class="market-pro-products-layout">
-
-
-
-
-    <!-- DESKTOP SIDEBAR -->
+  <section id="marketProducts" class="market-pro-products-layout">
 
     <aside class="market-pro-sidebar">
+      <h3>Filters</h3>
 
-        <h3>
-            Filters
-        </h3>
+      <label>Category</label>
+      <select id="sideCategoryFilter">
+        <option value="">All Categories</option>
+      </select>
 
-        <label>
-            Category
-        </label>
-
-        <select id="sideCategoryFilter">
-            <option value="">
-                All Categories
-            </option>
-        </select>
-
-
-        <label>
-            Sort
-        </label>
-
-        <select id="sideSortFilter">
-
-            <option value="newest">
-                Newest
-            </option>
-
-            <option value="low-high">
-                Price Low to High
-            </option>
-
-            <option value="high-low">
-                Price High to Low
-            </option>
-
-            <option value="rating">
-                Highest Rated
-            </option>
-
-        </select>
-
+      <label>Sort</label>
+      <select id="sideSortFilter">
+        <option value="newest">Newest</option>
+        <option value="low-high">Price Low to High</option>
+        <option value="high-low">Price High to Low</option>
+        <option value="rating">Highest Rated</option>
+      </select>
     </aside>
 
-
-
-
-
-
     <section class="market-pro-products-main">
-
-        <div class="market-heading compact-heading">
-
-            <div>
-
-                <h2>
-                    Featured Products & Services
-                </h2>
-
-                <p id="resultCount">
-                    Loading...
-                </p>
-
-            </div>
-
+      <div class="market-heading compact-heading">
+        <div>
+          <h2>Featured Products & Services</h2>
+          <p id="resultCount">Loading...</p>
         </div>
+      </div>
 
-
-
-        <div
-            id="productsGrid"
-            class="market-product-grid">
-
-            Loading marketplace...
-
-        </div>
-
+      <div id="productsGrid" class="market-product-grid">
+        Loading marketplace...
+      </div>
     </section>
 
-</section>
+  </section>
 
 </main>
 
-<script type="module" src="js/products.js?v=4.3-market-redesign"></script>
+<script type="module" src="js/products.js?v=4.4-mobile-hamburger"></script>
 
 </body>
 </html>
