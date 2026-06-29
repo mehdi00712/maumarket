@@ -36,6 +36,8 @@ const featuredShopsSection = document.getElementById("featuredShopsSection");
 
 const mobileMenuBtn = document.getElementById("mobileMenuBtn");
 const mobileNav = document.getElementById("mobileNav");
+const mobileMenuOverlay = document.getElementById("mobileMenuOverlay");
+const mobileMenuClose = document.getElementById("mobileMenuClose");
 
 const categoryIconGrid = document.getElementById("categoryIconGrid");
 
@@ -57,8 +59,37 @@ activeSearch = urlSearch;
 if (searchInput) searchInput.value = activeSearch;
 if (searchInput2) searchInput2.value = activeSearch;
 
+function openMobileMenu() {
+  mobileNav?.classList.add("show");
+  mobileMenuOverlay?.classList.add("show");
+  document.body.classList.add("menu-open");
+}
+
+function closeMobileMenu() {
+  mobileNav?.classList.remove("show");
+  mobileMenuOverlay?.classList.remove("show");
+  document.body.classList.remove("menu-open");
+}
+
 mobileMenuBtn?.addEventListener("click", () => {
-  mobileNav?.classList.toggle("show");
+  if (mobileNav?.classList.contains("show")) {
+    closeMobileMenu();
+  } else {
+    openMobileMenu();
+  }
+});
+
+mobileMenuClose?.addEventListener("click", closeMobileMenu);
+mobileMenuOverlay?.addEventListener("click", closeMobileMenu);
+
+mobileNav?.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", closeMobileMenu);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeMobileMenu();
+  }
 });
 
 async function loadCategories() {
@@ -772,10 +803,6 @@ function normalizeIcon(icon) {
   if (value.includes("gift")) return "gift";
 
   return "other";
-}
-
-function getCategoryIconKey(name, icon) {
-  return normalizeIcon(icon || name);
 }
 
 const ICON_LABELS = {
