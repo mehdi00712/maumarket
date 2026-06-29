@@ -24,6 +24,8 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
+const COMMISSION_RATE = 0.10;
+
 const shopName = document.getElementById("shopName");
 const shopDescription = document.getElementById("shopDescription");
 const shopPhone = document.getElementById("shopPhone");
@@ -50,6 +52,10 @@ const saveItemBtn = document.getElementById("saveItemBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
 const itemMessage = document.getElementById("itemMessage");
 const myItems = document.getElementById("myItems");
+
+const sellerPricePreview = document.getElementById("sellerPricePreview");
+const commissionPreview = document.getElementById("commissionPreview");
+const buyerPricePreview = document.getElementById("buyerPricePreview");
 
 let currentUser = null;
 let currentUserData = null;
@@ -84,9 +90,12 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  updatePricePreview();
   await loadShop();
   await loadMyItems();
 });
+
+itemPrice?.addEventListener("input", updatePricePreview);
 
 async function uploadImage(file, folder) {
   const safeName = file.name.replaceAll(" ", "-");
@@ -94,6 +103,36 @@ async function uploadImage(file, folder) {
   const imageRef = ref(storage, `${folder}/${currentUser.uid}/${fileName}`);
   await uploadBytes(imageRef, file);
   return await getDownloadURL(imageRef);
+}
+
+function calculatePrices(rawPrice) {
+  const sellerPrice = roundMoney(Number(rawPrice || 0));
+  const commissionAmount = roundMoney(sellerPrice * COMMISSION_RATE);
+  const buyerPrice = roundMoney(sellerPrice + commissionAmount);
+
+  return {
+    sellerPrice,
+    commissionRate: COMMISSION_RATE,
+    commissionPercent: 10,
+    commissionAmount,
+    buyerPrice
+  };
+}
+
+function updatePricePreview() {
+  const prices = calculatePrices(itemPrice?.value || 0);
+
+  if (sellerPricePreview) {
+    sellerPricePreview.textContent = formatRs(prices.sellerPrice);
+  }
+
+  if (commissionPreview) {
+    commissionPreview.textContent = formatRs(prices.commissionAmount);
+  }
+
+  if (buyerPricePreview) {
+    buyerPricePreview.textContent = formatRs(prices.buyerPrice);
+  }
 }
 
 async function loadShop() {
@@ -156,8 +195,10 @@ saveShopBtn.addEventListener("click", async () => {
 saveItemBtn.addEventListener("click", async () => {
   if (!currentUser) return;
 
-  if (!itemTitle.value.trim() || !itemPrice.value) {
-    itemMessage.textContent = "Title and price are required.";
+  const enteredSellerPrice = Number(itemPrice.value || 0);
+
+  if (!itemTitle.value.trim() || enteredSellerPrice <= 0) {
+    itemMessage.textContent = "Title and seller price are required.";
     return;
   }
 
@@ -178,12 +219,24 @@ saveItemBtn.addEventListener("click", async () => {
       imageUrl = await uploadImage(itemImage.files[0], "products");
     }
 
+    const prices = calculatePrices(enteredSellerPrice);
+
     const itemData = {
       sellerId: currentUser.uid,
       type: itemType.value,
       title: itemTitle.value.trim(),
       description: itemDescription.value.trim(),
-      price: Number(itemPrice.value),
+
+      sellerPrice: prices.sellerPrice,
+      commissionRate: prices.commissionRate,
+      commissionPercent: prices.commissionPercent,
+      commissionAmount: prices.commissionAmount,
+      buyerPrice: prices.buyerPrice,
+
+      // Keep this for older marketplace/product/cart pages.
+      // Buyer-facing price is stored here.
+      price: prices.buyerPrice,
+
       stock: Number(itemStock.value || 0),
       category: itemCategory.value,
       serviceArea: serviceArea.value.trim(),
@@ -200,6 +253,7 @@ saveItemBtn.addEventListener("click", async () => {
         active: true,
         createdAt: serverTimestamp()
       });
+
       itemMessage.textContent = "Item added successfully.";
     }
 
@@ -230,6 +284,8 @@ function resetItemForm() {
   itemCategory.value = "Beauty";
   serviceArea.value = "";
   itemImage.value = "";
+
+  updatePricePreview();
 }
 
 async function loadMyItems() {
@@ -259,18 +315,28 @@ async function loadMyItems() {
   snapshot.forEach((docSnap) => {
     const item = docSnap.data();
 
+    const sellerPrice = getSellerPrice(item);
+    const buyerPrice = Number(item.buyerPrice || item.price || 0);
+    const commissionAmount = Number(item.commissionAmount || Math.max(0, buyerPrice - sellerPrice));
+
     const div = document.createElement("div");
     div.className = "card product-card";
 
     div.innerHTML = `
-      ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}">` : ""}
-      <span class="badge">${item.type}</span>
+      ${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}">` : ""}
+      <span class="badge">${escapeHtml(item.type || "item")}</span>
       <span class="status-badge ${item.active ? "active" : "hidden"}">
         ${item.active ? "Visible" : "Hidden"}
       </span>
-      <h3>${item.title}</h3>
-      <p>${item.category}</p>
-      <p><strong>Rs ${item.price}</strong></p>
+
+      <h3>${escapeHtml(item.title || "Untitled")}</h3>
+      <p>${escapeHtml(item.category || "Other")}</p>
+
+      <div class="seller-price-breakdown">
+        <p><strong>Seller receives:</strong> ${formatRs(sellerPrice)}</p>
+        <p><strong>MauMarket 10%:</strong> ${formatRs(commissionAmount)}</p>
+        <p><strong>Buyer sees:</strong> ${formatRs(buyerPrice)}</p>
+      </div>
 
       <div class="seller-actions">
         <button class="edit-btn">Edit</button>
@@ -290,10 +356,12 @@ async function loadMyItems() {
       itemType.value = item.type || "product";
       itemTitle.value = item.title || "";
       itemDescription.value = item.description || "";
-      itemPrice.value = item.price || "";
+      itemPrice.value = getSellerPrice(item);
       itemStock.value = item.stock || "";
       itemCategory.value = item.category || "Other";
       serviceArea.value = item.serviceArea || "";
+
+      updatePricePreview();
 
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -303,11 +371,13 @@ async function loadMyItems() {
         active: !item.active,
         updatedAt: serverTimestamp()
       });
+
       await loadMyItems();
     });
 
     div.querySelector(".danger-btn").addEventListener("click", async () => {
       if (!confirm("Delete this item permanently?")) return;
+
       await deleteDoc(doc(db, "products", docSnap.id));
       await loadMyItems();
     });
@@ -339,4 +409,36 @@ if (requestSlotsBtn) {
 
     slotMessage.textContent = "Request sent to admin.";
   });
+}
+
+function getSellerPrice(item) {
+  if (item.sellerPrice !== undefined && item.sellerPrice !== null) {
+    return Number(item.sellerPrice || 0);
+  }
+
+  const buyerPrice = Number(item.buyerPrice || item.price || 0);
+
+  if (buyerPrice <= 0) return 0;
+
+  return roundMoney(buyerPrice / 1.1);
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function formatRs(value) {
+  return `Rs ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
