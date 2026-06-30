@@ -11,6 +11,8 @@ import {
   increment
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const COMMISSION_RATE = 0.10;
+
 const productsGrid = document.getElementById("productsGrid");
 
 const searchInput = document.getElementById("searchInput");
@@ -50,11 +52,8 @@ let activeCategory = "";
 let activeSort = "newest";
 
 const params = new URLSearchParams(window.location.search);
-const urlCategory = params.get("category") || "";
-const urlSearch = params.get("search") || "";
-
-activeCategory = urlCategory;
-activeSearch = urlSearch;
+activeCategory = params.get("category") || "";
+activeSearch = params.get("search") || "";
 
 if (searchInput) searchInput.value = activeSearch;
 if (searchInput2) searchInput2.value = activeSearch;
@@ -87,9 +86,7 @@ mobileNav?.querySelectorAll("a").forEach((link) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeMobileMenu();
-  }
+  if (event.key === "Escape") closeMobileMenu();
 });
 
 async function loadCategories() {
@@ -126,6 +123,24 @@ async function loadCategories() {
   }
 }
 
+function renderFallbackCategories() {
+  allCategories = [
+    { name: "Beauty", icon: "beauty", sortOrder: 1 },
+    { name: "Electronics", icon: "electronics", sortOrder: 2 },
+    { name: "Phones", icon: "phone", sortOrder: 3 },
+    { name: "Fashion", icon: "fashion", sortOrder: 4 },
+    { name: "Food", icon: "food", sortOrder: 5 },
+    { name: "Hardware", icon: "hardware", sortOrder: 6 },
+    { name: "Home", icon: "home", sortOrder: 7 },
+    { name: "Services", icon: "services", sortOrder: 8 },
+    { name: "Vehicles", icon: "vehicles", sortOrder: 9 },
+    { name: "Other", icon: "other", sortOrder: 10 }
+  ];
+
+  renderCategoryDropdowns();
+  renderCategoryIcons();
+}
+
 function renderCategoryDropdowns() {
   const dropdowns = [
     topCategoryFilter,
@@ -138,7 +153,6 @@ function renderCategoryDropdowns() {
 
     allCategories.forEach((category) => {
       const option = document.createElement("option");
-
       option.value = category.name || "";
       option.textContent = category.name || "Category";
 
@@ -156,7 +170,7 @@ function renderCategoryDropdowns() {
 function renderCategoryIcons() {
   if (!categoryIconGrid) return;
 
-  const baseCategories = [
+  const categories = [
     {
       name: "",
       icon: "grid",
@@ -171,12 +185,10 @@ function renderCategoryIcons() {
 
   categoryIconGrid.innerHTML = "";
 
-  baseCategories.forEach((category) => {
+  categories.forEach((category) => {
     const btn = document.createElement("button");
-
     btn.type = "button";
     btn.className = `category-icon-card ${activeCategory === category.name ? "active" : ""}`;
-    btn.dataset.category = category.name;
 
     btn.innerHTML = `
       <span class="category-icon-circle">
@@ -192,24 +204,6 @@ function renderCategoryIcons() {
 
     categoryIconGrid.appendChild(btn);
   });
-}
-
-function renderFallbackCategories() {
-  allCategories = [
-    { name: "Beauty", icon: "beauty", sortOrder: 1 },
-    { name: "Electronics", icon: "electronics", sortOrder: 2 },
-    { name: "Phones", icon: "phone", sortOrder: 3 },
-    { name: "Fashion", icon: "fashion", sortOrder: 4 },
-    { name: "Food", icon: "food", sortOrder: 5 },
-    { name: "Hardware", icon: "hardware", sortOrder: 6 },
-    { name: "Home", icon: "home", sortOrder: 7 },
-    { name: "Services", icon: "services", sortOrder: 8 },
-    { name: "Vehicles", icon: "vehicles", sortOrder: 9 },
-    { name: "Other", icon: "other", sortOrder: 10 }
-  ];
-
-  renderCategoryDropdowns();
-  renderCategoryIcons();
 }
 
 async function loadTopBanner() {
@@ -329,9 +323,7 @@ function renderSkeletonGrid() {
 }
 
 async function getShop(sellerId) {
-  if (!sellerId) {
-    return emptyShop("");
-  }
+  if (!sellerId) return emptyShop("");
 
   if (shopCache[sellerId]) return shopCache[sellerId];
 
@@ -385,7 +377,6 @@ function renderFeaturedShops() {
     .sort((a, b) => {
       const aScore = Number(a.averageRating || 0) + Number(a.totalReviews || 0) * 0.05;
       const bScore = Number(b.averageRating || 0) + Number(b.totalReviews || 0) * 0.05;
-
       return bScore - aScore;
     })
     .slice(0, 12);
@@ -437,7 +428,8 @@ function renderItems(shouldScroll = false) {
       ${item.category || ""}
       ${item.type || ""}
       ${item.shop?.shopName || ""}
-      ${item.price || ""}
+      ${getBuyerPrice(item)}
+      ${getSellerPrice(item)}
       ${item.serviceArea || ""}
       ${item.shop?.location || ""}
     `.toLowerCase();
@@ -492,11 +484,11 @@ function sortItems(items, sort) {
   const copy = [...items];
 
   if (sort === "low-high") {
-    copy.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+    copy.sort((a, b) => getBuyerPrice(a) - getBuyerPrice(b));
   }
 
   if (sort === "high-low") {
-    copy.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+    copy.sort((a, b) => getBuyerPrice(b) - getBuyerPrice(a));
   }
 
   if (sort === "newest") {
@@ -509,7 +501,6 @@ function sortItems(items, sort) {
     copy.sort((a, b) => {
       const aRating = Number(a.averageRating || a.shop?.averageRating || 0);
       const bRating = Number(b.averageRating || b.shop?.averageRating || 0);
-
       return bRating - aRating;
     });
   }
@@ -523,6 +514,11 @@ function createProductCard(item) {
   const shopRating = Number(item.shop?.averageRating || 0);
   const shopReviews = Number(item.shop?.totalReviews || 0);
   const sold = Number(item.soldCount || 0);
+
+  const buyerPrice = getBuyerPrice(item);
+  const sellerPrice = getSellerPrice(item);
+  const commissionAmount = getCommissionAmount(item);
+
   const location = safeArea(item.shop?.location || item.serviceArea || "Mauritius");
 
   const ratingText = productRating > 0
@@ -565,7 +561,9 @@ function createProductCard(item) {
       <p class="rating-line-small muted">${sellerRatingText}${sold > 0 ? ` • ${sold} sold` : ""}</p>
 
       <p class="product-location">📍 ${escapeHtml(location)}</p>
-      <p class="price">Rs ${Number(item.price || 0).toLocaleString("en-US")}</p>
+
+      <p class="price">${formatRs(buyerPrice)}</p>
+      <p class="buyer-price-note">Final price • MauMarket commission included</p>
 
       <a class="btn product-main-btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
         View Details
@@ -584,7 +582,7 @@ function createProductCard(item) {
 
 function getDiscountBadge(item) {
   const oldPrice = Number(item.oldPrice || item.compareAtPrice || 0);
-  const price = Number(item.price || 0);
+  const price = getBuyerPrice(item);
 
   if (!oldPrice || !price || oldPrice <= price) return "";
 
@@ -777,10 +775,86 @@ function attachFilterEvents() {
   });
 }
 
+function getBuyerPrice(item) {
+  const buyerPrice = Number(item.buyerPrice || 0);
+
+  if (buyerPrice > 0) {
+    return roundMoney(buyerPrice);
+  }
+
+  const price = Number(item.price || 0);
+
+  if (price > 0) {
+    return roundMoney(price);
+  }
+
+  const sellerPrice = Number(item.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    return roundMoney(sellerPrice * (1 + COMMISSION_RATE));
+  }
+
+  return 0;
+}
+
+function getSellerPrice(item) {
+  const sellerPrice = Number(item.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    return roundMoney(sellerPrice);
+  }
+
+  const buyerPrice = getBuyerPrice(item);
+
+  if (buyerPrice > 0) {
+    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
+  }
+
+  return 0;
+}
+
+function getCommissionAmount(item) {
+  const commissionAmount = Number(item.commissionAmount || 0);
+
+  if (commissionAmount > 0) {
+    return roundMoney(commissionAmount);
+  }
+
+  const sellerPrice = getSellerPrice(item);
+  const buyerPrice = getBuyerPrice(item);
+
+  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function formatRs(value) {
+  return `Rs ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function safeArea(location) {
+  const raw = String(location || "Mauritius").trim();
+
+  if (!raw) return "Mauritius Area";
+
+  const cleaned = raw
+    .replace(/\d+/g, "")
+    .replace(/street|road|avenue|lane|house|building|flat|apartment/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return "Mauritius Area";
+
+  return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
+}
+
 function normalizeIcon(icon) {
   const value = String(icon || "other").toLowerCase().trim();
-
-  if (ICON_LABELS[value]) return value;
 
   if (value.includes("elect")) return "electronics";
   if (value.includes("phone")) return "phone";
@@ -802,32 +876,8 @@ function normalizeIcon(icon) {
   if (value.includes("health")) return "health";
   if (value.includes("gift")) return "gift";
 
-  return "other";
+  return value || "other";
 }
-
-const ICON_LABELS = {
-  grid: "All",
-  electronics: "Electronics",
-  phone: "Phones",
-  laptop: "Computers",
-  fashion: "Fashion",
-  beauty: "Beauty",
-  food: "Food",
-  grocery: "Groceries",
-  home: "Home",
-  furniture: "Furniture",
-  hardware: "Hardware",
-  tools: "Tools",
-  services: "Services",
-  vehicles: "Vehicles",
-  baby: "Baby & Kids",
-  sports: "Sports",
-  books: "Books",
-  pets: "Pets",
-  health: "Health",
-  gift: "Gifts",
-  other: "Other"
-};
 
 function svgIcon(type) {
   const icons = {
@@ -971,22 +1021,6 @@ function svgIcon(type) {
   };
 
   return icons[type] || icons.other;
-}
-
-function safeArea(location) {
-  const raw = String(location || "Mauritius").trim();
-
-  if (!raw) return "Mauritius Area";
-
-  const cleaned = raw
-    .replace(/\d+/g, "")
-    .replace(/street|road|avenue|lane|house|building|flat|apartment/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!cleaned) return "Mauritius Area";
-
-  return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
 }
 
 function escapeHtml(value) {
