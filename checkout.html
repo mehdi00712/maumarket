@@ -6,10 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="navbar">
-  <h2>MauMarket Checkout</h2>
+<header class="amazon-topbar">
+  <a class="brand logo-brand" href="index.html">
+    <img src="images/maumarketlogo.png" alt="MauMarket">
+  </a>
+
   <nav>
     <a href="products.html">Marketplace</a>
     <a href="cart.html">Cart</a>
@@ -17,41 +21,141 @@
   </nav>
 </header>
 
-<main class="container">
-  <h1>Checkout</h1>
+<main class="container checkout-page">
 
-  <section class="form-card">
-    <h2>Delivery Details</h2>
-
-    <input id="customerName" placeholder="Full name">
-    <input id="customerPhone" placeholder="Phone number">
-    <textarea id="deliveryAddress" placeholder="Delivery address"></textarea>
-    <textarea id="orderNotes" placeholder="Order notes optional"></textarea>
-
-    <h2>Order Summary</h2>
-    <div id="checkoutItems"></div>
-
-    <div class="cart-summary">
-      <p>Items Total: Rs <span id="itemsTotal">0</span></p>
-      <p>Delivery Fee: Rs <span id="deliveryFee">150</span></p>
-      <h2>Total to Pay: Rs <span id="grandTotal">0</span></h2>
-    </div>
-
-    <div class="juice-box">
-      <h2>Pay with Juice</h2>
-      <p><strong>Pay to:</strong> MauMarket</p>
-      <p><strong>Juice Number:</strong> +230 5775 0662</p>
-      <p>Pay the total amount first, then upload your Juice payment screenshot below.</p>
-    </div>
-
-    <label>Upload Juice Payment Screenshot</label>
-    <input id="paymentProof" type="file" accept="image/*">
-
-    <button id="placeOrderBtn">Submit Payment & Place Order</button>
-    <p id="checkoutMessage"></p>
+  <section class="dashboard-section-title">
+    <h1>Checkout</h1>
+    <p>Complete your order securely through MauMarket.</p>
   </section>
+
+  <section class="buyer-trust-strip">
+    <div>
+      <strong>Final Prices</strong>
+      <span>Commission already included</span>
+    </div>
+
+    <div>
+      <strong>Platform Delivery</strong>
+      <span>MauMarket handles delivery</span>
+    </div>
+
+    <div>
+      <strong>Secure Checkout</strong>
+      <span>Payment verified before processing</span>
+    </div>
+  </section>
+
+  <section class="checkout-layout">
+
+    <div class="checkout-main">
+
+      <section class="form-card">
+        <div class="section-row-title">
+          <h2>Delivery Details</h2>
+          <span>Required for delivery</span>
+        </div>
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input id="customerName" placeholder="Full name">
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input id="customerPhone" placeholder="Phone number">
+        </div>
+
+        <div class="form-group">
+          <label>Delivery Address</label>
+          <textarea id="deliveryAddress" placeholder="Delivery address"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Order Notes</label>
+          <textarea id="orderNotes" placeholder="Optional notes for MauMarket"></textarea>
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="section-row-title">
+          <h2>Order Items</h2>
+          <span>Review before paying</span>
+        </div>
+
+        <div id="checkoutItems">
+          Loading order items...
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="juice-box">
+          <h2>Pay with Juice</h2>
+
+          <p><strong>Pay to:</strong> MauMarket</p>
+          <p><strong>Juice Number:</strong> +230 5775 0662</p>
+
+          <p>
+            Pay the total amount first, then upload your Juice payment screenshot below.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label>Upload Juice Payment Screenshot</label>
+          <input id="paymentProof" type="file" accept="image/*">
+        </div>
+
+        <button id="placeOrderBtn" type="button">
+          Submit Payment & Place Order
+        </button>
+
+        <p id="checkoutMessage"></p>
+      </section>
+
+    </div>
+
+    <aside class="checkout-summary-card">
+
+      <h2>Order Summary</h2>
+
+      <div class="summary-row">
+        <span>Items Total</span>
+        <strong>Rs <span id="itemsTotal">0</span></strong>
+      </div>
+
+      <div class="summary-row">
+        <span>MauMarket Service</span>
+        <strong>Included</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Delivery Fee</span>
+        <strong>Rs <span id="deliveryFee">150</span></strong>
+      </div>
+
+      <hr>
+
+      <div class="summary-total">
+        <span>Total to Pay</span>
+        <strong>Rs <span id="grandTotal">0</span></strong>
+      </div>
+
+      <div class="cart-guarantee">
+        <h3>MauMarket Protection</h3>
+        <ul>
+          <li>✓ Verified sellers</li>
+          <li>✓ Payment verification</li>
+          <li>✓ Platform delivery</li>
+          <li>✓ Customer support</li>
+        </ul>
+      </div>
+
+    </aside>
+
+  </section>
+
 </main>
 
-<script type="module" src="js/checkout.js"></script>
+<script type="module" src="js/checkout.js?v=4.6-commission"></script>
+
 </body>
 </html>
