@@ -15,9 +15,16 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const COMMISSION_RATE = 0.10;
+
 const sellerOrdersList = document.getElementById("sellerOrdersList");
 const sellerOrdersMenuBtn = document.getElementById("sellerOrdersMenuBtn");
 const sellerOrdersNav = document.getElementById("sellerOrdersNav");
+
+const sellerTotalOrders = document.getElementById("sellerTotalOrders");
+const sellerTotalEarnings = document.getElementById("sellerTotalEarnings");
+const sellerTotalCommission = document.getElementById("sellerTotalCommission");
+const sellerOrdersCountText = document.getElementById("sellerOrdersCountText");
 
 let currentUser = null;
 
@@ -64,6 +71,12 @@ async function loadSellerOrders() {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
+      renderStats(0, 0, 0);
+
+      if (sellerOrdersCountText) {
+        sellerOrdersCountText.textContent = "0 orders";
+      }
+
       sellerOrdersList.innerHTML = `
         <div class="order-card">
           <h3>No orders yet</h3>
@@ -88,6 +101,10 @@ async function loadSellerOrders() {
 
     sellerOrdersList.innerHTML = "";
 
+    let visibleOrderCount = 0;
+    let totalSellerEarnings = 0;
+    let totalCommission = 0;
+
     orders.forEach((order) => {
       const sellerItems = (order.items || []).filter((item) => {
         return item.sellerId === currentUser.uid;
@@ -95,16 +112,37 @@ async function loadSellerOrders() {
 
       if (sellerItems.length === 0) return;
 
-      const sellerTotal = sellerItems.reduce((sum, item) => {
-        return sum + Number(item.price || 0) * Number(item.quantity || 1);
-      }, 0);
+      visibleOrderCount++;
 
-      const itemsHtml = sellerItems.map((item) => `
-        <li>
-          <strong>${item.title || "Item"}</strong>
-          — Rs ${Number(item.price || 0)} x ${Number(item.quantity || 1)}
-        </li>
-      `).join("");
+      const sellerTotals = calculateSellerOrderTotals(sellerItems);
+
+      totalSellerEarnings += sellerTotals.sellerAmount;
+      totalCommission += sellerTotals.commissionAmount;
+
+      const itemsHtml = sellerItems.map((item) => {
+        const quantity = Number(item.quantity || 1);
+        const buyerPrice = getBuyerPrice(item);
+        const sellerPrice = getSellerPrice(item);
+        const commissionAmount = getCommissionAmount(item);
+        const buyerSubtotal = roundMoney(buyerPrice * quantity);
+        const sellerSubtotal = roundMoney(sellerPrice * quantity);
+        const commissionSubtotal = roundMoney(commissionAmount * quantity);
+
+        return `
+          <li class="seller-order-item">
+            <div>
+              <strong>${escapeHtml(item.title || "Item")}</strong>
+              <p class="muted">${escapeHtml(item.category || "")}</p>
+            </div>
+
+            <div class="seller-order-price-lines">
+              <span>Buyer: ${formatRs(buyerPrice)} x ${quantity} = ${formatRs(buyerSubtotal)}</span>
+              <span>Seller earns: ${formatRs(sellerSubtotal)}</span>
+              <span>MauMarket 10%: ${formatRs(commissionSubtotal)}</span>
+            </div>
+          </li>
+        `;
+      }).join("");
 
       const paymentNotice =
         order.paymentStatus !== "verified"
@@ -138,14 +176,23 @@ async function loadSellerOrders() {
       `;
 
       const driverInfo = order.deliveryGuyName
-        ? `<p><strong>Assigned Driver:</strong> ${order.deliveryGuyName}</p>`
+        ? `<p><strong>Assigned Driver:</strong> ${escapeHtml(order.deliveryGuyName)}</p>`
         : "";
 
       const div = document.createElement("div");
-      div.className = "order-card";
+      div.className = "order-card seller-order-card";
 
       div.innerHTML = `
-        <h3>Order #${order.id.slice(0, 8)}</h3>
+        <div class="section-row-title">
+          <div>
+            <h3>Order #${order.id.slice(0, 8)}</h3>
+            <p class="muted">${formatDate(order.createdAt)}</p>
+          </div>
+
+          <span class="status-pill">
+            ${escapeHtml(order.orderStatus || "Pending Payment")}
+          </span>
+        </div>
 
         <div class="tracking-box">
           <span class="${stepClass(order.orderStatus, "Pending Payment")}">Pending</span>
@@ -158,17 +205,28 @@ async function loadSellerOrders() {
           <span class="${stepClass(order.orderStatus, "Delivered")}">Delivered</span>
         </div>
 
-        <p><strong>Customer:</strong> ${order.customerName || "Not provided"}</p>
-        <p><strong>Phone:</strong> ${order.customerPhone || "Not provided"}</p>
-        <p><strong>Address:</strong> ${order.deliveryAddress || "Not provided"}</p>
-        <p><strong>Status:</strong> ${order.orderStatus || "Pending Payment"}</p>
-        ${driverInfo}
-        ${paymentNotice}
+        <div class="seller-order-grid">
+          <div>
+            <p><strong>Customer:</strong> ${escapeHtml(order.customerName || "Not provided")}</p>
+            <p><strong>Phone:</strong> ${escapeHtml(order.customerPhone || "Not provided")}</p>
+            <p><strong>Address:</strong> ${escapeHtml(order.deliveryAddress || "Not provided")}</p>
+            ${driverInfo}
+            ${paymentNotice}
+          </div>
+
+          <div class="seller-order-money-box">
+            <p><strong>Buyer paid for your items:</strong></p>
+            <h3>${formatRs(sellerTotals.buyerAmount)}</h3>
+
+            <p><strong>You receive:</strong> ${formatRs(sellerTotals.sellerAmount)}</p>
+            <p><strong>MauMarket 10%:</strong> ${formatRs(sellerTotals.commissionAmount)}</p>
+          </div>
+        </div>
 
         <h4>Your Items</h4>
-        <ul>${itemsHtml}</ul>
-
-        <p><strong>Your item total:</strong> Rs ${sellerTotal}</p>
+        <ul class="seller-order-items-list">
+          ${itemsHtml}
+        </ul>
 
         <div class="seller-actions">
           ${statusButtons}
@@ -198,6 +256,12 @@ async function loadSellerOrders() {
       sellerOrdersList.appendChild(div);
     });
 
+    renderStats(visibleOrderCount, totalSellerEarnings, totalCommission);
+
+    if (sellerOrdersCountText) {
+      sellerOrdersCountText.textContent = `${visibleOrderCount} order(s)`;
+    }
+
     if (!sellerOrdersList.innerHTML.trim()) {
       sellerOrdersList.innerHTML = `
         <div class="order-card">
@@ -210,10 +274,99 @@ async function loadSellerOrders() {
     sellerOrdersList.innerHTML = `
       <div class="order-card">
         <h3>Could not load seller orders</h3>
-        <p>${error.message}</p>
+        <p>${escapeHtml(error.message)}</p>
       </div>
     `;
   }
+}
+
+function calculateSellerOrderTotals(items) {
+  let buyerAmount = 0;
+  let sellerAmount = 0;
+  let commissionAmount = 0;
+
+  items.forEach((item) => {
+    const quantity = Number(item.quantity || 1);
+
+    const buyerPrice = getBuyerPrice(item);
+    const sellerPrice = getSellerPrice(item);
+    const commission = getCommissionAmount(item);
+
+    buyerAmount += buyerPrice * quantity;
+    sellerAmount += sellerPrice * quantity;
+    commissionAmount += commission * quantity;
+  });
+
+  return {
+    buyerAmount: roundMoney(buyerAmount),
+    sellerAmount: roundMoney(sellerAmount),
+    commissionAmount: roundMoney(commissionAmount)
+  };
+}
+
+function renderStats(orderCount, sellerAmount, commissionAmount) {
+  if (sellerTotalOrders) {
+    sellerTotalOrders.textContent = String(orderCount);
+  }
+
+  if (sellerTotalEarnings) {
+    sellerTotalEarnings.textContent = formatRs(sellerAmount);
+  }
+
+  if (sellerTotalCommission) {
+    sellerTotalCommission.textContent = formatRs(commissionAmount);
+  }
+}
+
+function getBuyerPrice(item) {
+  const buyerPrice = Number(item.buyerPrice || 0);
+
+  if (buyerPrice > 0) {
+    return roundMoney(buyerPrice);
+  }
+
+  const price = Number(item.price || 0);
+
+  if (price > 0) {
+    return roundMoney(price);
+  }
+
+  const sellerPrice = Number(item.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    return roundMoney(sellerPrice * (1 + COMMISSION_RATE));
+  }
+
+  return 0;
+}
+
+function getSellerPrice(item) {
+  const sellerPrice = Number(item.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    return roundMoney(sellerPrice);
+  }
+
+  const buyerPrice = getBuyerPrice(item);
+
+  if (buyerPrice > 0) {
+    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
+  }
+
+  return 0;
+}
+
+function getCommissionAmount(item) {
+  const commissionAmount = Number(item.commissionAmount || 0);
+
+  if (commissionAmount > 0) {
+    return roundMoney(commissionAmount);
+  }
+
+  const sellerPrice = getSellerPrice(item);
+  const buyerPrice = getBuyerPrice(item);
+
+  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
 }
 
 function stepClass(currentStatus, stepStatus) {
@@ -236,4 +389,36 @@ function stepClass(currentStatus, stepStatus) {
   const stepIndex = steps.indexOf(stepStatus);
 
   return currentIndex >= stepIndex ? "track-step done" : "track-step";
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function formatRs(value) {
+  return `Rs ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function formatDate(timestamp) {
+  if (!timestamp?.seconds) return "";
+
+  return new Date(timestamp.seconds * 1000).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
