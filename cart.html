@@ -1,33 +1,309 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Cart | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Shopping Cart | MauMarket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="navbar">
-  <h2>MauMarket Cart</h2>
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="checkout.html">Checkout</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
+<!-- ========================= HEADER ========================= -->
+
+<header class="amazon-topbar">
+
+    <a class="brand logo-brand" href="index.html">
+        <img src="images/maumarketlogo.png" alt="MauMarket">
+    </a>
+
+    <div class="amazon-search">
+
+        <select>
+            <option>All</option>
+        </select>
+
+        <input
+            id="cartSearchInput"
+            placeholder="Search MauMarket">
+
+        <button
+            id="cartSearchBtn"
+            type="button">
+            Search
+        </button>
+
+    </div>
+
+    <nav>
+
+        <a href="products.html">
+            Marketplace
+        </a>
+
+        <a href="dashboard.html">
+            Dashboard
+        </a>
+
+        <a href="my-orders.html">
+            Orders
+        </a>
+
+    </nav>
+
 </header>
 
-<main class="container">
-  <h1>Your Cart</h1>
+<!-- ========================= SUB NAV ========================= -->
 
-  <div id="cartItems"></div>
+<div class="amazon-subnav">
 
-  <div class="cart-summary">
-    <h2>Total: Rs <span id="cartTotal">0</span></h2>
-    <a class="btn" href="checkout.html">Proceed to Checkout</a>
-  </div>
+    <a href="products.html">All</a>
+    <a href="products.html?category=Beauty">Beauty</a>
+    <a href="products.html?category=Electronics">Electronics</a>
+    <a href="products.html?category=Fashion">Fashion</a>
+    <a href="products.html?category=Food">Food</a>
+    <a href="products.html?category=Hardware">Hardware</a>
+    <a href="products.html?category=Home">Home</a>
+    <a href="products.html?category=Services">Services</a>
+
+</div>
+
+<!-- ========================= PAGE ========================= -->
+
+<main class="container cart-page">
+
+    <section class="dashboard-section-title">
+
+        <h1>
+            Shopping Cart
+        </h1>
+
+        <p>
+            Review your items before completing your MauMarket order.
+        </p>
+
+    </section>
+
+    <!-- TRUST -->
+
+    <section class="buyer-trust-strip">
+
+        <div>
+            <strong>
+                Final Price
+            </strong>
+
+            <span>
+                Prices already include MauMarket commission
+            </span>
+        </div>
+
+        <div>
+
+            <strong>
+                Verified Sellers
+            </strong>
+
+            <span>
+                Every order goes through MauMarket
+            </span>
+
+        </div>
+
+        <div>
+
+            <strong>
+                Secure Checkout
+            </strong>
+
+            <span>
+                Protected payment & delivery
+            </span>
+
+        </div>
+
+    </section>
+
+    <!-- CART -->
+
+    <section class="cart-layout">
+
+        <section class="cart-main">
+
+            <div
+                id="cartItems">
+
+                Loading your cart...
+
+            </div>
+
+        </section>
+
+        <!-- SUMMARY -->
+
+        <aside class="cart-summary-card">
+
+            <h2>
+                Order Summary
+            </h2>
+
+            <div class="summary-row">
+
+                <span>
+                    Items
+                </span>
+
+                <span id="summaryItems">
+                    0
+                </span>
+
+            </div>
+
+            <div class="summary-row">
+
+                <span>
+                    Products Total
+                </span>
+
+                <span>
+                    Rs <span id="productsTotal">0</span>
+                </span>
+
+            </div>
+
+            <div class="summary-row">
+
+                <span>
+                    MauMarket Service
+                </span>
+
+                <span class="summary-green">
+                    Included
+                </span>
+
+            </div>
+
+            <div class="summary-row">
+
+                <span>
+                    Delivery
+                </span>
+
+                <span>
+                    Calculated at checkout
+                </span>
+
+            </div>
+
+            <hr>
+
+            <div class="summary-total">
+
+                <span>
+                    Total
+                </span>
+
+                <strong>
+
+                    Rs
+                    <span id="cartTotal">
+                        0
+                    </span>
+
+                </strong>
+
+            </div>
+
+            <a
+                class="btn checkout-btn"
+                href="checkout.html">
+
+                Proceed to Checkout
+
+            </a>
+
+            <a
+                class="secondary-btn continue-shopping-btn"
+                href="products.html">
+
+                Continue Shopping
+
+            </a>
+
+            <div class="cart-guarantee">
+
+                <h3>
+                    MauMarket Guarantee
+                </h3>
+
+                <ul>
+
+                    <li>
+                        ✓ Verified Sellers
+                    </li>
+
+                    <li>
+                        ✓ Secure Payments
+                    </li>
+
+                    <li>
+                        ✓ Delivery Tracking
+                    </li>
+
+                    <li>
+                        ✓ Customer Protection
+                    </li>
+
+                </ul>
+
+            </div>
+
+        </aside>
+
+    </section>
+
 </main>
 
-<script type="module" src="js/cart.js"></script>
+<script>
+
+const cartSearchInput =
+document.getElementById("cartSearchInput");
+
+const cartSearchBtn =
+document.getElementById("cartSearchBtn");
+
+function searchMarketplace(){
+
+    const search =
+    cartSearchInput.value.trim();
+
+    window.location.href =
+    search
+    ? `products.html?search=${encodeURIComponent(search)}`
+    : "products.html";
+
+}
+
+cartSearchBtn.onclick =
+searchMarketplace;
+
+cartSearchInput.onkeydown =
+(e)=>{
+
+    if(e.key==="Enter"){
+
+        e.preventDefault();
+
+        searchMarketplace();
+
+    }
+
+};
+
+</script>
+
+<script type="module" src="js/cart.js?v=4.6-commission"></script>
+
 </body>
 </html>
