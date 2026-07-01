@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <header class="market-mobile-header">
@@ -21,17 +22,75 @@
     <a href="seller.html">Seller</a>
     <a href="seller-earnings.html">Earnings</a>
     <a href="seller-analytics.html">Analytics</a>
+    <a href="products.html">Marketplace</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
 </header>
 
 <main class="container">
-  <h1>Orders For Your Shop</h1>
-  <p class="muted">You will see orders here as soon as customers place them.</p>
 
-  <div id="sellerOrdersList"></div>
+  <section class="dashboard-section-title">
+    <h1>Orders For Your Shop</h1>
+    <p>Track customer orders, seller earnings, and MauMarket commission.</p>
+  </section>
+
+  <section class="buyer-trust-strip">
+    <div>
+      <strong>Seller Earnings</strong>
+      <span>Your product price before commission</span>
+    </div>
+
+    <div>
+      <strong>MauMarket 10%</strong>
+      <span>Automatically calculated</span>
+    </div>
+
+    <div>
+      <strong>Buyer Total</strong>
+      <span>Final price paid by customer</span>
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="card">
+      <h3>Total Orders</h3>
+      <h2 id="sellerTotalOrders">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Seller Earnings</h3>
+      <h2 id="sellerTotalEarnings">Rs 0</h2>
+    </div>
+
+    <div class="card">
+      <h3>MauMarket Commission</h3>
+      <h2 id="sellerTotalCommission">Rs 0</h2>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <div class="section-row-title">
+      <h2>Your Orders</h2>
+      <span id="sellerOrdersCountText">Loading...</span>
+    </div>
+
+    <div id="sellerOrdersList">
+      Loading seller orders...
+    </div>
+  </section>
+
 </main>
 
-<script type="module" src="js/seller-orders.js"></script>
+<script>
+  const sellerOrdersMenuBtn = document.getElementById("sellerOrdersMenuBtn");
+  const sellerOrdersNav = document.getElementById("sellerOrdersNav");
+
+  sellerOrdersMenuBtn?.addEventListener("click", () => {
+    sellerOrdersNav?.classList.toggle("show");
+  });
+</script>
+
+<script type="module" src="js/seller-orders.js?v=4.6-commission"></script>
+
 </body>
 </html>
