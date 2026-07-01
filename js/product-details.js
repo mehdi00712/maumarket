@@ -16,6 +16,8 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const COMMISSION_RATE = 0.10;
+
 const detailsBox = document.getElementById("detailsBox");
 const relatedItems = document.getElementById("relatedItems");
 
@@ -155,6 +157,10 @@ function renderDetails() {
     currentShop.totalReviews || shopReviews.length || 0
   );
 
+  const buyerPrice = getBuyerPrice(currentItem);
+  const sellerPrice = getSellerPrice(currentItem);
+  const commissionAmount = getCommissionAmount(currentItem);
+
   const productRatingText = productAverageRating > 0
     ? `⭐ ${productAverageRating.toFixed(1)} (${productTotalReviews} review${productTotalReviews === 1 ? "" : "s"})`
     : "⭐ No product reviews yet";
@@ -184,7 +190,12 @@ function renderDetails() {
 
         <p class="rating-line">${productRatingText}</p>
 
-        <h2 class="product-price">Rs ${Number(currentItem.price || 0)}</h2>
+        <h2 class="product-price">${formatRs(buyerPrice)}</h2>
+
+        <div class="buyer-price-note-box">
+          <strong>Final buyer price</strong>
+          <p>MauMarket commission is already included. No hidden seller commission at checkout.</p>
+        </div>
 
         <p>${escapeHtml(currentItem.description || "No description provided.")}</p>
 
@@ -223,9 +234,9 @@ function renderDetails() {
           </div>
         </div>
 
-        <p>📍 ${escapeHtml(currentShop.location || "Mauritius")}</p>
-        <p>☎ ${escapeHtml(currentShop.phone || "Not specified")}</p>
+        <p>📍 ${escapeHtml(safeArea(currentShop.location || "Mauritius"))}</p>
         <p>🚚 Delivery by MauMarket</p>
+        <p>🛡 Secure MauMarket checkout</p>
 
         <a class="btn" href="shop.html?id=${encodeURIComponent(currentItem.sellerId || "")}">
           Visit Shop
@@ -308,6 +319,7 @@ async function loadRelatedItems() {
   items.slice(0, 8).forEach((item) => {
     const rating = Number(item.averageRating || 0);
     const totalReviews = Number(item.totalReviews || 0);
+    const buyerPrice = getBuyerPrice(item);
 
     const div = document.createElement("div");
     div.className = "pro-product-card";
@@ -332,7 +344,8 @@ async function loadRelatedItems() {
           ${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "⭐ No reviews yet"}
         </p>
 
-        <p class="pro-price">Rs ${Number(item.price || 0)}</p>
+        <p class="pro-price">${formatRs(buyerPrice)}</p>
+        <p class="buyer-price-note">Final price included</p>
 
         <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
           View Details
@@ -373,7 +386,11 @@ async function toggleWishlist() {
         productId: currentItem.id,
         sellerId: currentItem.sellerId || "",
         title: currentItem.title || "",
-        price: Number(currentItem.price || 0),
+        price: getBuyerPrice(currentItem),
+        buyerPrice: getBuyerPrice(currentItem),
+        sellerPrice: getSellerPrice(currentItem),
+        commissionAmount: getCommissionAmount(currentItem),
+        commissionRate: COMMISSION_RATE,
         imageUrl: currentItem.imageUrl || "",
         category: currentItem.category || "",
         type: currentItem.type || "",
@@ -427,7 +444,13 @@ async function addToCart() {
     title: currentItem.title,
     type: currentItem.type,
     category: currentItem.category,
-    price: Number(currentItem.price || 0),
+
+    price: getBuyerPrice(currentItem),
+    buyerPrice: getBuyerPrice(currentItem),
+    sellerPrice: getSellerPrice(currentItem),
+    commissionAmount: getCommissionAmount(currentItem),
+    commissionRate: COMMISSION_RATE,
+
     quantity: qty,
     imageUrl: currentItem.imageUrl || "",
     shopName: currentShop.shopName || "",
@@ -435,6 +458,84 @@ async function addToCart() {
   }, { merge: true });
 
   cartMessage.textContent = "Added to cart.";
+}
+
+function getBuyerPrice(item) {
+  const buyerPrice = Number(item.buyerPrice || 0);
+
+  if (buyerPrice > 0) {
+    return roundMoney(buyerPrice);
+  }
+
+  const price = Number(item.price || 0);
+
+  if (price > 0) {
+    return roundMoney(price);
+  }
+
+  const sellerPrice = Number(item.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    return roundMoney(sellerPrice * (1 + COMMISSION_RATE));
+  }
+
+  return 0;
+}
+
+function getSellerPrice(item) {
+  const sellerPrice = Number(item.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    return roundMoney(sellerPrice);
+  }
+
+  const buyerPrice = getBuyerPrice(item);
+
+  if (buyerPrice > 0) {
+    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
+  }
+
+  return 0;
+}
+
+function getCommissionAmount(item) {
+  const commissionAmount = Number(item.commissionAmount || 0);
+
+  if (commissionAmount > 0) {
+    return roundMoney(commissionAmount);
+  }
+
+  const sellerPrice = getSellerPrice(item);
+  const buyerPrice = getBuyerPrice(item);
+
+  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function formatRs(value) {
+  return `Rs ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function safeArea(location) {
+  const raw = String(location || "Mauritius").trim();
+
+  if (!raw) return "Mauritius Area";
+
+  const cleaned = raw
+    .replace(/\d+/g, "")
+    .replace(/street|road|avenue|lane|house|building|flat|apartment/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return "Mauritius Area";
+
+  return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
 }
 
 function getAverageRating(reviews, fieldName) {
