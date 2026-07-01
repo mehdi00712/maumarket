@@ -6,10 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <header class="navbar">
   <h2>Commission Dashboard</h2>
+
   <nav>
     <a href="admin.html">Admin</a>
     <a href="admin-payments.html">Payments</a>
@@ -21,7 +23,28 @@
 </header>
 
 <main class="container">
-  <h1>MauMarket Revenue</h1>
+
+  <section class="dashboard-section-title">
+    <h1>MauMarket Revenue</h1>
+    <p>Track buyer sales, 10% MauMarket commission, seller payouts, and delivery fees.</p>
+  </section>
+
+  <section class="buyer-trust-strip">
+    <div>
+      <strong>Buyer Price</strong>
+      <span>Final price paid by customer</span>
+    </div>
+
+    <div>
+      <strong>Seller Payout</strong>
+      <span>Seller price before commission</span>
+    </div>
+
+    <div>
+      <strong>MauMarket 10%</strong>
+      <span>Your platform commission</span>
+    </div>
+  </section>
 
   <section class="cards">
     <div class="card">
@@ -43,12 +66,30 @@
       <h3>Delivery Fees</h3>
       <h2>Rs <span id="totalDeliveryFees">0</span></h2>
     </div>
+
+    <div class="card">
+      <h3>Verified Orders</h3>
+      <h2 id="verifiedOrdersCount">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>Avg Commission / Order</h3>
+      <h2>Rs <span id="avgCommission">0</span></h2>
+    </div>
   </section>
 
-  <h2>Verified Orders</h2>
-  <div id="commissionOrders">Loading...</div>
+  <section class="form-card">
+    <div class="section-row-title">
+      <h2>Verified Orders</h2>
+      <span id="commissionOrdersCountText">Loading...</span>
+    </div>
+
+    <div id="commissionOrders">Loading...</div>
+  </section>
+
 </main>
 
-<script type="module" src="js/admin-commission.js"></script>
+<script type="module" src="js/admin-commission.js?v=4.6-commission"></script>
+
 </body>
 </html>
