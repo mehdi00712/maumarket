@@ -1,50 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>My Orders | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>My Orders | MauMarket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="amazon-topbar">
-  <a href="dashboard.html" class="logo-brand">
-  <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
+<main class="container orders-page">
 
-  <div class="amazon-search">
-    <select>
-      <option>All</option>
-    </select>
-    <input placeholder="Search MauMarket">
-    <button onclick="window.location.href='products.html'">Search</button>
-  </div>
+    <!-- PAGE HEADER -->
 
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="cart.html">Cart</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+    <section class="dashboard-section-title">
 
-<div class="amazon-subnav">
-  <a href="products.html">All</a>
-  <a href="products.html?category=Beauty">Beauty</a>
-  <a href="products.html?category=Electronics">Electronics</a>
-  <a href="products.html?category=Fashion">Fashion</a>
-  <a href="products.html?category=Food">Food</a>
-  <a href="products.html?category=Hardware">Hardware</a>
-  <a href="products.html?category=Services">Services</a>
-</div>
+        <h1>
+            My Orders
+        </h1>
 
-<main class="container">
-  <h1>My Orders</h1>
-  <p class="muted">Track your orders and leave reviews after delivery.</p>
+        <p>
+            Track every order placed through MauMarket from payment to delivery.
+        </p>
 
-  <div id="ordersList"></div>
+    </section>
+
+    <!-- TRUST BAR -->
+
+    <section class="buyer-trust-strip">
+
+        <div>
+
+            <strong>
+                ✔ Verified Sellers
+            </strong>
+
+            <span>
+                Every seller is approved before selling.
+            </span>
+
+        </div>
+
+        <div>
+
+            <strong>
+                📦 Live Order Tracking
+            </strong>
+
+            <span>
+                Follow your order from payment to delivery.
+            </span>
+
+        </div>
+
+        <div>
+
+            <strong>
+                🚚 MauMarket Delivery
+            </strong>
+
+            <span>
+                Your order is delivered by MauMarket.
+            </span>
+
+        </div>
+
+    </section>
+
+    <!-- ORDER FILTERS -->
+
+    <section class="orders-toolbar">
+
+        <div class="orders-search">
+
+            <input
+                id="orderSearch"
+                type="text"
+                placeholder="Search an order...">
+
+        </div>
+
+        <div class="orders-filters">
+
+            <select id="orderStatusFilter">
+
+                <option value="">
+                    All Orders
+                </option>
+
+                <option value="Payment Submitted">
+                    Payment Submitted
+                </option>
+
+                <option value="Preparing Order">
+                    Preparing
+                </option>
+
+                <option value="Ready for Pickup">
+                    Ready For Pickup
+                </option>
+
+                <option value="Picked Up">
+                    Picked Up
+                </option>
+
+                <option value="Out for Delivery">
+                    Out For Delivery
+                </option>
+
+                <option value="Delivered">
+                    Delivered
+                </option>
+
+                <option value="Cancelled">
+                    Cancelled
+                </option>
+
+            </select>
+
+        </div>
+
+    </section>
+
+    <!-- ORDERS -->
+
+    <section class="orders-layout">
+
+        <div
+            id="ordersList"
+            class="orders-list">
+
+            Loading your orders...
+
+        </div>
+
+        <!-- SIDEBAR -->
+
+        <aside class="orders-sidebar">
+
+            <div class="orders-info-card">
+
+                <h2>
+                    Need Help?
+                </h2>
+
+                <p>
+
+                    Our support team is available if you have questions about
+                    payment, delivery or your order.
+
+                </p>
+
+                <a
+                    href="dashboard.html"
+                    class="btn">
+
+                    Contact Support
+
+                </a>
+
+            </div>
+
+            <div class="orders-info-card">
+
+                <h3>
+                    MauMarket Protection
+                </h3>
+
+                <ul>
+
+                    <li>✔ Verified Sellers</li>
+
+                    <li>✔ Secure Payments</li>
+
+                    <li>✔ Delivery Tracking</li>
+
+                    <li>✔ Customer Support</li>
+
+                    <li>✔ Verified Reviews</li>
+
+                </ul>
+
+            </div>
+
+            <div class="orders-info-card">
+
+                <h3>
+                    Order Status Guide
+                </h3>
+
+                <ul>
+
+                    <li>💳 Payment Submitted</li>
+
+                    <li>📦 Preparing Order</li>
+
+                    <li>✅ Ready for Pickup</li>
+
+                    <li>🚚 Out for Delivery</li>
+
+                    <li>🎉 Delivered</li>
+
+                </ul>
+
+            </div>
+
+        </aside>
+
+    </section>
+
 </main>
 
-<script type="module" src="js/my-orders.js"></script>
+<!-- Shared Navigation -->
+<script type="module" src="js/nav.js?v=2.0"></script>
+
+<!-- Orders Logic -->
+<script type="module" src="js/my-orders.js?v=5.0"></script>
+
 </body>
 </html>
