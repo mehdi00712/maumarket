@@ -8,12 +8,9 @@ import {
   collection,
   getDocs,
   doc,
-  getDoc,
   updateDoc,
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-const COMMISSION_RATE = 0.10;
 
 const cartItems = document.getElementById("cartItems");
 const cartTotal = document.getElementById("cartTotal");
@@ -55,7 +52,7 @@ async function loadCart() {
     };
 
     const sellerId = cartItem.sellerId || "unknown";
-    const sellerName = cartItem.shopName || "Unknown Shop";
+    const sellerName = cartItem.shopName || "MauMarket Seller";
 
     if (!sellerGroups[sellerId]) {
       sellerGroups[sellerId] = {
@@ -93,10 +90,8 @@ async function loadCart() {
 
     group.items.forEach((item) => {
       const quantity = Number(item.quantity || 1);
-      const buyerPrice = getBuyerPrice(item);
-      const sellerPrice = getSellerPrice(item);
-      const commissionAmount = getCommissionAmount(item);
-      const lineTotal = roundMoney(buyerPrice * quantity);
+      const price = getBuyerPrice(item);
+      const lineTotal = roundMoney(price * quantity);
 
       sellerTotal += lineTotal;
       total += lineTotal;
@@ -123,18 +118,9 @@ async function loadCart() {
 
           <div class="cart-price-box">
             <p>
-              <strong>Buyer Price:</strong>
-              ${formatRs(buyerPrice)}
+              <strong>Price:</strong>
+              ${formatRs(price)}
             </p>
-
-            <p class="buyer-price-note">
-              MauMarket commission included
-            </p>
-          </div>
-
-          <div class="cart-commission-mini">
-            <span>Seller receives: ${formatRs(sellerPrice)}</span>
-            <span>MauMarket 10%: ${formatRs(commissionAmount)}</span>
           </div>
 
           <div class="cart-qty-row">
@@ -187,6 +173,7 @@ async function loadCart() {
 
     const footer = document.createElement("div");
     footer.className = "cart-seller-footer";
+
     footer.innerHTML = `
       <span>${group.items.length} item(s) from this seller</span>
       <strong>${formatRs(sellerTotal)}</strong>
@@ -233,38 +220,6 @@ function renderEmptyCart() {
   if (cartTotal) cartTotal.textContent = "0";
 }
 
-async function refreshCartItemFromProduct(cartItem) {
-  try {
-    const productSnap = await getDoc(doc(db, "products", cartItem.productId));
-
-    if (!productSnap.exists()) {
-      return cartItem;
-    }
-
-    const product = {
-      id: productSnap.id,
-      ...productSnap.data()
-    };
-
-    return {
-      ...cartItem,
-      title: product.title || cartItem.title,
-      type: product.type || cartItem.type,
-      category: product.category || cartItem.category,
-      imageUrl: product.imageUrl || cartItem.imageUrl,
-      sellerId: product.sellerId || cartItem.sellerId,
-      price: getBuyerPrice(product),
-      buyerPrice: getBuyerPrice(product),
-      sellerPrice: getSellerPrice(product),
-      commissionAmount: getCommissionAmount(product),
-      commissionRate: COMMISSION_RATE
-    };
-  } catch (error) {
-    console.warn("Could not refresh cart item:", error.message);
-    return cartItem;
-  }
-}
-
 function getBuyerPrice(item) {
   const buyerPrice = Number(item.buyerPrice || 0);
 
@@ -281,39 +236,10 @@ function getBuyerPrice(item) {
   const sellerPrice = Number(item.sellerPrice || 0);
 
   if (sellerPrice > 0) {
-    return roundMoney(sellerPrice * (1 + COMMISSION_RATE));
+    return roundMoney(sellerPrice * 1.1);
   }
 
   return 0;
-}
-
-function getSellerPrice(item) {
-  const sellerPrice = Number(item.sellerPrice || 0);
-
-  if (sellerPrice > 0) {
-    return roundMoney(sellerPrice);
-  }
-
-  const buyerPrice = getBuyerPrice(item);
-
-  if (buyerPrice > 0) {
-    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
-  }
-
-  return 0;
-}
-
-function getCommissionAmount(item) {
-  const commissionAmount = Number(item.commissionAmount || 0);
-
-  if (commissionAmount > 0) {
-    return roundMoney(commissionAmount);
-  }
-
-  const sellerPrice = getSellerPrice(item);
-  const buyerPrice = getBuyerPrice(item);
-
-  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
 }
 
 function roundMoney(value) {
