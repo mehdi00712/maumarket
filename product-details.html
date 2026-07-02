@@ -1,103 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Item Details | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Item Details | MauMarket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="amazon-topbar">
-  <a class="brand logo-brand" href="index.html">
-    <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
-
-  <div class="amazon-search">
-    <select>
-      <option>All</option>
-    </select>
-
-    <input id="detailsSearchInput" placeholder="Search MauMarket">
-
-    <button id="detailsSearchBtn" type="button">Search</button>
-  </div>
-
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="cart.html">Cart</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
-
-<div class="amazon-subnav">
-  <a href="products.html">All</a>
-  <a href="products.html?category=Beauty">Beauty</a>
-  <a href="products.html?category=Electronics">Electronics</a>
-  <a href="products.html?category=Fashion">Fashion</a>
-  <a href="products.html?category=Food">Food</a>
-  <a href="products.html?category=Hardware">Hardware</a>
-  <a href="products.html?category=Home">Home</a>
-  <a href="products.html?category=Services">Services</a>
-  <a href="products.html?category=Other">Other</a>
-</div>
-
 <main class="product-page">
 
-  <section class="buyer-trust-strip">
-    <div>
-      <strong>Secure Shopping</strong>
-      <span>Shop safely with MauMarket protection</span>
-    </div>
+    <section class="buyer-trust-strip">
 
-    <div>
-      <strong>Verified Seller</strong>
-      <span>Seller identity checked by MauMarket</span>
-    </div>
+        <div>
+            <strong>🛡 Secure Shopping</strong>
+            <span>Every order is protected by MauMarket.</span>
+        </div>
 
-    <div>
-      <strong>Tracked Delivery</strong>
-      <span>Delivery handled through MauMarket</span>
-    </div>
-  </section>
+        <div>
+            <strong>✔ Verified Sellers</strong>
+            <span>Every seller is reviewed before selling.</span>
+        </div>
 
-  <div id="detailsBox" class="pro-details-box">Loading...</div>
+        <div>
+            <strong>🚚 Island-wide Delivery</strong>
+            <span>MauMarket manages delivery across Mauritius.</span>
+        </div>
 
-  <section class="related-section">
-    <div class="section-row-title">
-      <h2>Related Items</h2>
-      <a href="products.html">View all</a>
-    </div>
+    </section>
 
-    <div id="relatedItems" class="pro-product-grid"></div>
-  </section>
+    <section
+        id="detailsBox"
+        class="pro-details-box">
+
+        Loading product...
+
+    </section>
+
+    <section class="related-section">
+
+        <div class="section-row-title">
+
+            <h2>Related Products</h2>
+
+            <a href="products.html">
+                View All
+            </a>
+
+        </div>
+
+        <div
+            id="relatedItems"
+            class="pro-product-grid">
+
+            Loading...
+
+        </div>
+
+    </section>
 
 </main>
 
-<script>
-  const detailsSearchInput = document.getElementById("detailsSearchInput");
-  const detailsSearchBtn = document.getElementById("detailsSearchBtn");
+<script type="module" src="js/nav.js?v=2.0"></script>
 
-  function runDetailsSearch() {
-    const search = detailsSearchInput.value.trim();
-
-    window.location.href = search
-      ? `products.html?search=${encodeURIComponent(search)}`
-      : "products.html";
-  }
-
-  detailsSearchBtn.addEventListener("click", runDetailsSearch);
-
-  detailsSearchInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      runDetailsSearch();
-    }
-  });
-</script>
-
-<script type="module" src="js/product-details.js?v=4.7-clean-buyer"></script>
+<script type="module" src="js/product-details.js?v=5.0"></script>
 
 </body>
 </html>
