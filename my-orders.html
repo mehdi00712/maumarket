@@ -12,198 +12,136 @@
 
 <main class="container orders-page">
 
-    <!-- PAGE HEADER -->
+    <section class="dashboard-hero orders-hero">
 
-    <section class="dashboard-section-title">
+        <div class="dashboard-hero-left">
 
-        <h1>
-            My Orders
-        </h1>
+            <span class="hero-badge">
+                📦 My Orders
+            </span>
 
-        <p>
-            Track every order placed through MauMarket from payment to delivery.
-        </p>
+            <h1>
+                Track Every Order
+            </h1>
+
+            <p>
+                Follow your MauMarket orders from payment verification to delivery.
+            </p>
+
+            <div class="dashboard-hero-buttons">
+                <a href="products.html" class="btn">🛍 Continue Shopping</a>
+                <a href="cart.html" class="secondary-btn">🛒 View Cart</a>
+            </div>
+
+        </div>
+
+        <div class="dashboard-hero-right">
+
+            <div class="dashboard-hero-card">
+                <div class="hero-card-icon">🚚</div>
+                <h3>Tracked Delivery</h3>
+                <p>Stay updated until your order reaches you.</p>
+            </div>
+
+        </div>
 
     </section>
-
-    <!-- TRUST BAR -->
 
     <section class="buyer-trust-strip">
 
-        <div>
-
-            <strong>
-                ✔ Verified Sellers
-            </strong>
-
-            <span>
-                Every seller is approved before selling.
-            </span>
-
+        <div class="trust-card">
+            <div class="trust-icon">✔</div>
+            <strong>Verified Sellers</strong>
+            <span>Every seller is approved before selling.</span>
         </div>
 
-        <div>
-
-            <strong>
-                📦 Live Order Tracking
-            </strong>
-
-            <span>
-                Follow your order from payment to delivery.
-            </span>
-
+        <div class="trust-card">
+            <div class="trust-icon">📦</div>
+            <strong>Order Tracking</strong>
+            <span>Follow your order from payment to delivery.</span>
         </div>
 
-        <div>
+        <div class="trust-card">
+            <div class="trust-icon">🚚</div>
+            <strong>MauMarket Delivery</strong>
+            <span>Your order is handled through MauMarket.</span>
+        </div>
 
-            <strong>
-                🚚 MauMarket Delivery
-            </strong>
-
-            <span>
-                Your order is delivered by MauMarket.
-            </span>
-
+        <div class="trust-card">
+            <div class="trust-icon">🛡️</div>
+            <strong>Buyer Protection</strong>
+            <span>Support is available if something goes wrong.</span>
         </div>
 
     </section>
-
-    <!-- ORDER FILTERS -->
 
     <section class="orders-toolbar">
 
         <div class="orders-search">
-
             <input
                 id="orderSearch"
                 type="text"
-                placeholder="Search an order...">
-
+                placeholder="Search order, product, seller...">
         </div>
 
         <div class="orders-filters">
-
             <select id="orderStatusFilter">
-
-                <option value="">
-                    All Orders
-                </option>
-
-                <option value="Payment Submitted">
-                    Payment Submitted
-                </option>
-
-                <option value="Preparing Order">
-                    Preparing
-                </option>
-
-                <option value="Ready for Pickup">
-                    Ready For Pickup
-                </option>
-
-                <option value="Picked Up">
-                    Picked Up
-                </option>
-
-                <option value="Out for Delivery">
-                    Out For Delivery
-                </option>
-
-                <option value="Delivered">
-                    Delivered
-                </option>
-
-                <option value="Cancelled">
-                    Cancelled
-                </option>
-
+                <option value="">All Orders</option>
+                <option value="Payment Submitted">Payment Submitted</option>
+                <option value="Preparing Order">Preparing</option>
+                <option value="Ready for Pickup">Ready For Pickup</option>
+                <option value="Picked Up">Picked Up</option>
+                <option value="Out for Delivery">Out For Delivery</option>
+                <option value="Delivery Submitted">Delivery Submitted</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
             </select>
-
         </div>
 
     </section>
 
-    <!-- ORDERS -->
-
     <section class="orders-layout">
 
-        <div
-            id="ordersList"
-            class="orders-list">
-
+        <div id="ordersList" class="orders-list">
             Loading your orders...
-
         </div>
-
-        <!-- SIDEBAR -->
 
         <aside class="orders-sidebar">
 
             <div class="orders-info-card">
-
-                <h2>
-                    Need Help?
-                </h2>
+                <h2>Need Help?</h2>
 
                 <p>
-
-                    Our support team is available if you have questions about
-                    payment, delivery or your order.
-
+                    Our support team can help with payment, delivery, or order problems.
                 </p>
 
-                <a
-                    href="dashboard.html"
-                    class="btn">
-
+                <a href="dashboard.html" class="btn">
                     Contact Support
-
                 </a>
-
             </div>
 
             <div class="orders-info-card">
-
-                <h3>
-                    MauMarket Protection
-                </h3>
+                <h3>MauMarket Protection</h3>
 
                 <ul>
-
-                    <li>✔ Verified Sellers</li>
-
-                    <li>✔ Secure Payments</li>
-
-                    <li>✔ Delivery Tracking</li>
-
-                    <li>✔ Customer Support</li>
-
-                    <li>✔ Verified Reviews</li>
-
+                    <li>✔ Verified sellers</li>
+                    <li>✔ Payment verification</li>
+                    <li>✔ Delivery tracking</li>
+                    <li>✔ Customer support</li>
+                    <li>✔ Verified reviews</li>
                 </ul>
-
             </div>
 
             <div class="orders-info-card">
-
-                <h3>
-                    Order Status Guide
-                </h3>
+                <h3>Status Guide</h3>
 
                 <ul>
-
                     <li>💳 Payment Submitted</li>
-
                     <li>📦 Preparing Order</li>
-
                     <li>✅ Ready for Pickup</li>
-
                     <li>🚚 Out for Delivery</li>
-
                     <li>🎉 Delivered</li>
-
                 </ul>
-
             </div>
 
         </aside>
@@ -212,11 +150,8 @@
 
 </main>
 
-<!-- Shared Navigation -->
 <script type="module" src="js/nav.js?v=2.0"></script>
-
-<!-- Orders Logic -->
-<script type="module" src="js/my-orders.js?v=5.0"></script>
+<script type="module" src="js/my-orders.js?v=5.1"></script>
 
 </body>
 </html>
