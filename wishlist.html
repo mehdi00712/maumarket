@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Wishlist | MauMarket</title>
+    <title>My Wishlist | MauMarket</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="styles.css">
@@ -10,67 +10,198 @@
 
 <body>
 
-<main class="container wishlist-page">
+<!-- Navigation is injected automatically by nav.js -->
 
-    <!-- PAGE HEADER -->
+<main class="wishlist-page container">
 
-    <section class="dashboard-section-title">
+    <!-- ================= HERO ================= -->
 
-        <h1>My Wishlist ❤️</h1>
+    <section class="dashboard-hero wishlist-hero">
 
-        <p>
-            Save products you love and come back to them anytime.
-        </p>
+        <div class="dashboard-hero-left">
+
+            <span class="hero-badge">
+                ❤️ Your Wishlist
+            </span>
+
+            <h1>
+
+                Save Today,
+                Buy Anytime
+
+            </h1>
+
+            <p>
+
+                Keep your favourite products in one place. Your wishlist is
+                automatically synced with your MauMarket account so you can
+                easily return whenever you're ready to purchase.
+
+            </p>
+
+            <div class="dashboard-hero-buttons">
+
+                <a
+                    href="products.html"
+                    class="btn">
+
+                    🛍 Continue Shopping
+
+                </a>
+
+                <a
+                    href="cart.html"
+                    class="secondary-btn">
+
+                    🛒 View Cart
+
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="dashboard-hero-right">
+
+            <div class="dashboard-hero-card">
+
+                <div class="hero-card-icon">
+
+                    ❤️
+
+                </div>
+
+                <h3>
+
+                    Wishlist
+
+                </h3>
+
+                <p>
+
+                    Never lose track of products you love.
+
+                </p>
+
+            </div>
+
+        </div>
 
     </section>
 
-    <!-- TRUST -->
+    <!-- ================= BENEFITS ================= -->
 
     <section class="buyer-trust-strip">
 
-        <div>
+        <div class="trust-card">
+
+            <div class="trust-icon">
+                ✔
+            </div>
 
             <strong>
-                ✔ Verified Sellers
+
+                Verified Sellers
+
             </strong>
 
             <span>
-                Every seller is approved before selling on MauMarket.
+
+                Every shop is reviewed before joining MauMarket.
+
             </span>
 
         </div>
 
-        <div>
+        <div class="trust-card">
+
+            <div class="trust-icon">
+                🛡️
+            </div>
 
             <strong>
-                🛡 Secure Shopping
+
+                Secure Shopping
+
             </strong>
 
             <span>
-                Your purchases stay protected through MauMarket.
+
+                Shop confidently with protected payments.
+
             </span>
 
         </div>
 
-        <div>
+        <div class="trust-card">
+
+            <div class="trust-icon">
+                🚚
+            </div>
 
             <strong>
-                🚚 Island-wide Delivery
+
+                Fast Delivery
+
             </strong>
 
             <span>
-                Delivery is managed by MauMarket across Mauritius.
+
+                Delivery available across Mauritius.
+
+            </span>
+
+        </div>
+
+        <div class="trust-card">
+
+            <div class="trust-icon">
+                ⭐
+            </div>
+
+            <strong>
+
+                Local Marketplace
+
+            </strong>
+
+            <span>
+
+                Support trusted Mauritian businesses.
+
             </span>
 
         </div>
 
     </section>
 
-    <!-- WISHLIST -->
+    <!-- ================= CONTENT ================= -->
 
     <section class="wishlist-layout">
 
-        <div class="wishlist-main">
+        <!-- LEFT -->
+
+        <section class="wishlist-main">
+
+            <div class="cart-section-head">
+
+                <div>
+
+                    <h2>
+
+                        Saved Products
+
+                    </h2>
+
+                    <p>
+
+                        Items you've saved will appear below.
+
+                    </p>
+
+                </div>
+
+            </div>
 
             <div
                 id="wishlistItems"
@@ -80,23 +211,23 @@
 
             </div>
 
-        </div>
+        </section>
 
-        <!-- SIDEBAR -->
+        <!-- RIGHT -->
 
         <aside class="wishlist-sidebar">
 
             <div class="wishlist-info-card">
 
                 <h2>
-                    Wishlist
+
+                    ❤️ My Wishlist
+
                 </h2>
 
                 <p>
 
-                    Keep your favourite products in one place.
-
-                    Prices and availability are updated automatically whenever you visit.
+                    Save products you love so you can quickly find them later.
 
                 </p>
 
@@ -105,18 +236,42 @@
             <div class="wishlist-info-card">
 
                 <h3>
-                    Shopping Tips
+
+                    Why Use Wishlist?
+
                 </h3>
 
                 <ul>
 
-                    <li>❤️ Save products for later.</li>
+                    <li>❤️ Save favourite products.</li>
 
-                    <li>🛒 Move items directly to your cart.</li>
+                    <li>🛒 Add items to your cart anytime.</li>
 
-                    <li>🔔 Check back regularly for new arrivals.</li>
+                    <li>⭐ Compare products before buying.</li>
 
-                    <li>🚚 Fast delivery across Mauritius.</li>
+                    <li>🚚 Purchase when you're ready.</li>
+
+                </ul>
+
+            </div>
+
+            <div class="wishlist-info-card">
+
+                <h3>
+
+                    MauMarket Promise
+
+                </h3>
+
+                <ul>
+
+                    <li>✔ Verified Sellers</li>
+
+                    <li>✔ Secure Checkout</li>
+
+                    <li>✔ Buyer Protection</li>
+
+                    <li>✔ Island-wide Delivery</li>
 
                 </ul>
 
@@ -124,13 +279,54 @@
 
             <a
                 href="products.html"
-                class="btn">
+                class="btn"
+                style="width:100%;">
 
-                Continue Shopping
+                Explore Marketplace
 
             </a>
 
         </aside>
+
+    </section>
+
+    <!-- ================= RECOMMENDATIONS ================= -->
+
+    <section class="dashboard-section">
+
+        <div class="dashboard-section-title">
+
+            <div>
+
+                <h2>
+
+                    You May Also Like
+
+                </h2>
+
+                <p>
+
+                    Discover more products from MauMarket sellers.
+
+                </p>
+
+            </div>
+
+            <a href="products.html">
+
+                Browse All
+
+            </a>
+
+        </div>
+
+        <div
+            id="recommendedWishlistProducts"
+            class="market-product-grid">
+
+            <!-- Optional recommendations loaded later -->
+
+        </div>
 
     </section>
 
@@ -139,8 +335,8 @@
 <!-- Shared Navigation -->
 <script type="module" src="js/nav.js?v=2.0"></script>
 
-<!-- Wishlist Logic -->
-<script type="module" src="js/wishlist.js?v=2.0"></script>
+<!-- Wishlist -->
+<script type="module" src="js/wishlist.js?v=3.0"></script>
 
 </body>
 </html>
