@@ -84,6 +84,7 @@ async function loadCheckout() {
     const sellerPrice = getSellerPrice(rawItem);
     const commissionAmount = getCommissionAmount(rawItem);
     const quantity = Number(rawItem.quantity || 1);
+
     const subtotal = roundMoney(buyerPrice * quantity);
     const sellerSubtotal = roundMoney(sellerPrice * quantity);
     const commissionSubtotal = roundMoney(commissionAmount * quantity);
@@ -118,7 +119,6 @@ async function loadCheckout() {
         <div>
           <strong>${escapeHtml(item.title || "Untitled")}</strong>
           <p>${escapeHtml(item.shopName || "MauMarket Seller")}</p>
-          <p class="buyer-price-note">Final price includes MauMarket commission</p>
         </div>
       </div>
 
