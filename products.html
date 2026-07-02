@@ -1,117 +1,312 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Marketplace | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>MauMarket | Marketplace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
+<!-- Navigation is injected automatically by nav.js -->
+
 <main class="market-pro-page">
 
-  <section id="categoryIconGrid" class="category-icon-grid">
-    Loading categories...
-  </section>
+    <!-- ================= HERO ================= -->
 
-  <section class="market-pro-hero">
-    <div class="hero-content">
-      <span class="hero-mini-label">Mauritius Local Marketplace</span>
+    <section class="market-pro-hero">
 
-      <h1>Shop with confidence across Mauritius</h1>
+        <div class="hero-content">
 
-      <p>
-        Discover products and services from trusted local businesses with secure checkout,
-        verified sellers and delivery handled by MauMarket.
-      </p>
+            <span class="hero-mini-label">
+                🇲🇺 Mauritius Local Marketplace
+            </span>
 
-      <a href="#marketProducts" class="hero-shop-btn">
-        Start Shopping
-      </a>
-    </div>
+            <h1>
+                Discover Thousands of Products Across Mauritius
+            </h1>
 
-    <div class="hero-illustration">
-      <div class="hero-island"></div>
-      <div class="hero-bag">m</div>
-    </div>
-  </section>
+            <p>
+                Shop from verified local businesses, discover amazing deals,
+                enjoy secure checkout and island-wide delivery powered by
+                MauMarket.
+            </p>
 
-  <section class="buyer-trust-strip">
-    <div>
-      <strong>✔ Verified Sellers</strong>
-      <span>Every shop is reviewed before selling.</span>
-    </div>
+            <div class="hero-buttons">
 
-    <div>
-      <strong>🔒 Secure Checkout</strong>
-      <span>Your payment is protected through MauMarket.</span>
-    </div>
+                <a href="#marketProducts"
+                   class="hero-shop-btn">
+                    Shop Now
+                </a>
 
-    <div>
-      <strong>🚚 Island-wide Delivery</strong>
-      <span>Orders are delivered through MauMarket.</span>
-    </div>
-  </section>
+                <a href="seller.html"
+                   class="hero-secondary-btn">
+                    Become a Seller
+                </a>
 
-  <section id="featuredShopsSection" class="featured-shops-section market-pro-featured">
-    <div class="section-row-title">
-      <h2>Featured Shops</h2>
-      <a href="products.html">View all</a>
-    </div>
+            </div>
 
-    <div id="featuredShops" class="featured-shops-row">
-      Loading featured shops...
-    </div>
-  </section>
-
-  <section id="topAdBanner" class="market-premium-ad" style="display:none;"></section>
-
-  <section id="marketProducts" class="market-pro-products-layout">
-
-    <aside class="market-pro-sidebar">
-      <h3>Filters</h3>
-
-      <label>Category</label>
-      <select id="sideCategoryFilter">
-        <option value="">All Categories</option>
-      </select>
-
-      <label>Sort</label>
-      <select id="sideSortFilter">
-        <option value="newest">Newest</option>
-        <option value="low-high">Price Low to High</option>
-        <option value="high-low">Price High to Low</option>
-        <option value="rating">Highest Rated</option>
-      </select>
-
-      <div class="sidebar-info-box">
-        <h4>Shop with Confidence</h4>
-        <p>
-          Verified sellers, secure payments, tracked delivery and customer protection on every order.
-        </p>
-      </div>
-    </aside>
-
-    <section class="market-pro-products-main">
-      <div class="market-heading compact-heading">
-        <div>
-          <h2>Featured Products & Services</h2>
-          <p id="resultCount">Loading...</p>
         </div>
-      </div>
 
-      <div id="productsGrid" class="market-product-grid">
-        Loading marketplace...
-      </div>
+        <div class="hero-illustration">
+
+            <div class="hero-island"></div>
+
+            <div class="hero-bag">
+                M
+            </div>
+
+        </div>
+
     </section>
 
-  </section>
+    <!-- ================= TRUST ================= -->
+
+    <section class="buyer-trust-strip">
+
+        <div class="trust-card">
+            <div class="trust-icon">🛡️</div>
+
+            <strong>
+                Verified Sellers
+            </strong>
+
+            <span>
+                Every shop is approved before selling.
+            </span>
+
+        </div>
+
+        <div class="trust-card">
+
+            <div class="trust-icon">
+                🔒
+            </div>
+
+            <strong>
+                Secure Checkout
+            </strong>
+
+            <span>
+                Protected payments with buyer protection.
+            </span>
+
+        </div>
+
+        <div class="trust-card">
+
+            <div class="trust-icon">
+                🚚
+            </div>
+
+            <strong>
+                Fast Delivery
+            </strong>
+
+            <span>
+                Island-wide delivery through MauMarket.
+            </span>
+
+        </div>
+
+        <div class="trust-card">
+
+            <div class="trust-icon">
+                ⭐
+            </div>
+
+            <strong>
+                Trusted Marketplace
+            </strong>
+
+            <span>
+                Shop confidently with local businesses.
+            </span>
+
+        </div>
+
+    </section>
+
+    <!-- ================= CATEGORIES ================= -->
+
+    <section class="homepage-section">
+
+        <div class="section-row-title">
+
+            <h2>
+                Shop by Category
+            </h2>
+
+            <a href="#marketProducts">
+                Browse All
+            </a>
+
+        </div>
+
+        <div
+            id="categoryIconGrid"
+            class="category-icon-grid">
+
+            Loading categories...
+
+        </div>
+
+    </section>
+
+    <!-- ================= FEATURED SHOPS ================= -->
+
+    <section
+        id="featuredShopsSection"
+        class="featured-shops-section">
+
+        <div class="section-row-title">
+
+            <h2>
+                Featured Shops
+            </h2>
+
+            <a href="products.html">
+                View all
+            </a>
+
+        </div>
+
+        <div
+            id="featuredShops"
+            class="featured-shops-row">
+
+            Loading featured shops...
+
+        </div>
+
+    </section>
+
+    <!-- ================= ADS ================= -->
+
+    <section
+        id="topAdBanner"
+        class="market-premium-ad"
+        style="display:none;">
+
+    </section>
+
+    <!-- ================= PRODUCTS ================= -->
+
+    <section
+        id="marketProducts"
+        class="market-pro-products-layout">
+
+        <!-- Sidebar -->
+
+        <aside class="market-pro-sidebar">
+
+            <h3>
+                Filter Products
+            </h3>
+
+            <label>
+                Category
+            </label>
+
+            <select id="sideCategoryFilter">
+
+                <option value="">
+                    All Categories
+                </option>
+
+            </select>
+
+            <label>
+                Sort By
+            </label>
+
+            <select id="sideSortFilter">
+
+                <option value="newest">
+                    Newest
+                </option>
+
+                <option value="low-high">
+                    Lowest Price
+                </option>
+
+                <option value="high-low">
+                    Highest Price
+                </option>
+
+                <option value="rating">
+                    Highest Rated
+                </option>
+
+            </select>
+
+            <div class="sidebar-info-box">
+
+                <h4>
+                    Why Shop on MauMarket?
+                </h4>
+
+                <ul>
+
+                    <li>✔ Verified Sellers</li>
+
+                    <li>✔ Buyer Protection</li>
+
+                    <li>✔ Island-wide Delivery</li>
+
+                    <li>✔ Secure Checkout</li>
+
+                    <li>✔ Local Businesses</li>
+
+                </ul>
+
+            </div>
+
+        </aside>
+
+        <!-- Products -->
+
+        <section class="market-pro-products-main">
+
+            <div class="market-heading compact-heading">
+
+                <div>
+
+                    <h2>
+                        Products & Services
+                    </h2>
+
+                    <p id="resultCount">
+
+                        Loading...
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div
+                id="productsGrid"
+                class="market-product-grid">
+
+                Loading marketplace...
+
+            </div>
+
+        </section>
+
+    </section>
 
 </main>
 
-<script type="module" src="js/nav.js?v=1.0"></script>
-<script type="module" src="js/products.js?v=4.8-shared-nav"></script>
+<!-- Shared Navigation -->
+<script type="module" src="js/nav.js?v=2.0"></script>
+
+<!-- Marketplace -->
+<script type="module" src="js/products.js?v=5.0"></script>
 
 </body>
 </html>
