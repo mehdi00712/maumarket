@@ -11,37 +11,40 @@ import {
   increment
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+/*
+  MauMarket products.js
+  Updated for:
+  - Shared nav.js header
+  - Cleaner marketplace UI
+  - Safer null checks
+  - Category icons
+  - Featured shops
+  - Premium ad banner
+  - Search/category/sort filters
+  - Buyer-facing price only
+  - No commission wording shown to buyers
+*/
+
 const COMMISSION_RATE = 0.10;
 
 const productsGrid = document.getElementById("productsGrid");
+const resultCount = document.getElementById("resultCount");
+const categoryIconGrid = document.getElementById("categoryIconGrid");
+const featuredShops = document.getElementById("featuredShops");
+const featuredShopsSection = document.getElementById("featuredShopsSection");
+const topAdBanner = document.getElementById("topAdBanner");
 
 const searchInput = document.getElementById("searchInput");
 const searchInput2 = document.getElementById("searchInput2");
-
 const searchBtn = document.getElementById("searchBtn");
 const searchBtn2 = document.getElementById("searchBtn2");
 
 const typeFilter = document.getElementById("typeFilter");
-
 const topCategoryFilter = document.getElementById("topCategoryFilter");
 const categoryFilter = document.getElementById("categoryFilter");
 const sideCategoryFilter = document.getElementById("sideCategoryFilter");
-
 const sortFilter = document.getElementById("sortFilter");
 const sideSortFilter = document.getElementById("sideSortFilter");
-
-const resultCount = document.getElementById("resultCount");
-const topAdBanner = document.getElementById("topAdBanner");
-
-const featuredShops = document.getElementById("featuredShops");
-const featuredShopsSection = document.getElementById("featuredShopsSection");
-
-const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-const mobileNav = document.getElementById("mobileNav");
-const mobileMenuOverlay = document.getElementById("mobileMenuOverlay");
-const mobileMenuClose = document.getElementById("mobileMenuClose");
-
-const categoryIconGrid = document.getElementById("categoryIconGrid");
 
 let allItems = [];
 let allCategories = [];
@@ -52,44 +55,18 @@ let activeCategory = "";
 let activeSort = "newest";
 
 const params = new URLSearchParams(window.location.search);
-activeCategory = params.get("category") || "";
 activeSearch = params.get("search") || "";
+activeCategory = params.get("category") || "";
 
 if (searchInput) searchInput.value = activeSearch;
 if (searchInput2) searchInput2.value = activeSearch;
 
-function openMobileMenu() {
-  mobileNav?.classList.add("show");
-  mobileMenuOverlay?.classList.add("show");
-  document.body.classList.add("menu-open");
-}
+attachSearchEvents();
+attachFilterEvents();
 
-function closeMobileMenu() {
-  mobileNav?.classList.remove("show");
-  mobileMenuOverlay?.classList.remove("show");
-  document.body.classList.remove("menu-open");
-}
-
-mobileMenuBtn?.addEventListener("click", () => {
-  if (mobileNav?.classList.contains("show")) {
-    closeMobileMenu();
-  } else {
-    openMobileMenu();
-  }
-});
-
-mobileMenuClose?.addEventListener("click", closeMobileMenu);
-mobileMenuOverlay?.addEventListener("click", closeMobileMenu);
-
-mobileNav?.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", closeMobileMenu);
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeMobileMenu();
-  }
-});
+await loadCategories();
+await loadTopBanner();
+await loadItems();
 
 async function loadCategories() {
   try {
@@ -108,6 +85,11 @@ async function loadCategories() {
       }
     });
 
+    if (allCategories.length === 0) {
+      renderFallbackCategories();
+      return;
+    }
+
     allCategories.sort((a, b) => {
       const aOrder = Number(a.sortOrder || 0);
       const bOrder = Number(b.sortOrder || 0);
@@ -120,7 +102,7 @@ async function loadCategories() {
     renderCategoryDropdowns();
     renderCategoryIcons();
   } catch (error) {
-    console.warn("Categories not loaded:", error.message);
+    console.warn("Categories could not load:", error.message);
     renderFallbackCategories();
   }
 }
@@ -158,10 +140,6 @@ function renderCategoryDropdowns() {
       option.value = category.name || "";
       option.textContent = category.name || "Category";
 
-      if (activeCategory === category.name) {
-        option.selected = true;
-      }
-
       select.appendChild(option);
     });
 
@@ -188,24 +166,23 @@ function renderCategoryIcons() {
   categoryIconGrid.innerHTML = "";
 
   categories.forEach((category) => {
-    const btn = document.createElement("button");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `category-icon-card ${activeCategory === category.name ? "active" : ""}`;
 
-    btn.type = "button";
-    btn.className = `category-icon-card ${activeCategory === category.name ? "active" : ""}`;
-
-    btn.innerHTML = `
+    button.innerHTML = `
       <span class="category-icon-circle">
         ${svgIcon(category.icon)}
       </span>
       <span>${escapeHtml(category.label)}</span>
     `;
 
-    btn.addEventListener("click", () => {
+    button.addEventListener("click", () => {
       setCategory(category.name);
       runSearch(true);
     });
 
-    categoryIconGrid.appendChild(btn);
+    categoryIconGrid.appendChild(button);
   });
 }
 
@@ -213,12 +190,12 @@ async function loadTopBanner() {
   if (!topAdBanner) return;
 
   try {
-    const q = query(
+    const bannerQuery = query(
       collection(db, "banners"),
       where("active", "==", true)
     );
 
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(bannerQuery);
 
     if (snapshot.empty) {
       topAdBanner.style.display = "none";
@@ -231,15 +208,19 @@ async function loadTopBanner() {
     }));
 
     banners.sort((a, b) => {
-      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+      const aTime = a.createdAt?.seconds || 0;
+      const bTime = b.createdAt?.seconds || 0;
+      return bTime - aTime;
     });
 
     const banner = banners[0];
 
-    if (!banner.imageUrl || !banner.shopId) {
+    if (!banner.imageUrl) {
       topAdBanner.style.display = "none";
       return;
     }
+
+    const targetShopId = banner.shopId || banner.sellerId || "";
 
     topAdBanner.style.display = "block";
     topAdBanner.classList.add("market-premium-ad");
@@ -251,13 +232,13 @@ async function loadTopBanner() {
         <div class="top-ad-content premium-ad-content">
           <span>Featured Shop</span>
           <h2>${escapeHtml(banner.title || banner.shopName || "Featured Seller")}</h2>
-          <p>${escapeHtml(banner.subtitle || banner.shopName || "Discover this MauMarket seller.")}</p>
+          <p>${escapeHtml(banner.subtitle || "Discover this MauMarket seller.")}</p>
           <button type="button">Visit Shop</button>
         </div>
       </div>
     `;
 
-    topAdBanner.onclick = async () => {
+    topAdBanner.addEventListener("click", async () => {
       try {
         await updateDoc(doc(db, "banners", banner.id), {
           clicks: increment(1)
@@ -266,10 +247,14 @@ async function loadTopBanner() {
         console.warn("Could not update banner clicks:", error.message);
       }
 
-      window.location.href = `shop.html?id=${encodeURIComponent(banner.shopId)}`;
-    };
+      if (targetShopId) {
+        window.location.href = `shop.html?id=${encodeURIComponent(targetShopId)}`;
+      } else {
+        window.location.href = "products.html";
+      }
+    });
   } catch (error) {
-    console.warn("Banner not loaded:", error.message);
+    console.warn("Banner could not load:", error.message);
     topAdBanner.style.display = "none";
   }
 }
@@ -280,12 +265,12 @@ async function loadItems() {
   renderSkeletonGrid();
 
   try {
-    const q = query(
+    const productsQuery = query(
       collection(db, "products"),
       where("active", "==", true)
     );
 
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(productsQuery);
 
     allItems = [];
 
@@ -303,7 +288,7 @@ async function loadItems() {
     renderFeaturedShops();
   } catch (error) {
     productsGrid.innerHTML = `
-      <div class="order-card">
+      <div class="order-card empty-market-card">
         <h3>Marketplace could not load</h3>
         <p>${escapeHtml(error.message)}</p>
       </div>
@@ -312,7 +297,9 @@ async function loadItems() {
 }
 
 function renderSkeletonGrid() {
-  productsGrid.innerHTML = Array.from({ length: 8 }).map(() => `
+  if (!productsGrid) return;
+
+  productsGrid.innerHTML = Array.from({ length: 10 }).map(() => `
     <div class="market-product-card skeleton-card">
       <div class="market-product-img skeleton-box"></div>
       <div class="market-product-body">
@@ -345,6 +332,7 @@ async function getShop(sellerId) {
       shopCache[sellerId] = emptyShop(sellerId);
     }
   } catch (error) {
+    console.warn("Could not load shop:", error.message);
     shopCache[sellerId] = emptyShop(sellerId);
   }
 
@@ -354,7 +342,7 @@ async function getShop(sellerId) {
 function emptyShop(id) {
   return {
     id,
-    shopName: "Unknown Shop",
+    shopName: "MauMarket Seller",
     verified: false,
     averageRating: 0,
     totalReviews: 0,
@@ -410,7 +398,7 @@ function renderFeaturedShops() {
 
       <strong>${escapeHtml(shop.shopName || "Shop")}</strong>
       <span>✓ Verified</span>
-      <small>${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "No reviews yet"}</small>
+      <small>${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "New shop"}</small>
     `;
 
     featuredShops.appendChild(card);
@@ -418,6 +406,8 @@ function renderFeaturedShops() {
 }
 
 function renderItems(shouldScroll = false) {
+  if (!productsGrid) return;
+
   syncControlsFromState();
 
   const search = activeSearch.toLowerCase().trim();
@@ -455,21 +445,7 @@ function renderItems(shouldScroll = false) {
   }
 
   if (filtered.length === 0) {
-    productsGrid.innerHTML = `
-      <div class="order-card empty-market-card">
-        <h3>No items found</h3>
-        <p>${search ? `No result for "${escapeHtml(search)}".` : "Try another search, category, or filter."}</p>
-        <button type="button" id="clearMarketplaceSearch" class="secondary-btn">Clear Search</button>
-      </div>
-    `;
-
-    document.getElementById("clearMarketplaceSearch")?.addEventListener("click", () => {
-      setSearch("");
-      setCategory("");
-      setSort("newest");
-      runSearch(true);
-    });
-
+    renderEmptyState(search);
     if (shouldScroll) scrollToProducts();
     return;
   }
@@ -481,6 +457,25 @@ function renderItems(shouldScroll = false) {
   });
 
   if (shouldScroll) scrollToProducts();
+}
+
+function renderEmptyState(search) {
+  productsGrid.innerHTML = `
+    <div class="order-card empty-market-card">
+      <h3>No items found</h3>
+      <p>${search ? `No result for "${escapeHtml(search)}".` : "Try another search, category, or filter."}</p>
+      <button type="button" id="clearMarketplaceSearch" class="secondary-btn">
+        Clear Search
+      </button>
+    </div>
+  `;
+
+  document.getElementById("clearMarketplaceSearch")?.addEventListener("click", () => {
+    setSearch("");
+    setCategory("");
+    setSort("newest");
+    runSearch(true);
+  });
 }
 
 function sortItems(items, sort) {
@@ -496,7 +491,9 @@ function sortItems(items, sort) {
 
   if (sort === "newest") {
     copy.sort((a, b) => {
-      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+      const aTime = a.createdAt?.seconds || 0;
+      const bTime = b.createdAt?.seconds || 0;
+      return bTime - aTime;
     });
   }
 
@@ -524,16 +521,16 @@ function createProductCard(item) {
 
   const ratingText = productRating > 0
     ? `⭐ ${productRating.toFixed(1)} (${productReviews})`
-    : "⭐ No reviews yet";
+    : "⭐ New item";
 
   const sellerRatingText = shopRating > 0
     ? `Seller ⭐ ${shopRating.toFixed(1)} (${shopReviews})`
-    : "Seller not rated yet";
+    : "Verified seller";
 
-  const div = document.createElement("div");
-  div.className = "market-product-card market-wow-product-card";
+  const card = document.createElement("article");
+  card.className = "market-product-card market-wow-product-card";
 
-  div.innerHTML = `
+  card.innerHTML = `
     <a class="market-product-img" href="product-details.html?id=${encodeURIComponent(item.id)}">
       ${
         item.imageUrl
@@ -571,13 +568,14 @@ function createProductCard(item) {
     </div>
   `;
 
-  div.querySelector(".product-heart")?.addEventListener("click", (event) => {
+  card.querySelector(".product-heart")?.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    alert("Open the product page to save this item to your wishlist.");
+
+    window.location.href = `product-details.html?id=${encodeURIComponent(item.id)}`;
   });
 
-  return div;
+  return card;
 }
 
 function getDiscountBadge(item) {
@@ -1002,10 +1000,3 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-
-attachSearchEvents();
-attachFilterEvents();
-
-await loadCategories();
-await loadTopBanner();
-await loadItems();
