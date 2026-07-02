@@ -35,22 +35,24 @@ document.addEventListener("DOMContentLoaded", () => {
           currentRole = "customer";
         }
       } catch (error) {
-        console.warn("Could not load nav user:", error.message);
+        console.warn("Could not load user role:", error.message);
         currentRole = "customer";
       }
     }
 
-    renderNavLinks();
+    renderNav();
   });
 });
 
 function buildResponsiveNav() {
-  removeOldMobileNav();
+  hideOldHeaders();
 
   const header = document.createElement("header");
   header.className = "mm-nav";
+
   header.innerHTML = `
     <div class="mm-nav-inner">
+
       <button id="mmMenuBtn" class="mm-icon-btn" type="button" aria-label="Open menu">
         <span></span>
         <span></span>
@@ -62,7 +64,7 @@ function buildResponsiveNav() {
       </a>
 
       <form id="mmSearchForm" class="mm-search">
-        <select id="mmSearchCategory" aria-label="Category">
+        <select id="mmSearchCategory">
           <option value="">All</option>
           <option value="Beauty">Beauty</option>
           <option value="Electronics">Electronics</option>
@@ -84,6 +86,7 @@ function buildResponsiveNav() {
       <a href="cart.html" class="mm-cart-btn" aria-label="Cart">
         🛒
       </a>
+
     </div>
   `;
 
@@ -96,10 +99,14 @@ function buildResponsiveNav() {
   const sideMenu = document.createElement("aside");
   sideMenu.id = "mmSideMenu";
   sideMenu.className = "mm-side-menu";
+
   sideMenu.innerHTML = `
     <div class="mm-side-head">
       <img src="${LOGO_PATH}" alt="MauMarket">
-      <button id="mmMenuClose" type="button" aria-label="Close menu">×</button>
+
+      <button id="mmMenuClose" type="button" aria-label="Close menu">
+        ×
+      </button>
     </div>
 
     <div id="mmUserBox" class="mm-user-box">
@@ -117,14 +124,16 @@ function buildResponsiveNav() {
   overlay.addEventListener("click", closeMenu);
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeMenu();
+    if (event.key === "Escape") {
+      closeMenu();
+    }
   });
 
   document.getElementById("mmSearchForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    const search = document.getElementById("mmSearchInput").value.trim();
-    const category = document.getElementById("mmSearchCategory").value;
+    const search = document.getElementById("mmSearchInput")?.value.trim() || "";
+    const category = document.getElementById("mmSearchCategory")?.value || "";
 
     const params = new URLSearchParams();
 
@@ -137,26 +146,27 @@ function buildResponsiveNav() {
   });
 }
 
-function removeOldMobileNav() {
-  const selectors = [
+function hideOldHeaders() {
+  const oldHeaders = [
+    ".amazon-topbar",
+    ".amazon-subnav",
+    ".navbar",
+    ".market-mobile-header",
+    ".market-pro-header",
     ".mobile-market-header",
     ".mobile-search-area",
     ".mobile-side-menu",
-    ".mobile-menu-overlay",
-    ".market-pro-header",
-    ".amazon-topbar",
-    ".amazon-subnav",
-    ".navbar"
+    ".mobile-menu-overlay"
   ];
 
-  selectors.forEach((selector) => {
+  oldHeaders.forEach((selector) => {
     document.querySelectorAll(selector).forEach((element) => {
       element.style.display = "none";
     });
   });
 }
 
-function renderNavLinks() {
+function renderNav() {
   const desktopLinks = document.getElementById("mmDesktopLinks");
   const mobileLinks = document.getElementById("mmMobileLinks");
   const userBox = document.getElementById("mmUserBox");
@@ -167,17 +177,12 @@ function renderNavLinks() {
 
   desktopLinks.innerHTML = links
     .filter((link) => link.desktop !== false)
-    .map((link) => link.isButton
-      ? `<button class="mm-link-button" data-action="${link.action}" type="button">${link.label}</button>`
-      : `<a href="${link.href}">${link.label}</a>`
-    )
+    .slice(0, 5)
+    .map(renderDesktopLink)
     .join("");
 
   mobileLinks.innerHTML = links
-    .map((link) => link.isButton
-      ? `<button class="mm-mobile-link" data-action="${link.action}" type="button">${link.icon} ${link.label}</button>`
-      : `<a class="mm-mobile-link" href="${link.href}">${link.icon} ${link.label}</a>`
-    )
+    .map(renderMobileLink)
     .join("");
 
   userBox.innerHTML = getUserBoxHtml();
@@ -188,14 +193,61 @@ function renderNavLinks() {
 
   document.querySelectorAll(".mm-mobile-link").forEach((link) => {
     link.addEventListener("click", () => {
-      if (!link.dataset.action) closeMenu();
+      if (!link.dataset.action) {
+        closeMenu();
+      }
     });
   });
+
+  setActiveLinks();
+}
+
+function renderDesktopLink(link) {
+  if (link.isButton) {
+    return `
+      <button
+        class="mm-link-button"
+        data-action="${link.action}"
+        type="button">
+        ${escapeHtml(link.label)}
+      </button>
+    `;
+  }
+
+  return `
+    <a href="${escapeHtml(link.href)}">
+      ${escapeHtml(link.label)}
+    </a>
+  `;
+}
+
+function renderMobileLink(link) {
+  if (link.isButton) {
+    return `
+      <button
+        class="mm-mobile-link"
+        data-action="${link.action}"
+        type="button">
+        <span>${link.icon}</span>
+        ${escapeHtml(link.label)}
+      </button>
+    `;
+  }
+
+  return `
+    <a
+      class="mm-mobile-link"
+      href="${escapeHtml(link.href)}">
+      <span>${link.icon}</span>
+      ${escapeHtml(link.label)}
+    </a>
+  `;
 }
 
 function getLinksForRole() {
   if (!currentUser) {
     return [
+      { label: "Home", icon: "🏠", href: "index.html" },
       { label: "Marketplace", icon: "🛍", href: "products.html" },
       { label: "Login", icon: "🔐", href: "login.html" },
       { label: "Join Now", icon: "✨", href: "register.html" }
@@ -209,10 +261,12 @@ function getLinksForRole() {
       { label: "Products", icon: "📦", href: "admin-products.html" },
       { label: "Payments", icon: "💳", href: "admin-payments.html" },
       { label: "Delivery", icon: "🚚", href: "admin-delivery.html" },
+      { label: "Payouts", icon: "💰", href: "admin-payouts.html" },
       { label: "Reviews", icon: "⭐", href: "admin-reviews.html" },
       { label: "Categories", icon: "🏷", href: "admin-categories.html" },
       { label: "Analytics", icon: "📊", href: "admin-analytics.html" },
-      { label: "Logout", icon: "🚪", isButton: true, action: "logout" }
+      { label: "Dashboard", icon: "👤", href: "dashboard.html" },
+      { label: "Logout", icon: "🚪", isButton: true, action: "logout", desktop: false }
     ];
   }
 
@@ -224,7 +278,7 @@ function getLinksForRole() {
       { label: "Earnings", icon: "💰", href: "seller-earnings.html" },
       { label: "Analytics", icon: "📊", href: "seller-analytics.html" },
       { label: "Dashboard", icon: "👤", href: "dashboard.html" },
-      { label: "Logout", icon: "🚪", isButton: true, action: "logout" }
+      { label: "Logout", icon: "🚪", isButton: true, action: "logout", desktop: false }
     ];
   }
 
@@ -234,7 +288,7 @@ function getLinksForRole() {
     { label: "Cart", icon: "🛒", href: "cart.html" },
     { label: "Orders", icon: "📦", href: "my-orders.html" },
     { label: "Dashboard", icon: "👤", href: "dashboard.html" },
-    { label: "Logout", icon: "🚪", isButton: true, action: "logout" }
+    { label: "Logout", icon: "🚪", isButton: true, action: "logout", desktop: false }
   ];
 }
 
@@ -266,9 +320,27 @@ function getUserBoxHtml() {
   `;
 }
 
+function setActiveLinks() {
+  const currentPage =
+    window.location.pathname.split("/").pop() || "index.html";
+
+  document.querySelectorAll(".mm-desktop-links a, .mm-mobile-link").forEach((link) => {
+    const href = link.getAttribute("href");
+
+    if (!href) return;
+
+    const hrefPage = href.split("?")[0];
+
+    if (hrefPage === currentPage) {
+      link.classList.add("active");
+    }
+  });
+}
+
 async function logoutUser() {
   try {
     await signOut(auth);
+    closeMenu();
     window.location.href = "login.html";
   } catch (error) {
     alert(error.message);
