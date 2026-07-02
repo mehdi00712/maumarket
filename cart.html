@@ -9,38 +9,6 @@
 
 <body>
 
-<header class="amazon-topbar">
-  <a class="brand logo-brand" href="index.html">
-    <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
-
-  <div class="amazon-search">
-    <select>
-      <option>All</option>
-    </select>
-
-    <input id="cartSearchInput" placeholder="Search MauMarket">
-    <button id="cartSearchBtn" type="button">Search</button>
-  </div>
-
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="my-orders.html">Orders</a>
-  </nav>
-</header>
-
-<div class="amazon-subnav">
-  <a href="products.html">All</a>
-  <a href="products.html?category=Beauty">Beauty</a>
-  <a href="products.html?category=Electronics">Electronics</a>
-  <a href="products.html?category=Fashion">Fashion</a>
-  <a href="products.html?category=Food">Food</a>
-  <a href="products.html?category=Hardware">Hardware</a>
-  <a href="products.html?category=Home">Home</a>
-  <a href="products.html?category=Services">Services</a>
-</div>
-
 <main class="container cart-page">
 
   <section class="dashboard-section-title">
@@ -50,18 +18,18 @@
 
   <section class="buyer-trust-strip">
     <div>
-      <strong>Secure Shopping</strong>
-      <span>Shop safely with verified MauMarket sellers</span>
+      <strong>🛡 Secure Shopping</strong>
+      <span>Shop safely with verified MauMarket sellers.</span>
     </div>
 
     <div>
-      <strong>Verified Sellers</strong>
-      <span>Every order goes through MauMarket</span>
+      <strong>✔ Verified Sellers</strong>
+      <span>Every order stays protected through MauMarket.</span>
     </div>
 
     <div>
-      <strong>Secure Checkout</strong>
-      <span>Protected payment and delivery</span>
+      <strong>🚚 Tracked Delivery</strong>
+      <span>Delivery is handled by MauMarket.</span>
     </div>
   </section>
 
@@ -122,29 +90,8 @@
 
 </main>
 
-<script>
-const cartSearchInput = document.getElementById("cartSearchInput");
-const cartSearchBtn = document.getElementById("cartSearchBtn");
-
-function searchMarketplace() {
-  const search = cartSearchInput.value.trim();
-
-  window.location.href = search
-    ? `products.html?search=${encodeURIComponent(search)}`
-    : "products.html";
-}
-
-cartSearchBtn.onclick = searchMarketplace;
-
-cartSearchInput.onkeydown = (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    searchMarketplace();
-  }
-};
-</script>
-
-<script type="module" src="js/cart.js?v=4.7-clean-buyer"></script>
+<script type="module" src="js/nav.js?v=2.0"></script>
+<script type="module" src="js/cart.js?v=4.8-shared-nav"></script>
 
 </body>
 </html>
