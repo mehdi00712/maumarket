@@ -9,47 +9,6 @@
 
 <body>
 
-<header class="amazon-topbar shop-wow-topbar">
-  <a class="brand logo-brand" href="index.html">
-    <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
-
-  <div class="amazon-search">
-    <select>
-      <option>All Categories</option>
-    </select>
-
-    <input
-      id="shopSearchInput"
-      type="text"
-      placeholder="Search products, services, or shops...">
-
-    <button
-      id="shopSearchBtn"
-      type="button">
-      Search
-    </button>
-  </div>
-
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="cart.html">Cart</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
-
-<div class="amazon-subnav shop-wow-subnav">
-  <a href="products.html">All</a>
-  <a href="products.html?category=Beauty">Beauty</a>
-  <a href="products.html?category=Electronics">Electronics</a>
-  <a href="products.html?category=Fashion">Fashion</a>
-  <a href="products.html?category=Food">Food</a>
-  <a href="products.html?category=Hardware">Hardware</a>
-  <a href="products.html?category=Home">Home</a>
-  <a href="products.html?category=Services">Services</a>
-  <a href="products.html?category=Other">Other</a>
-</div>
-
 <main class="shop-page shop-wow-page">
 
   <div class="breadcrumbs shop-wow-breadcrumbs">
@@ -68,24 +27,24 @@
     <div class="shop-trust-item">
       <span>🛡️</span>
       <div>
-        <strong>Verified MauMarket Seller</strong>
-        <small>Seller identity checked by MauMarket</small>
+        <strong>Verified Seller</strong>
+        <small>Seller checked by MauMarket</small>
       </div>
     </div>
 
     <div class="shop-trust-item">
       <span>🔒</span>
       <div>
-        <strong>Secure Payments</strong>
-        <small>All payments protected through MauMarket</small>
+        <strong>Secure Checkout</strong>
+        <small>Payments protected through MauMarket</small>
       </div>
     </div>
 
     <div class="shop-trust-item">
       <span>🚚</span>
       <div>
-        <strong>Delivery Through MauMarket</strong>
-        <small>Safe and tracked delivery</small>
+        <strong>Tracked Delivery</strong>
+        <small>Delivery handled by MauMarket</small>
       </div>
     </div>
 
@@ -93,7 +52,7 @@
       <span>⭐</span>
       <div>
         <strong>Verified Reviews</strong>
-        <small>Real reviews from buyers</small>
+        <small>Reviews from real buyers</small>
       </div>
     </div>
   </section>
@@ -121,15 +80,15 @@
   </section>
 
   <div class="shop-tabs shop-wow-tabs">
-    <button class="tab-btn active" data-tab="products">
+    <button class="tab-btn active" data-tab="products" type="button">
       Shop Products
     </button>
 
-    <button class="tab-btn" data-tab="about">
+    <button class="tab-btn" data-tab="about" type="button">
       About Shop
     </button>
 
-    <button class="tab-btn" data-tab="reviews">
+    <button class="tab-btn" data-tab="reviews" type="button">
       Reviews
     </button>
   </div>
@@ -141,14 +100,12 @@
       <div id="productsTab" class="tab-content active">
 
         <div class="shop-section-head shop-wow-section-head">
-
           <div>
             <h2>Shop Products</h2>
             <p id="shopResultCount" class="muted"></p>
           </div>
 
           <div class="shop-filter-row shop-wow-filter-row">
-
             <input
               type="text"
               id="shopProductSearch"
@@ -160,30 +117,21 @@
               <option value="high-low">Price High to Low</option>
               <option value="rating">Highest Rated</option>
             </select>
-
           </div>
-
         </div>
 
-        <div
-          id="shopItems"
-          class="pro-product-grid shop-wow-products-grid">
+        <div id="shopItems" class="pro-product-grid shop-wow-products-grid">
           Loading items...
         </div>
 
       </div>
 
       <div id="aboutTab" class="tab-content">
-
-        <div id="aboutShopBox" class="pro-side-card shop-wow-card">
-        </div>
-
+        <div id="aboutShopBox" class="pro-side-card shop-wow-card"></div>
       </div>
 
       <div id="reviewsTab" class="tab-content">
-
         <div class="review-summary-card shop-wow-card">
-
           <div class="review-score">
             <h2 id="reviewsAverageRating">0.0</h2>
             <p>Average Rating</p>
@@ -195,26 +143,20 @@
               <strong id="reviewsTotalCount">0</strong>
             </p>
           </div>
-
         </div>
 
-        <div
-          id="reviewsBox"
-          class="pro-side-card shop-wow-card">
+        <div id="reviewsBox" class="pro-side-card shop-wow-card">
           Loading reviews...
         </div>
-
       </div>
 
     </div>
 
     <aside class="shop-sidebar shop-wow-sidebar">
 
-      <div id="shopAboutCard" class="pro-side-card shop-wow-card">
-      </div>
+      <div id="shopAboutCard" class="pro-side-card shop-wow-card"></div>
 
       <div id="shopPolicyCard" class="pro-side-card shop-wow-card">
-
         <h3>MauMarket Protection</h3>
 
         <ul class="policy-list shop-policy-list">
@@ -224,25 +166,20 @@
           <li>✅ Verified Reviews</li>
           <li>✅ Customer Support</li>
         </ul>
-
       </div>
 
-      <div id="shopRatingCard" class="pro-side-card shop-wow-card">
-      </div>
+      <div id="shopRatingCard" class="pro-side-card shop-wow-card"></div>
 
       <div class="pro-side-card shop-wow-card">
-
         <h3>Need Help?</h3>
 
         <p>
-          Contact the seller safely through MauMarket after checkout.
-          We keep payment, delivery and support inside the platform.
+          Keep your payment, delivery and support safely inside MauMarket.
         </p>
 
         <a class="btn" href="dashboard.html">
           Contact Support
         </a>
-
       </div>
 
     </aside>
@@ -251,33 +188,8 @@
 
 </main>
 
-<script>
-const shopSearchInput = document.getElementById("shopSearchInput");
-const shopSearchBtn = document.getElementById("shopSearchBtn");
-
-function searchMarketplace() {
-  const value = shopSearchInput.value.trim();
-
-  if (!value) {
-    window.location.href = "products.html";
-    return;
-  }
-
-  window.location.href =
-    `products.html?search=${encodeURIComponent(value)}`;
-}
-
-shopSearchBtn?.addEventListener("click", searchMarketplace);
-
-shopSearchInput?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    searchMarketplace();
-  }
-});
-</script>
-
-<script type="module" src="js/shop.js?v=4.1-shop-wow"></script>
+<script type="module" src="js/nav.js?v=2.0"></script>
+<script type="module" src="js/shop.js?v=4.2-shared-nav"></script>
 
 </body>
 </html>
