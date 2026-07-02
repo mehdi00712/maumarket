@@ -86,7 +86,9 @@ mobileNav?.querySelectorAll("a").forEach((link) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeMobileMenu();
+  if (event.key === "Escape") {
+    closeMobileMenu();
+  }
 });
 
 async function loadCategories() {
@@ -187,6 +189,7 @@ function renderCategoryIcons() {
 
   categories.forEach((category) => {
     const btn = document.createElement("button");
+
     btn.type = "button";
     btn.className = `category-icon-card ${activeCategory === category.name ? "active" : ""}`;
 
@@ -377,6 +380,7 @@ function renderFeaturedShops() {
     .sort((a, b) => {
       const aScore = Number(a.averageRating || 0) + Number(a.totalReviews || 0) * 0.05;
       const bScore = Number(b.averageRating || 0) + Number(b.totalReviews || 0) * 0.05;
+
       return bScore - aScore;
     })
     .slice(0, 12);
@@ -429,7 +433,6 @@ function renderItems(shouldScroll = false) {
       ${item.type || ""}
       ${item.shop?.shopName || ""}
       ${getBuyerPrice(item)}
-      ${getSellerPrice(item)}
       ${item.serviceArea || ""}
       ${item.shop?.location || ""}
     `.toLowerCase();
@@ -501,6 +504,7 @@ function sortItems(items, sort) {
     copy.sort((a, b) => {
       const aRating = Number(a.averageRating || a.shop?.averageRating || 0);
       const bRating = Number(b.averageRating || b.shop?.averageRating || 0);
+
       return bRating - aRating;
     });
   }
@@ -516,9 +520,6 @@ function createProductCard(item) {
   const sold = Number(item.soldCount || 0);
 
   const buyerPrice = getBuyerPrice(item);
-  const sellerPrice = getSellerPrice(item);
-  const commissionAmount = getCommissionAmount(item);
-
   const location = safeArea(item.shop?.location || item.serviceArea || "Mauritius");
 
   const ratingText = productRating > 0
@@ -563,7 +564,6 @@ function createProductCard(item) {
       <p class="product-location">📍 ${escapeHtml(location)}</p>
 
       <p class="price">${formatRs(buyerPrice)}</p>
-      <p class="buyer-price-note">Final price • MauMarket commission included</p>
 
       <a class="btn product-main-btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
         View Details
@@ -795,35 +795,6 @@ function getBuyerPrice(item) {
   }
 
   return 0;
-}
-
-function getSellerPrice(item) {
-  const sellerPrice = Number(item.sellerPrice || 0);
-
-  if (sellerPrice > 0) {
-    return roundMoney(sellerPrice);
-  }
-
-  const buyerPrice = getBuyerPrice(item);
-
-  if (buyerPrice > 0) {
-    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
-  }
-
-  return 0;
-}
-
-function getCommissionAmount(item) {
-  const commissionAmount = Number(item.commissionAmount || 0);
-
-  if (commissionAmount > 0) {
-    return roundMoney(commissionAmount);
-  }
-
-  const sellerPrice = getSellerPrice(item);
-  const buyerPrice = getBuyerPrice(item);
-
-  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
 }
 
 function roundMoney(value) {
