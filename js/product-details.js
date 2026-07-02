@@ -57,7 +57,8 @@ async function loadDetails() {
   currentShop = {
     shopName: "Unknown Shop",
     averageRating: 0,
-    totalReviews: 0
+    totalReviews: 0,
+    location: "Mauritius"
   };
 
   if (currentItem.sellerId) {
@@ -158,8 +159,6 @@ function renderDetails() {
   );
 
   const buyerPrice = getBuyerPrice(currentItem);
-  const sellerPrice = getSellerPrice(currentItem);
-  const commissionAmount = getCommissionAmount(currentItem);
 
   const productRatingText = productAverageRating > 0
     ? `⭐ ${productAverageRating.toFixed(1)} (${productTotalReviews} review${productTotalReviews === 1 ? "" : "s"})`
@@ -169,11 +168,17 @@ function renderDetails() {
     ? `⭐ ${shopAverageRating.toFixed(1)} (${shopTotalReviews} shop review${shopTotalReviews === 1 ? "" : "s"})`
     : "⭐ No shop reviews yet";
 
+  const stockText =
+    currentItem.type === "product"
+      ? getStockText(currentItem.stock)
+      : `Available in ${escapeHtml(currentItem.serviceArea || "selected areas")}`;
+
   const reviewsHtml = renderReviewsList();
 
   detailsBox.innerHTML = `
-    <section class="pro-product-details">
-      <div class="pro-gallery">
+    <section class="pro-product-details clean-product-details">
+
+      <div class="pro-gallery clean-gallery">
         ${
           currentItem.imageUrl
             ? `<img class="main-product-img" src="${escapeHtml(currentItem.imageUrl)}" alt="${escapeHtml(currentItem.title || "Product")}">`
@@ -181,7 +186,7 @@ function renderDetails() {
         }
       </div>
 
-      <div class="pro-product-info">
+      <div class="pro-product-info clean-product-info">
         <span class="badge">${escapeHtml(currentItem.type || "item")}</span>
 
         <h1>${escapeHtml(currentItem.title || "Untitled")}</h1>
@@ -192,22 +197,27 @@ function renderDetails() {
 
         <h2 class="product-price">${formatRs(buyerPrice)}</h2>
 
-        <div class="buyer-price-note-box">
-          <strong>Final buyer price</strong>
-          <p>MauMarket commission is already included. No hidden seller commission at checkout.</p>
+        <div class="product-trust-mini">
+          <span>✓ Secure checkout</span>
+          <span>✓ Verified seller</span>
+          <span>✓ Delivery by MauMarket</span>
         </div>
 
-        <p>${escapeHtml(currentItem.description || "No description provided.")}</p>
+        <p class="product-description">
+          ${escapeHtml(currentItem.description || "No description provided.")}
+        </p>
 
-        ${
-          currentItem.type === "product"
-            ? `<p><strong>Stock:</strong> ${Number(currentItem.stock || 0)}</p>`
-            : `<p><strong>Service Area:</strong> ${escapeHtml(currentItem.serviceArea || "Not specified")}</p>`
-        }
+        <p class="stock-line">
+          <strong>${stockText}</strong>
+        </p>
 
-        <div class="cart-actions">
+        <div class="cart-actions clean-cart-actions">
           <input id="qtyInput" type="number" min="1" value="1">
-          <button id="addToCartBtn">Add to Cart</button>
+
+          <button id="addToCartBtn" type="button">
+            Add to Cart
+          </button>
+
           <button id="wishlistBtn" class="secondary-btn" type="button">
             ${isWishlisted ? "♥ Saved" : "♡ Save"}
           </button>
@@ -217,14 +227,14 @@ function renderDetails() {
         <p id="wishlistMessage"></p>
       </div>
 
-      <aside class="buy-box">
+      <aside class="buy-box clean-buy-box">
         <h3>Seller</h3>
 
         <div class="mini-shop">
           ${
             currentShop.logoUrl
               ? `<img src="${escapeHtml(currentShop.logoUrl)}" alt="${escapeHtml(currentShop.shopName || "Shop")}">`
-              : ""
+              : `<div class="shop-logo-fallback">Shop</div>`
           }
 
           <div>
@@ -234,9 +244,11 @@ function renderDetails() {
           </div>
         </div>
 
-        <p>📍 ${escapeHtml(safeArea(currentShop.location || "Mauritius"))}</p>
-        <p>🚚 Delivery by MauMarket</p>
-        <p>🛡 Secure MauMarket checkout</p>
+        <div class="seller-safe-info">
+          <p>📍 ${escapeHtml(safeArea(currentShop.location || "Mauritius"))}</p>
+          <p>🚚 Delivery by MauMarket</p>
+          <p>🛡 Secure checkout</p>
+        </div>
 
         <a class="btn" href="shop.html?id=${encodeURIComponent(currentItem.sellerId || "")}">
           Visit Shop
@@ -267,7 +279,7 @@ function renderReviewsList() {
     return `
       <div class="order-card">
         <h3>No reviews yet</h3>
-        <p class="muted">Be the first to review this product after a verified purchase.</p>
+        <p class="muted">Reviews will appear after verified purchases.</p>
       </div>
     `;
   }
@@ -345,7 +357,6 @@ async function loadRelatedItems() {
         </p>
 
         <p class="pro-price">${formatRs(buyerPrice)}</p>
-        <p class="buyer-price-note">Final price included</p>
 
         <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
           View Details
@@ -378,6 +389,7 @@ async function toggleWishlist() {
 
     if (isWishlisted) {
       await deleteDoc(wishlistRef);
+
       isWishlisted = false;
       wishlistBtn.textContent = "♡ Save";
       wishlistMessage.textContent = "Removed from wishlist.";
@@ -511,15 +523,13 @@ function getCommissionAmount(item) {
   return roundMoney(Math.max(0, buyerPrice - sellerPrice));
 }
 
-function roundMoney(value) {
-  return Math.round(Number(value || 0) * 100) / 100;
-}
+function getStockText(stockValue) {
+  const stock = Number(stockValue || 0);
 
-function formatRs(value) {
-  return `Rs ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  })}`;
+  if (stock <= 0) return "Stock information unavailable";
+  if (stock <= 5) return `Only ${stock} left in stock`;
+
+  return "In stock";
 }
 
 function safeArea(location) {
@@ -546,6 +556,17 @@ function getAverageRating(reviews, fieldName) {
   }, 0);
 
   return Number((total / reviews.length).toFixed(1));
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function formatRs(value) {
+  return `Rs ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
 }
 
 function escapeHtml(value) {
