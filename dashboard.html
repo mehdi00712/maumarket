@@ -1,93 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Dashboard | MauMarket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-
-<header class="market-mobile-header">
-  <div class="mobile-top-row">
-    <a href="dashboard.html" class="logo-brand">
-      <img src="images/maumarketlogo.png" alt="MauMarket">
-    </a>
-
-    <button id="dashboardMenuBtn" class="hamburger-btn" type="button">☰</button>
-  </div>
-
-  <div class="mobile-search">
-    <select>
-      <option>All</option>
-    </select>
-
-    <input id="dashboardSearchInput" placeholder="Search MauMarket">
-    <button id="dashboardSearchBtn" type="button">Search</button>
-  </div>
-
-  <nav id="dashboardNav" class="mobile-nav">
-    <a href="products.html">Marketplace</a>
-    <a href="wishlist.html">❤️ Wishlist</a>
-    <a href="cart.html">🛒 Cart</a>
-    <a href="my-orders.html">📦 Orders</a>
-    <button id="logoutBtn" type="button">Logout</button>
-  </nav>
-</header>
 
 <main class="dashboard-page">
 
-  <section class="dashboard-hero">
-    <div>
-      <span id="roleBadge" class="hero-badge">Account</span>
+    <!-- HERO -->
 
-      <h1 id="welcome">
-        Loading...
-      </h1>
+    <section class="dashboard-hero">
 
-      <p id="status">
-        Manage your MauMarket account from one place.
-      </p>
-    </div>
-  </section>
+        <div class="dashboard-hero-content">
 
-  <section id="quickStats" class="dashboard-stats">
+            <span
+                id="roleBadge"
+                class="hero-badge">
 
-    <!-- dashboard.js will populate -->
+                Loading...
 
-  </section>
+            </span>
 
-  <section>
+            <h1 id="welcome">
 
-    <div class="dashboard-section-title">
-      <h2>Your Control Center</h2>
-      <p>Choose what you want to manage.</p>
-    </div>
+                Welcome
 
-    <div id="actions" class="dashboard-grid">
+            </h1>
 
-      <!-- dashboard.js will populate -->
+            <p id="status">
 
-    </div>
+                Manage your MauMarket account from one convenient place.
 
-    <!-- Wishlist shortcut -->
-    <div class="form-card" style="margin-top:20px;">
-      <h3>❤️ Wishlist</h3>
+            </p>
 
-      <p>
-        Save products and services you want to buy later.
-      </p>
+        </div>
 
-      <a href="wishlist.html" class="btn">
-        Open Wishlist
-      </a>
-    </div>
+    </section>
 
-  </section>
+    <!-- QUICK STATS -->
+
+    <section
+        id="quickStats"
+        class="dashboard-stats">
+
+        <!-- dashboard.js -->
+
+    </section>
+
+    <!-- QUICK ACTIONS -->
+
+    <section class="dashboard-section">
+
+        <div class="dashboard-section-title">
+
+            <div>
+
+                <h2>
+
+                    Quick Actions
+
+                </h2>
+
+                <p>
+
+                    Everything you need is just one click away.
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div
+            id="actions"
+            class="dashboard-grid">
+
+            <!-- dashboard.js -->
+
+        </div>
+
+    </section>
+
+    <!-- SHORTCUTS -->
+
+    <section class="dashboard-shortcuts">
+
+        <div class="dashboard-shortcut-card">
+
+            <div class="shortcut-icon">
+
+                ❤️
+
+            </div>
+
+            <h3>
+
+                Wishlist
+
+            </h3>
+
+            <p>
+
+                Save products and purchase them later.
+
+            </p>
+
+            <a
+                href="wishlist.html"
+                class="btn">
+
+                Open Wishlist
+
+            </a>
+
+        </div>
+
+        <div class="dashboard-shortcut-card">
+
+            <div class="shortcut-icon">
+
+                🛒
+
+            </div>
+
+            <h3>
+
+                Shopping Cart
+
+            </h3>
+
+            <p>
+
+                Review your selected items before checkout.
+
+            </p>
+
+            <a
+                href="cart.html"
+                class="btn">
+
+                View Cart
+
+            </a>
+
+        </div>
+
+        <div class="dashboard-shortcut-card">
+
+            <div class="shortcut-icon">
+
+                📦
+
+            </div>
+
+            <h3>
+
+                My Orders
+
+            </h3>
+
+            <p>
+
+                Track every order placed through MauMarket.
+
+            </p>
+
+            <a
+                href="my-orders.html"
+                class="btn">
+
+                View Orders
+
+            </a>
+
+        </div>
+
+    </section>
+
+    <!-- PLATFORM BENEFITS -->
+
+    <section class="buyer-trust-strip">
+
+        <div>
+
+            <strong>
+
+                ✔ Verified Sellers
+
+            </strong>
+
+            <span>
+
+                Every seller is manually approved.
+
+            </span>
+
+        </div>
+
+        <div>
+
+            <strong>
+
+                🔒 Secure Payments
+
+            </strong>
+
+            <span>
+
+                Payments are verified before processing.
+
+            </span>
+
+        </div>
+
+        <div>
+
+            <strong>
+
+                🚚 MauMarket Delivery
+
+            </strong>
+
+            <span>
+
+                Orders are delivered safely across Mauritius.
+
+            </span>
+
+        </div>
+
+    </section>
 
 </main>
 
-<script type="module" src="js/dashboard.js"></script>
+<!-- Shared Navigation -->
+<script type="module" src="js/nav.js?v=2.0"></script>
+
+<!-- Dashboard -->
+<script type="module" src="js/dashboard.js?v=5.0"></script>
 
 </body>
 </html>
