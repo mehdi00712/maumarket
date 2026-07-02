@@ -1,156 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Checkout | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Checkout | MauMarket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="amazon-topbar">
-  <a class="brand logo-brand" href="index.html">
-    <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
-
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="cart.html">Cart</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
-
 <main class="container checkout-page">
 
-  <section class="dashboard-section-title">
-    <h1>Checkout</h1>
-    <p>Complete your order securely through MauMarket.</p>
-  </section>
+    <section class="dashboard-section-title">
 
-  <section class="buyer-trust-strip">
-    <div>
-      <strong>Secure Payment</strong>
-      <span>Your payment is verified before processing</span>
-    </div>
+        <h1>Secure Checkout</h1>
 
-    <div>
-      <strong>Delivery by MauMarket</strong>
-      <span>Your order is handled through our delivery flow</span>
-    </div>
+        <p>
+            You're one step away from receiving your order.
+        </p>
 
-    <div>
-      <strong>Buyer Protection</strong>
-      <span>Support available if something goes wrong</span>
-    </div>
-  </section>
+    </section>
 
-  <section class="checkout-layout">
+    <!-- TRUST -->
 
-    <div class="checkout-main">
+    <section class="buyer-trust-strip">
 
-      <section class="form-card">
-        <div class="section-row-title">
-          <h2>Delivery Details</h2>
-          <span>Required for delivery</span>
+        <div>
+
+            <strong>
+                🛡 Secure Payment
+            </strong>
+
+            <span>
+                Every payment is reviewed by MauMarket before your order is processed.
+            </span>
+
         </div>
 
-        <div class="form-group">
-          <label>Full Name</label>
-          <input id="customerName" placeholder="Full name">
+        <div>
+
+            <strong>
+                ✔ Verified Sellers
+            </strong>
+
+            <span>
+                All sellers are approved before they can sell on MauMarket.
+            </span>
+
         </div>
 
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input id="customerPhone" placeholder="Phone number">
+        <div>
+
+            <strong>
+                🚚 Delivery by MauMarket
+            </strong>
+
+            <span>
+                Your order is collected and delivered through MauMarket.
+            </span>
+
         </div>
 
-        <div class="form-group">
-          <label>Delivery Address</label>
-          <textarea id="deliveryAddress" placeholder="Delivery address"></textarea>
+    </section>
+
+    <section class="checkout-layout">
+
+        <!-- LEFT -->
+
+        <div class="checkout-main">
+
+            <!-- DELIVERY -->
+
+            <section class="form-card">
+
+                <div class="section-row-title">
+
+                    <div>
+
+                        <h2>Delivery Information</h2>
+
+                        <p>
+                            Please provide accurate delivery details.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Full Name
+                    </label>
+
+                    <input
+                        id="customerName"
+                        type="text"
+                        placeholder="Enter your full name">
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Phone Number
+                    </label>
+
+                    <input
+                        id="customerPhone"
+                        type="text"
+                        placeholder="Example: 57750662">
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Delivery Address
+                    </label>
+
+                    <textarea
+                        id="deliveryAddress"
+                        placeholder="House number, street, village or town"></textarea>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Order Notes
+                    </label>
+
+                    <textarea
+                        id="orderNotes"
+                        placeholder="Optional instructions for delivery"></textarea>
+
+                </div>
+
+            </section>
+
+            <!-- ITEMS -->
+
+            <section class="form-card">
+
+                <div class="section-row-title">
+
+                    <div>
+
+                        <h2>Your Order</h2>
+
+                        <p>
+                            Review all items before payment.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div id="checkoutItems">
+
+                    Loading your order...
+
+                </div>
+
+            </section>
+
+            <!-- PAYMENT -->
+
+            <section class="form-card">
+
+                <div class="juice-box">
+
+                    <h2>
+                        Juice Payment
+                    </h2>
+
+                    <p>
+
+                        Please transfer the amount shown in the summary.
+
+                    </p>
+
+                    <div class="payment-details">
+
+                        <div>
+
+                            <strong>
+                                Pay To
+                            </strong>
+
+                            <p>
+                                MauMarket
+                            </p>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Juice Number
+                            </strong>
+
+                            <p>
+                                +230 5775 0662
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Upload Payment Screenshot
+                    </label>
+
+                    <input
+                        id="paymentProof"
+                        type="file"
+                        accept="image/*">
+
+                </div>
+
+                <button
+                    id="placeOrderBtn"
+                    class="btn checkout-submit-btn"
+                    type="button">
+
+                    Complete Order
+
+                </button>
+
+                <p id="checkoutMessage"></p>
+
+            </section>
+
         </div>
 
-        <div class="form-group">
-          <label>Order Notes</label>
-          <textarea id="orderNotes" placeholder="Optional notes for MauMarket"></textarea>
-        </div>
-      </section>
+        <!-- RIGHT -->
 
-      <section class="form-card">
-        <div class="section-row-title">
-          <h2>Order Items</h2>
-          <span>Review before paying</span>
-        </div>
+        <aside class="checkout-summary-card">
 
-        <div id="checkoutItems">
-          Loading order items...
-        </div>
-      </section>
+            <h2>
+                Order Summary
+            </h2>
 
-      <section class="form-card">
-        <div class="juice-box">
-          <h2>Pay with Juice</h2>
+            <div class="summary-row">
 
-          <p><strong>Pay to:</strong> MauMarket</p>
-          <p><strong>Juice Number:</strong> +230 5775 0662</p>
+                <span>
+                    Items Total
+                </span>
 
-          <p>
-            Pay the total amount first, then upload your Juice payment screenshot below.
-          </p>
-        </div>
+                <strong>
 
-        <div class="form-group">
-          <label>Upload Juice Payment Screenshot</label>
-          <input id="paymentProof" type="file" accept="image/*">
-        </div>
+                    Rs
+                    <span id="itemsTotal">
+                        0
+                    </span>
 
-        <button id="placeOrderBtn" type="button">
-          Submit Payment & Place Order
-        </button>
+                </strong>
 
-        <p id="checkoutMessage"></p>
-      </section>
+            </div>
 
-    </div>
+            <div class="summary-row">
 
-    <aside class="checkout-summary-card">
+                <span>
+                    Delivery Fee
+                </span>
 
-      <h2>Order Summary</h2>
+                <strong>
 
-      <div class="summary-row">
-        <span>Items Total</span>
-        <strong>Rs <span id="itemsTotal">0</span></strong>
-      </div>
+                    Rs
+                    <span id="deliveryFee">
+                        150
+                    </span>
 
-      <div class="summary-row">
-        <span>Delivery Fee</span>
-        <strong>Rs <span id="deliveryFee">150</span></strong>
-      </div>
+                </strong>
 
-      <hr>
+            </div>
 
-      <div class="summary-total">
-        <span>Total to Pay</span>
-        <strong>Rs <span id="grandTotal">0</span></strong>
-      </div>
+            <hr>
 
-      <div class="cart-guarantee">
-        <h3>MauMarket Protection</h3>
-        <ul>
-          <li>✓ Verified sellers</li>
-          <li>✓ Payment verification</li>
-          <li>✓ Delivery tracking</li>
-          <li>✓ Customer support</li>
-        </ul>
-      </div>
+            <div class="summary-total">
 
-    </aside>
+                <span>
 
-  </section>
+                    Total to Pay
+
+                </span>
+
+                <strong>
+
+                    Rs
+                    <span id="grandTotal">
+                        0
+                    </span>
+
+                </strong>
+
+            </div>
+
+            <div class="cart-guarantee">
+
+                <h3>
+
+                    Why shop with MauMarket?
+
+                </h3>
+
+                <ul>
+
+                    <li>✔ Verified Sellers</li>
+
+                    <li>✔ Secure Payment Verification</li>
+
+                    <li>✔ Island-wide Delivery</li>
+
+                    <li>✔ Order Tracking</li>
+
+                    <li>✔ Customer Support</li>
+
+                </ul>
+
+            </div>
+
+        </aside>
+
+    </section>
 
 </main>
 
-<script type="module" src="js/checkout.js?v=4.7-clean-buyer"></script>
+<!-- Shared navigation (desktop + mobile + role-aware) -->
+<script type="module" src="js/nav.js?v=2.0"></script>
+
+<!-- Checkout logic -->
+<script type="module" src="js/checkout.js?v=5.0"></script>
 
 </body>
 </html>
