@@ -13,29 +13,43 @@
 
   <section class="dashboard-section-title">
     <h1>Shopping Cart</h1>
-    <p>Review your items before completing your MauMarket order.</p>
+    <p>Review your selected items and complete your MauMarket checkout securely.</p>
   </section>
 
   <section class="buyer-trust-strip">
-    <div>
-      <strong>🛡 Secure Shopping</strong>
+    <div class="trust-card">
+      <div class="trust-icon">🛡️</div>
+      <strong>Secure Shopping</strong>
       <span>Shop safely with verified MauMarket sellers.</span>
     </div>
 
-    <div>
-      <strong>✔ Verified Sellers</strong>
-      <span>Every order stays protected through MauMarket.</span>
+    <div class="trust-card">
+      <div class="trust-icon">🔒</div>
+      <strong>Protected Checkout</strong>
+      <span>Your payment is verified before processing.</span>
     </div>
 
-    <div>
-      <strong>🚚 Tracked Delivery</strong>
-      <span>Delivery is handled by MauMarket.</span>
+    <div class="trust-card">
+      <div class="trust-icon">🚚</div>
+      <strong>Tracked Delivery</strong>
+      <span>Delivery is handled through MauMarket.</span>
     </div>
   </section>
 
   <section class="cart-layout">
 
     <section class="cart-main">
+      <div class="cart-section-head">
+        <div>
+          <h2>Your Items</h2>
+          <p>Update quantities or remove products before checkout.</p>
+        </div>
+
+        <a href="products.html" class="secondary-btn">
+          Continue Shopping
+        </a>
+      </div>
+
       <div id="cartItems">
         Loading your cart...
       </div>
@@ -70,18 +84,14 @@
         Proceed to Checkout
       </a>
 
-      <a class="secondary-btn continue-shopping-btn" href="products.html">
-        Continue Shopping
-      </a>
-
       <div class="cart-guarantee">
-        <h3>MauMarket Guarantee</h3>
+        <h3>MauMarket Protection</h3>
 
         <ul>
-          <li>✓ Verified Sellers</li>
-          <li>✓ Secure Payments</li>
-          <li>✓ Delivery Tracking</li>
-          <li>✓ Customer Protection</li>
+          <li>✓ Verified sellers</li>
+          <li>✓ Secure payment verification</li>
+          <li>✓ Delivery tracking</li>
+          <li>✓ Customer support</li>
         </ul>
       </div>
     </aside>
@@ -91,7 +101,7 @@
 </main>
 
 <script type="module" src="js/nav.js?v=2.0"></script>
-<script type="module" src="js/cart.js?v=4.8-shared-nav"></script>
+<script type="module" src="js/cart.js?v=5.0"></script>
 
 </body>
 </html>
