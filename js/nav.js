@@ -295,7 +295,7 @@ function getLinksForRole() {
 
   if (currentRole === "admin") {
     return [
-      { label: "Admin", icon: "⚙", href: "admin.html" },
+      { label: "Admin", icon: "⚙", href: "dashboard.html" },
       { label: "Users", icon: "👥", href: "admin-users.html" },
       { label: "Products", icon: "□", href: "admin-products.html" },
       { label: "Payments", icon: "▣", href: "admin-payments.html" },
