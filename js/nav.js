@@ -101,6 +101,18 @@ function buildResponsiveNav() {
 
   document.body.prepend(header);
 
+  const mobileSearch = document.createElement("section");
+  mobileSearch.id = "mmMobileSearch";
+  mobileSearch.className = "mm-mobile-search-wrap";
+  mobileSearch.innerHTML = `
+    <form id="mmMobileSearchForm" class="mm-mobile-search">
+      <input id="mmMobileSearchInput" type="search" placeholder="Search MauMarket..." autocomplete="off">
+      <button type="submit" aria-label="Search">⌕</button>
+    </form>
+  `;
+
+  header.insertAdjacentElement("afterend", mobileSearch);
+
   const overlay = document.createElement("div");
   overlay.id = "mmMenuOverlay";
   overlay.className = "mm-menu-overlay";
@@ -152,6 +164,17 @@ function buildResponsiveNav() {
   document.getElementById("mmSearchCategory")?.addEventListener("change", () => {
     if (isProductsPage()) {
       runNavSearch(true);
+    }
+  });
+
+  document.getElementById("mmMobileSearchForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    runMobileNavSearch(true);
+  });
+
+  document.getElementById("mmMobileSearchInput")?.addEventListener("input", () => {
+    if (isProductsPage()) {
+      runMobileNavSearch(false);
     }
   });
 }
@@ -391,12 +414,54 @@ function closeMenu() {
   document.body.classList.remove("menu-open");
 }
 
+
+function runMobileNavSearch(scrollToResults) {
+  const mobileInput = document.getElementById("mmMobileSearchInput");
+  const desktopInput = document.getElementById("mmSearchInput");
+  const category = document.getElementById("mmSearchCategory");
+
+  const search = mobileInput?.value.trim() || "";
+  const selectedCategory = category?.value || "";
+
+  if (desktopInput && desktopInput.value !== search) {
+    desktopInput.value = search;
+  }
+
+  if (isProductsPage()) {
+    window.dispatchEvent(new CustomEvent("maumarket:search", {
+      detail: {
+        search,
+        category: selectedCategory,
+        scroll: scrollToResults
+      }
+    }));
+
+    updateProductsUrl(search, selectedCategory);
+    return;
+  }
+
+  const params = new URLSearchParams();
+
+  if (search) params.set("search", search);
+  if (selectedCategory) params.set("category", selectedCategory);
+
+  window.location.href = params.toString()
+    ? `products.html?${params.toString()}`
+    : "products.html";
+}
+
+
 function runNavSearch(scrollToResults) {
   const input = document.getElementById("mmSearchInput");
   const category = document.getElementById("mmSearchCategory");
 
   const search = input?.value.trim() || "";
   const selectedCategory = category?.value || "";
+
+  const mobileInput = document.getElementById("mmMobileSearchInput");
+  if (mobileInput && mobileInput.value !== search) {
+    mobileInput.value = search;
+  }
 
   if (isProductsPage()) {
     window.dispatchEvent(new CustomEvent("maumarket:search", {
