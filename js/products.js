@@ -23,11 +23,16 @@ import {
   - Search/category/sort filters
   - Buyer-facing price only
   - No commission wording shown to buyers
+  - Trending Today section
+  - Best Deals section
+  - Premium marketplace product cards
 */
 
 const COMMISSION_RATE = 0.10;
 
 const productsGrid = document.getElementById("productsGrid");
+const productsGridTrending = document.getElementById("productsGridTrending");
+const productsGridDeals = document.getElementById("productsGridDeals");
 const resultCount = document.getElementById("resultCount");
 const categoryIconGrid = document.getElementById("categoryIconGrid");
 const featuredShops = document.getElementById("featuredShops");
@@ -285,6 +290,7 @@ async function loadItems() {
     }
 
     renderItems(false);
+    renderHomeProductSections();
     renderFeaturedShops();
   } catch (error) {
     productsGrid.innerHTML = `
@@ -297,9 +303,7 @@ async function loadItems() {
 }
 
 function renderSkeletonGrid() {
-  if (!productsGrid) return;
-
-  productsGrid.innerHTML = Array.from({ length: 10 }).map(() => `
+  const skeletonHtml = Array.from({ length: 10 }).map(() => `
     <div class="market-product-card skeleton-card">
       <div class="market-product-img skeleton-box"></div>
       <div class="market-product-body">
@@ -310,6 +314,10 @@ function renderSkeletonGrid() {
       </div>
     </div>
   `).join("");
+
+  if (productsGrid) productsGrid.innerHTML = skeletonHtml;
+  if (productsGridTrending) productsGridTrending.innerHTML = skeletonHtml;
+  if (productsGridDeals) productsGridDeals.innerHTML = skeletonHtml;
 }
 
 async function getShop(sellerId) {
@@ -349,6 +357,74 @@ function emptyShop(id) {
     location: "Mauritius"
   };
 }
+
+
+function renderHomeProductSections() {
+  const visibleItems = allItems.filter((item) => item.active !== false);
+
+  const trendingItems = getTrendingItems(visibleItems).slice(0, 10);
+  const dealItems = getDealItems(visibleItems).slice(0, 10);
+
+  renderProductList(productsGridTrending, trendingItems, {
+    emptyTitle: "No trending products yet",
+    emptyMessage: "Trending products will appear here when more sellers add items."
+  });
+
+  renderProductList(productsGridDeals, dealItems, {
+    emptyTitle: "No deals yet",
+    emptyMessage: "Best deals will appear here when sellers add discounted products."
+  });
+}
+
+function getTrendingItems(items) {
+  return [...items].sort((a, b) => {
+    const aScore =
+      Number(a.soldCount || 0) * 3 +
+      Number(a.totalReviews || 0) * 2 +
+      Number(a.averageRating || 0) * 10 +
+      Number(a.createdAt?.seconds || 0) / 1000000000;
+
+    const bScore =
+      Number(b.soldCount || 0) * 3 +
+      Number(b.totalReviews || 0) * 2 +
+      Number(b.averageRating || 0) * 10 +
+      Number(b.createdAt?.seconds || 0) / 1000000000;
+
+    return bScore - aScore;
+  });
+}
+
+function getDealItems(items) {
+  return [...items].sort((a, b) => {
+    const aDiscount = getDiscountPercent(a);
+    const bDiscount = getDiscountPercent(b);
+
+    if (aDiscount !== bDiscount) return bDiscount - aDiscount;
+
+    return getBuyerPrice(a) - getBuyerPrice(b);
+  });
+}
+
+function renderProductList(grid, items, emptyState = {}) {
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  if (!items.length) {
+    grid.innerHTML = `
+      <div class="order-card empty-market-card">
+        <h3>${escapeHtml(emptyState.emptyTitle || "No products found")}</h3>
+        <p>${escapeHtml(emptyState.emptyMessage || "Products will appear here soon.")}</p>
+      </div>
+    `;
+    return;
+  }
+
+  items.forEach((item) => {
+    grid.appendChild(createProductCard(item));
+  });
+}
+
 
 function renderFeaturedShops() {
   if (!featuredShops || !featuredShopsSection) return;
@@ -563,7 +639,7 @@ function createProductCard(item) {
       <p class="price">${formatRs(buyerPrice)}</p>
 
       <a class="btn product-main-btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
-        View Details
+        View Product
       </a>
     </div>
   `;
@@ -578,13 +654,17 @@ function createProductCard(item) {
   return card;
 }
 
-function getDiscountBadge(item) {
+function getDiscountPercent(item) {
   const oldPrice = Number(item.oldPrice || item.compareAtPrice || 0);
   const price = getBuyerPrice(item);
 
-  if (!oldPrice || !price || oldPrice <= price) return "";
+  if (!oldPrice || !price || oldPrice <= price) return 0;
 
-  const discount = Math.round(((oldPrice - price) / oldPrice) * 100);
+  return Math.max(0, Math.round(((oldPrice - price) / oldPrice) * 100));
+}
+
+function getDiscountBadge(item) {
+  const discount = getDiscountPercent(item);
 
   if (discount <= 0) return "";
 
