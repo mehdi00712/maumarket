@@ -94,7 +94,11 @@ function buildResponsiveNav() {
       <nav id="mmDesktopLinks" class="mm-desktop-links"></nav>
 
       <a href="cart.html" class="mm-cart-btn" aria-label="Cart">
-        <span class="cart-icon">🛒</span>
+        <svg class="cart-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M3 5H5L7.2 15.2C7.32 15.72 7.78 16.1 8.32 16.1H18.2C18.72 16.1 19.18 15.75 19.32 15.25L21 8H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="9" cy="20" r="1.6" fill="currentColor"/>
+          <circle cx="18" cy="20" r="1.6" fill="currentColor"/>
+        </svg>
       </a>
     </div>
   `;
