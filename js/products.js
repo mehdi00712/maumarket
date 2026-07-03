@@ -788,6 +788,11 @@ function setSearch(value) {
   if (navInput && navInput.value !== activeSearch) {
     navInput.value = activeSearch;
   }
+
+  const mobileNavInput = document.getElementById("mmMobileSearchInput");
+  if (mobileNavInput && mobileNavInput.value !== activeSearch) {
+    mobileNavInput.value = activeSearch;
+  }
 }
 
 function setCategory(value) {
