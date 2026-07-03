@@ -4,184 +4,250 @@
   <meta charset="UTF-8">
   <title>Admin Analytics | MauMarket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="navbar">
-  <h2>Admin Analytics</h2>
+<!-- Navigation is injected automatically by nav.js -->
 
-  <nav>
-    <a href="admin.html">Admin</a>
-    <a href="admin-users.html">Users</a>
-    <a href="admin-products.html">Products</a>
-    <a href="admin-delivery.html">Delivery</a>
-    <a href="admin-commission.html">Commission</a>
-    <a href="admin-payouts.html">Payouts</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+<main class="container analytics-page admin-analytics-page">
 
-<main class="container">
+  <section class="analytics-hero">
+    <div>
+      <span class="hero-badge">Admin Analytics</span>
 
-  <section class="dashboard-section-title">
-    <h1>Platform Analytics</h1>
-    <p>Track MauMarket users, sellers, orders, revenue, delivery, products and platform growth.</p>
+      <h1>Platform Analytics</h1>
+
+      <p>
+        Track MauMarket performance, orders, sellers, customers, revenue,
+        delivery activity and marketplace growth from one professional dashboard.
+      </p>
+    </div>
+
+    <div class="analytics-hero-card">
+      <strong>Live Overview</strong>
+      <span id="analyticsUpdatedAt">Loading data...</span>
+    </div>
   </section>
 
-  <section class="cards">
-    <div class="card">
-      <h3>Total Users</h3>
-      <h2 id="totalUsers">0</h2>
+  <section class="analytics-kpi-grid">
+    <div class="analytics-kpi-card">
+      <span>Total Users</span>
+      <strong id="totalUsers">0</strong>
+      <small>All registered accounts</small>
     </div>
 
-    <div class="card">
-      <h3>Sellers</h3>
-      <h2 id="totalSellers">0</h2>
+    <div class="analytics-kpi-card">
+      <span>Sellers</span>
+      <strong id="totalSellers">0</strong>
+      <small>Marketplace sellers</small>
     </div>
 
-    <div class="card">
-      <h3>Customers</h3>
-      <h2 id="totalCustomers">0</h2>
+    <div class="analytics-kpi-card">
+      <span>Customers</span>
+      <strong id="totalCustomers">0</strong>
+      <small>Buyer accounts</small>
     </div>
 
-    <div class="card">
-      <h3>Delivery Drivers</h3>
-      <h2 id="totalDelivery">0</h2>
+    <div class="analytics-kpi-card">
+      <span>Delivery Drivers</span>
+      <strong id="totalDelivery">0</strong>
+      <small>Delivery accounts</small>
     </div>
 
-    <div class="card">
-      <h3>Products/Services</h3>
-      <h2 id="totalProducts">0</h2>
+    <div class="analytics-kpi-card">
+      <span>Products / Services</span>
+      <strong id="totalProducts">0</strong>
+      <small>Listed marketplace items</small>
     </div>
 
-    <div class="card">
-      <h3>Orders</h3>
-      <h2 id="totalOrders">0</h2>
+    <div class="analytics-kpi-card">
+      <span>Orders</span>
+      <strong id="totalOrders">0</strong>
+      <small>Total orders placed</small>
     </div>
 
-    <div class="card">
-      <h3>Delivered Orders</h3>
-      <h2 id="deliveredOrders">0</h2>
+    <div class="analytics-kpi-card">
+      <span>Delivered Orders</span>
+      <strong id="deliveredOrders">0</strong>
+      <small>Completed orders</small>
     </div>
 
-    <div class="card">
-      <h3>Platform Revenue</h3>
-      <h2 id="totalRevenue">Rs 0</h2>
+    <div class="analytics-kpi-card revenue-card">
+      <span>Platform Revenue</span>
+      <strong id="totalRevenue">Rs 0</strong>
+      <small>Verified order revenue</small>
     </div>
 
-    <div class="card">
-      <h3>Commission Earned</h3>
-      <h2 id="commissionRevenue">Rs 0</h2>
+    <div class="analytics-kpi-card">
+      <span>Commission Earned</span>
+      <strong id="commissionRevenue">Rs 0</strong>
+      <small>MauMarket commission</small>
     </div>
 
-    <div class="card">
-      <h3>Pending Payouts</h3>
-      <h2 id="pendingPayouts">Rs 0</h2>
+    <div class="analytics-kpi-card">
+      <span>Pending Payouts</span>
+      <strong id="pendingPayouts">Rs 0</strong>
+      <small>Seller payouts waiting</small>
     </div>
 
-    <div class="card">
-      <h3>Avg Order Value</h3>
-      <h2 id="averageOrderValue">Rs 0</h2>
+    <div class="analytics-kpi-card">
+      <span>Average Order Value</span>
+      <strong id="averageOrderValue">Rs 0</strong>
+      <small>Average verified order</small>
     </div>
 
-    <div class="card">
-      <h3>Total Reviews</h3>
-      <h2 id="totalReviews">0</h2>
+    <div class="analytics-kpi-card">
+      <span>Total Reviews</span>
+      <strong id="totalReviews">0</strong>
+      <small>Buyer reviews</small>
     </div>
   </section>
 
   <section class="analytics-charts-grid">
-
-    <div class="form-card">
-      <div class="section-row-title">
-        <h2>Revenue Trend</h2>
-        <span>Verified order revenue</span>
+    <article class="analytics-card">
+      <div class="analytics-card-head">
+        <div>
+          <h2>Revenue Trend</h2>
+          <p>Verified order revenue over time</p>
+        </div>
       </div>
-      <canvas id="adminRevenueChart" height="180"></canvas>
-    </div>
 
-    <div class="form-card">
-      <div class="section-row-title">
-        <h2>Orders Trend</h2>
-        <span>Orders over the last 7 days</span>
+      <div class="chart-container">
+        <canvas id="adminRevenueChart"></canvas>
       </div>
-      <canvas id="adminOrdersChart" height="180"></canvas>
-    </div>
+    </article>
 
-    <div class="form-card">
-      <div class="section-row-title">
-        <h2>User Roles</h2>
-        <span>Customers, sellers and delivery</span>
+    <article class="analytics-card">
+      <div class="analytics-card-head">
+        <div>
+          <h2>Orders Trend</h2>
+          <p>Orders over the last 7 days</p>
+        </div>
       </div>
-      <canvas id="userRolesChart" height="180"></canvas>
-    </div>
 
-    <div class="form-card">
-      <div class="section-row-title">
-        <h2>Order Status</h2>
-        <span>Platform order breakdown</span>
+      <div class="chart-container">
+        <canvas id="adminOrdersChart"></canvas>
       </div>
-      <canvas id="adminOrderStatusChart" height="180"></canvas>
-    </div>
+    </article>
 
+    <article class="analytics-card">
+      <div class="analytics-card-head">
+        <div>
+          <h2>User Roles</h2>
+          <p>Customers, sellers and delivery users</p>
+        </div>
+      </div>
+
+      <div class="chart-container compact-chart">
+        <canvas id="userRolesChart"></canvas>
+      </div>
+    </article>
+
+    <article class="analytics-card">
+      <div class="analytics-card-head">
+        <div>
+          <h2>Order Status</h2>
+          <p>Current order breakdown</p>
+        </div>
+      </div>
+
+      <div class="chart-container compact-chart">
+        <canvas id="adminOrderStatusChart"></canvas>
+      </div>
+    </article>
   </section>
 
-  <section class="shop-content-layout">
-
-    <div>
-
-      <section class="form-card">
-        <div class="section-row-title">
-          <h2>Top Sellers</h2>
-          <span>Based on verified sales</span>
+  <section class="analytics-main-layout">
+    <div class="analytics-main-column">
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <h2>Top Sellers</h2>
+            <p>Based on verified sales</p>
+          </div>
         </div>
-        <div id="topSellersBox">Loading top sellers...</div>
-      </section>
 
-      <section class="form-card">
-        <div class="section-row-title">
-          <h2>Top Products</h2>
-          <span>Best selling products/services</span>
+        <div id="topSellersBox" class="analytics-list">
+          Loading top sellers...
         </div>
-        <div id="topProductsBox">Loading top products...</div>
-      </section>
+      </article>
 
-      <section class="form-card">
-        <div class="section-row-title">
-          <h2>Recent Orders</h2>
-          <span>Latest marketplace activity</span>
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <h2>Top Products</h2>
+            <p>Best selling products and services</p>
+          </div>
         </div>
-        <div id="recentOrders">Loading recent orders...</div>
-      </section>
 
+        <div id="topProductsBox" class="analytics-list">
+          Loading top products...
+        </div>
+      </article>
+
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <h2>Recent Orders</h2>
+            <p>Latest marketplace activity</p>
+          </div>
+        </div>
+
+        <div id="recentOrders" class="analytics-list">
+          Loading recent orders...
+        </div>
+      </article>
     </div>
 
-    <aside>
+    <aside class="analytics-side-column">
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <h2>Platform Health</h2>
+            <p>Important platform indicators</p>
+          </div>
+        </div>
 
-      <section class="pro-side-card">
-        <h3>Platform Health</h3>
-        <div id="platformHealthBox">Loading...</div>
-      </section>
+        <div id="platformHealthBox" class="analytics-list">
+          Loading...
+        </div>
+      </article>
 
-      <section class="pro-side-card">
-        <h3>Revenue by Seller</h3>
-        <div id="sellerRevenueBox">Loading...</div>
-      </section>
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <h2>Revenue by Seller</h2>
+            <p>Seller performance breakdown</p>
+          </div>
+        </div>
 
-      <section class="pro-side-card">
-        <h3>Delivery Status</h3>
-        <div id="deliveryStatusBox">Loading...</div>
-      </section>
+        <div id="sellerRevenueBox" class="analytics-list">
+          Loading...
+        </div>
+      </article>
 
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <h2>Delivery Status</h2>
+            <p>Delivery flow overview</p>
+          </div>
+        </div>
+
+        <div id="deliveryStatusBox" class="analytics-list">
+          Loading...
+        </div>
+      </article>
     </aside>
-
   </section>
 
 </main>
 
-<script type="module" src="js/admin-analytics.js?v=3.4"></script>
+<script type="module" src="js/nav.js?v=4.0"></script>
+<script type="module" src="js/admin-analytics.js?v=4.0"></script>
 
 </body>
 </html>
