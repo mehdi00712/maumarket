@@ -16,15 +16,52 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+/* =========================
+   ELEMENTS
+========================= */
+
 const deliveryOrdersList = document.getElementById("deliveryOrdersList");
-const adminDeliveryMenuBtn = document.getElementById("adminDeliveryMenuBtn");
-const adminDeliveryNav = document.getElementById("adminDeliveryNav");
 
+const deliveryTotalCount = document.getElementById("deliveryTotalCount");
+const deliveryTodayCount = document.getElementById("deliveryTodayCount");
+const deliveryAssignedCount = document.getElementById("deliveryAssignedCount");
+const deliveryOutCount = document.getElementById("deliveryOutCount");
+const deliveryDoneCount = document.getElementById("deliveryDoneCount");
+
+const deliverySearchInput = document.getElementById("deliverySearchInput");
+const deliveryStatusFilter = document.getElementById("deliveryStatusFilter");
+const deliveryDriverFilter = document.getElementById("deliveryDriverFilter");
+const deliveryDateFilter = document.getElementById("deliveryDateFilter");
+const deliveryAreaFilter = document.getElementById("deliveryAreaFilter");
+
+const clearDeliveryFiltersBtn = document.getElementById("clearDeliveryFiltersBtn");
+const refreshDeliveriesBtn = document.getElementById("refreshDeliveriesBtn");
+const printDeliveriesBtn = document.getElementById("printDeliveriesBtn");
+const exportDeliveriesBtn = document.getElementById("exportDeliveriesBtn");
+
+const selectedDeliveryOrder = document.getElementById("selectedDeliveryOrder");
+const scheduleDriverSelect = document.getElementById("scheduleDriverSelect");
+const scheduleDeliveryDate = document.getElementById("scheduleDeliveryDate");
+const scheduleTimeSlot = document.getElementById("scheduleTimeSlot");
+const schedulePriority = document.getElementById("schedulePriority");
+const scheduleNotes = document.getElementById("scheduleNotes");
+const saveDeliveryScheduleBtn = document.getElementById("saveDeliveryScheduleBtn");
+const printSelectedDeliveryBtn = document.getElementById("printSelectedDeliveryBtn");
+const deliveryScheduleMessage = document.getElementById("deliveryScheduleMessage");
+const deliveryResultCount = document.getElementById("deliveryResultCount");
+
+/* =========================
+   STATE
+========================= */
+
+let currentAdmin = null;
 let deliveryDrivers = [];
+let allOrders = [];
+let filteredOrders = [];
 
-adminDeliveryMenuBtn?.addEventListener("click", () => {
-  adminDeliveryNav?.classList.toggle("show");
-});
+/* =========================
+   AUTH
+========================= */
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -32,204 +69,624 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  const userSnap = await getDoc(doc(db, "users", user.uid));
+  currentAdmin = user;
 
-  if (
-    !userSnap.exists() ||
-    userSnap.data().role !== "admin" ||
-    userSnap.data().approved !== true ||
-    userSnap.data().blocked === true
-  ) {
-    window.location.href = "dashboard.html";
-    return;
+  try {
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+
+    if (
+      !userSnap.exists() ||
+      userSnap.data().role !== "admin" ||
+      userSnap.data().approved !== true ||
+      userSnap.data().blocked === true
+    ) {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
+    bindEvents();
+    await loadPage();
+  } catch (error) {
+    renderError(error.message);
   }
+});
+
+/* =========================
+   EVENTS
+========================= */
+
+function bindEvents() {
+  deliverySearchInput?.addEventListener("input", applyFilters);
+  deliveryStatusFilter?.addEventListener("change", applyFilters);
+  deliveryDriverFilter?.addEventListener("change", applyFilters);
+  deliveryDateFilter?.addEventListener("change", applyFilters);
+  deliveryAreaFilter?.addEventListener("input", applyFilters);
+
+  clearDeliveryFiltersBtn?.addEventListener("click", clearFilters);
+
+  refreshDeliveriesBtn?.addEventListener("click", async () => {
+    await loadPage();
+  });
+
+  printDeliveriesBtn?.addEventListener("click", () => {
+    printDeliveryReport(filteredOrders);
+  });
+
+  exportDeliveriesBtn?.addEventListener("click", () => {
+    exportDeliveriesCSV(filteredOrders);
+  });
+
+  saveDeliveryScheduleBtn?.addEventListener("click", saveDeliverySchedule);
+
+  printSelectedDeliveryBtn?.addEventListener("click", () => {
+    const orderId = selectedDeliveryOrder?.value;
+
+    if (!orderId) {
+      showScheduleMessage("Please select an order first.", "error");
+      return;
+    }
+
+    const order = allOrders.find((item) => item.id === orderId);
+
+    if (!order) {
+      showScheduleMessage("Selected order was not found.", "error");
+      return;
+    }
+
+    printSingleDelivery(order);
+  });
+}
+
+/* =========================
+   LOAD PAGE
+========================= */
+
+async function loadPage() {
+  setLoading();
 
   await loadDeliveryDrivers();
   await loadDeliveryOrders();
-});
+
+  populateDriverSelects();
+  populateOrderSelect();
+
+  applyFilters();
+
+  showScheduleMessage("", "");
+}
 
 async function loadDeliveryDrivers() {
-  const q = query(
+  const driversQuery = query(
     collection(db, "users"),
     where("role", "==", "delivery")
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(driversQuery);
 
   deliveryDrivers = [];
 
   snapshot.forEach((docSnap) => {
-    const user = docSnap.data();
+    const driver = {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
 
-    if (user.approved === true && user.blocked !== true) {
-      deliveryDrivers.push({
-        id: docSnap.id,
-        ...user
-      });
+    if (driver.approved === true && driver.blocked !== true) {
+      deliveryDrivers.push(driver);
     }
+  });
+
+  deliveryDrivers.sort((a, b) => {
+    return String(a.name || a.email || "").localeCompare(
+      String(b.name || b.email || "")
+    );
   });
 }
 
 async function loadDeliveryOrders() {
-  deliveryOrdersList.innerHTML = `
-    <div class="order-card">
-      Loading delivery orders...
-    </div>
-  `;
-
-  const q = query(
+  const ordersQuery = query(
     collection(db, "orders"),
     where("paymentStatus", "==", "verified")
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(ordersQuery);
 
-  const orders = [];
+  allOrders = [];
 
   snapshot.forEach((docSnap) => {
-    orders.push({
+    allOrders.push({
       id: docSnap.id,
       ...docSnap.data()
     });
   });
 
-  orders.sort((a, b) => {
-    return (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0);
+  allOrders.sort((a, b) => {
+    const aTime =
+      a.deliveryDateText ||
+      a.deliveryDate ||
+      a.updatedAt?.seconds ||
+      a.createdAt?.seconds ||
+      0;
+
+    const bTime =
+      b.deliveryDateText ||
+      b.deliveryDate ||
+      b.updatedAt?.seconds ||
+      b.createdAt?.seconds ||
+      0;
+
+    if (typeof aTime === "string" && typeof bTime === "string") {
+      return bTime.localeCompare(aTime);
+    }
+
+    return Number(bTime) - Number(aTime);
   });
+}
+
+/* =========================
+   POPULATE SELECTS
+========================= */
+
+function populateDriverSelects() {
+  const driverOptions = deliveryDrivers.map((driver) => {
+    const name = driver.name || driver.fullName || driver.email || driver.id;
+
+    return `
+      <option value="${escapeHtml(driver.id)}">
+        ${escapeHtml(name)}
+      </option>
+    `;
+  }).join("");
+
+  if (deliveryDriverFilter) {
+    deliveryDriverFilter.innerHTML = `
+      <option value="">All Drivers</option>
+      ${driverOptions}
+    `;
+  }
+
+  if (scheduleDriverSelect) {
+    scheduleDriverSelect.innerHTML = `
+      <option value="">Select driver</option>
+      ${driverOptions}
+    `;
+  }
+}
+
+function populateOrderSelect() {
+  if (!selectedDeliveryOrder) return;
+
+  selectedDeliveryOrder.innerHTML = `
+    <option value="">Select an order</option>
+  `;
+
+  allOrders.forEach((order) => {
+    const option = document.createElement("option");
+
+    option.value = order.id;
+    option.textContent = `#${order.id.slice(0, 8)} — ${order.customerName || "Customer"} — Rs ${formatMoney(order.grandTotal || 0)}`;
+
+    selectedDeliveryOrder.appendChild(option);
+  });
+}
+
+/* =========================
+   FILTERS
+========================= */
+
+function applyFilters() {
+  const search = normalize(deliverySearchInput?.value || "");
+  const status = deliveryStatusFilter?.value || "";
+  const driverId = deliveryDriverFilter?.value || "";
+  const deliveryDate = deliveryDateFilter?.value || "";
+  const area = normalize(deliveryAreaFilter?.value || "");
+
+  filteredOrders = allOrders.filter((order) => {
+    const orderStatus = order.orderStatus || "";
+    const orderDriverId = order.deliveryGuyId || order.driverId || "";
+    const orderDate = getOrderDeliveryDate(order);
+    const orderArea = normalize(order.deliveryAddress || order.customerAddress || "");
+
+    const searchableText = normalize(`
+      ${order.id}
+      ${order.customerName || ""}
+      ${order.customerPhone || ""}
+      ${order.deliveryAddress || ""}
+      ${order.orderNotes || ""}
+      ${order.deliveryGuyName || ""}
+      ${order.orderStatus || ""}
+      ${order.deliveryStatus || ""}
+      ${(order.items || []).map((item) => item.title || "").join(" ")}
+    `);
+
+    const matchesSearch = !search || searchableText.includes(search);
+    const matchesStatus = !status || orderStatus === status;
+    const matchesDriver = !driverId || orderDriverId === driverId;
+    const matchesDate = !deliveryDate || orderDate === deliveryDate;
+    const matchesArea = !area || orderArea.includes(area);
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesDriver &&
+      matchesDate &&
+      matchesArea
+    );
+  });
+
+  updateStats();
+  renderOrders(filteredOrders);
+}
+
+function clearFilters() {
+  if (deliverySearchInput) deliverySearchInput.value = "";
+  if (deliveryStatusFilter) deliveryStatusFilter.value = "";
+  if (deliveryDriverFilter) deliveryDriverFilter.value = "";
+  if (deliveryDateFilter) deliveryDateFilter.value = "";
+  if (deliveryAreaFilter) deliveryAreaFilter.value = "";
+
+  applyFilters();
+}
+
+/* =========================
+   STATS
+========================= */
+
+function updateStats() {
+  const today = getTodayDate();
+
+  const total = allOrders.length;
+
+  const todayCount = allOrders.filter((order) => {
+    return getOrderDeliveryDate(order) === today;
+  }).length;
+
+  const assigned = allOrders.filter((order) => {
+    return Boolean(order.deliveryGuyId || order.driverId);
+  }).length;
+
+  const out = allOrders.filter((order) => {
+    return order.orderStatus === "Out for Delivery";
+  }).length;
+
+  const delivered = allOrders.filter((order) => {
+    return order.orderStatus === "Delivered";
+  }).length;
+
+  if (deliveryTotalCount) deliveryTotalCount.textContent = total;
+  if (deliveryTodayCount) deliveryTodayCount.textContent = todayCount;
+  if (deliveryAssignedCount) deliveryAssignedCount.textContent = assigned;
+  if (deliveryOutCount) deliveryOutCount.textContent = out;
+  if (deliveryDoneCount) deliveryDoneCount.textContent = delivered;
+
+  if (deliveryResultCount) {
+    deliveryResultCount.textContent = `${filteredOrders.length} delivery order(s) found`;
+  }
+}
+
+/* =========================
+   RENDER ORDERS
+========================= */
+
+function renderOrders(orders) {
+  if (!deliveryOrdersList) return;
 
   if (orders.length === 0) {
     deliveryOrdersList.innerHTML = `
-      <div class="order-card">
-        <h3>No verified orders yet</h3>
-        <p>Orders will appear here after payment is verified.</p>
+      <div class="delivery-empty-state">
+        <h3>No delivery orders found</h3>
+        <p>Try changing the filters or refresh the delivery list.</p>
       </div>
     `;
     return;
   }
 
-  deliveryOrdersList.innerHTML = "";
+  deliveryOrdersList.innerHTML = orders.map((order) => {
+    return orderCardHtml(order);
+  }).join("");
 
-  orders.forEach((order) => {
-    renderOrderCard(order);
+  deliveryOrdersList.querySelectorAll("[data-action]").forEach((button) => {
+    button.addEventListener("click", handleOrderAction);
+  });
+
+  deliveryOrdersList.querySelectorAll(".delivery-row-select").forEach((button) => {
+    button.addEventListener("click", () => {
+      const orderId = button.dataset.orderId;
+
+      if (selectedDeliveryOrder) {
+        selectedDeliveryOrder.value = orderId;
+      }
+
+      const order = allOrders.find((item) => item.id === orderId);
+
+      if (order) {
+        fillScheduler(order);
+        scrollToScheduler();
+      }
+    });
   });
 }
 
-function renderOrderCard(order) {
-  const itemsHtml = (order.items || []).map(item => `
-    <li>
-      ${item.title || "Item"} — Rs ${Number(item.price || 0)} x ${Number(item.quantity || 1)}
-      ${item.shopName ? `— ${item.shopName}` : ""}
-    </li>
-  `).join("");
+function orderCardHtml(order) {
+  const status = order.orderStatus || "Preparing Order";
+  const deliveryStatus = order.deliveryStatus || "Not started";
+  const driverName = order.deliveryGuyName || "Not assigned";
+  const driverId = order.deliveryGuyId || "";
+  const deliveryDate = getOrderDeliveryDate(order) || "Not scheduled";
+  const timeSlot = order.deliveryTimeSlot || "No time slot";
+  const priority = order.deliveryPriority || "Normal";
+  const total = Number(order.grandTotal || 0);
+  const deliveryFee = Number(order.deliveryFee || 0);
 
-  const driverOptions = deliveryDrivers.map(driver => `
-    <option value="${driver.id}" ${order.deliveryGuyId === driver.id ? "selected" : ""}>
-      ${driver.name || driver.email || driver.id}
-    </option>
-  `).join("");
+  const itemsCount = (order.items || []).reduce((sum, item) => {
+    return sum + Number(item.quantity || 1);
+  }, 0);
 
-  const signatureBox = order.deliverySignature
-    ? `
-      <div class="form-card">
-        <h4>Customer Signature</h4>
-        <img src="${order.deliverySignature}" alt="Customer signature" style="max-width:100%; background:#fff; border:1px solid #ddd; border-radius:12px;">
-        <p><strong>Signed by:</strong> ${order.deliverySignedBy || "Customer"}</p>
-        <p><strong>Delivery guy:</strong> ${order.deliveryGuyName || "Not specified"}</p>
-        <p><strong>Delivery note:</strong> ${order.deliveryNote || "None"}</p>
+  const statusClass = getStatusClass(status);
+  const priorityClass = getPriorityClass(priority);
+
+  return `
+    <article class="delivery-order-card" data-order-id="${escapeHtml(order.id)}">
+
+      <div class="delivery-order-top">
+        <div>
+          <span class="delivery-order-id">Order #${escapeHtml(order.id.slice(0, 8))}</span>
+          <h3>${escapeHtml(order.customerName || "Customer")}</h3>
+          <p>${escapeHtml(order.deliveryAddress || "No delivery address")}</p>
+        </div>
+
+        <div class="delivery-badges">
+          <span class="delivery-status ${statusClass}">
+            ${escapeHtml(status)}
+          </span>
+
+          <span class="delivery-priority ${priorityClass}">
+            ${escapeHtml(priority)}
+          </span>
+        </div>
       </div>
-    `
-    : `<p class="muted">No customer signature submitted yet.</p>`;
 
-  const assignBox = `
-    <div class="delivery-control">
-      <label>Assign Delivery Driver</label>
-      <select class="driver-select">
-        <option value="">Select driver</option>
-        ${driverOptions}
-      </select>
-      <button class="update-status-btn assign-driver-btn">Assign Driver</button>
-    </div>
+      <div class="delivery-progress">
+        ${timelineStep(status, "Preparing Order", "Preparing")}
+        ${timelineStep(status, "Ready for Pickup", "Ready")}
+        ${timelineStep(status, "Picked Up", "Picked Up")}
+        ${timelineStep(status, "Out for Delivery", "Out")}
+        ${timelineStep(status, "Delivery Submitted", "Submitted")}
+        ${timelineStep(status, "Delivered", "Delivered")}
+      </div>
+
+      <div class="delivery-order-grid">
+        <div class="delivery-info-box">
+          <small>Customer</small>
+          <strong>${escapeHtml(order.customerName || "Customer")}</strong>
+          <span>${escapeHtml(order.customerPhone || "No phone")}</span>
+        </div>
+
+        <div class="delivery-info-box">
+          <small>Driver</small>
+          <strong>${escapeHtml(driverName)}</strong>
+          <span>${escapeHtml(deliveryStatus)}</span>
+        </div>
+
+        <div class="delivery-info-box">
+          <small>Schedule</small>
+          <strong>${escapeHtml(deliveryDate)}</strong>
+          <span>${escapeHtml(timeSlot)}</span>
+        </div>
+
+        <div class="delivery-info-box">
+          <small>Package</small>
+          <strong>${itemsCount} item(s)</strong>
+          <span>Fee: Rs ${formatMoney(deliveryFee)}</span>
+        </div>
+
+        <div class="delivery-info-box">
+          <small>Total</small>
+          <strong>Rs ${formatMoney(total)}</strong>
+          <span>${escapeHtml(order.paymentStatus || "Payment")}</span>
+        </div>
+      </div>
+
+      <details class="delivery-details">
+        <summary>View order details</summary>
+
+        <div class="delivery-detail-body">
+          <div>
+            <h4>Items</h4>
+            <ul>
+              ${
+                (order.items || []).map((item) => `
+                  <li>
+                    ${escapeHtml(item.title || "Item")}
+                    — Rs ${formatMoney(item.price || 0)}
+                    × ${Number(item.quantity || 1)}
+                    ${item.shopName ? `— ${escapeHtml(item.shopName)}` : ""}
+                  </li>
+                `).join("") || "<li>No items found.</li>"
+              }
+            </ul>
+          </div>
+
+          <div>
+            <h4>Delivery Notes</h4>
+            <p>${escapeHtml(order.orderNotes || order.deliveryNotes || "No notes.")}</p>
+
+            ${
+              order.deliverySignature
+                ? `
+                  <div class="delivery-signature-box">
+                    <h4>Customer Signature</h4>
+                    <img src="${escapeHtml(order.deliverySignature)}" alt="Customer signature">
+                    <p><strong>Signed by:</strong> ${escapeHtml(order.deliverySignedBy || "Customer")}</p>
+                    <p><strong>Driver:</strong> ${escapeHtml(order.deliveryGuyName || "Driver")}</p>
+                    <p><strong>Note:</strong> ${escapeHtml(order.deliveryNote || "None")}</p>
+                  </div>
+                `
+                : `<p class="muted">No customer signature submitted yet.</p>`
+            }
+          </div>
+        </div>
+      </details>
+
+      <div class="delivery-card-actions">
+        <button
+          type="button"
+          class="secondary-btn delivery-row-select"
+          data-order-id="${escapeHtml(order.id)}">
+          Schedule
+        </button>
+
+        <button
+          type="button"
+          class="secondary-btn"
+          data-action="print"
+          data-order-id="${escapeHtml(order.id)}">
+          Print
+        </button>
+
+        ${
+          status === "Delivery Submitted"
+            ? `
+              <button
+                type="button"
+                class="approve-btn"
+                data-action="validate"
+                data-order-id="${escapeHtml(order.id)}">
+                Validate
+              </button>
+
+              <button
+                type="button"
+                class="danger-btn"
+                data-action="reject"
+                data-order-id="${escapeHtml(order.id)}">
+                Reject
+              </button>
+            `
+            : ""
+        }
+
+        ${
+          driverId && status !== "Delivered"
+            ? `
+              <button
+                type="button"
+                class="secondary-btn"
+                data-action="out"
+                data-order-id="${escapeHtml(order.id)}">
+                Mark Out
+              </button>
+            `
+            : ""
+        }
+      </div>
+
+    </article>
   `;
+}
 
-  const validateButton = order.orderStatus === "Delivery Submitted"
-    ? `<button class="approve-btn validate-delivery-btn">Validate Delivery</button>`
-    : "";
+/* =========================
+   ORDER ACTIONS
+========================= */
 
-  const rejectButton = order.orderStatus === "Delivery Submitted"
-    ? `<button class="danger-btn reject-delivery-btn">Reject Delivery</button>`
-    : "";
+async function handleOrderAction(event) {
+  const button = event.currentTarget;
+  const action = button.dataset.action;
+  const orderId = button.dataset.orderId;
 
-  const div = document.createElement("div");
-  div.className = "order-card";
+  const order = allOrders.find((item) => item.id === orderId);
 
-  div.innerHTML = `
-    <h3>Order #${order.id.slice(0, 8)}</h3>
+  if (!order) {
+    alert("Order not found.");
+    return;
+  }
 
-    <div class="tracking-box">
-      <span class="${stepClass(order.orderStatus, "Preparing Order")}">Preparing</span>
-      <span class="${stepClass(order.orderStatus, "Ready for Pickup")}">Ready</span>
-      <span class="${stepClass(order.orderStatus, "Picked Up")}">Picked Up</span>
-      <span class="${stepClass(order.orderStatus, "Out for Delivery")}">Out</span>
-      <span class="${stepClass(order.orderStatus, "Delivery Submitted")}">Submitted</span>
-      <span class="${stepClass(order.orderStatus, "Delivered")}">Delivered</span>
-    </div>
+  if (action === "print") {
+    printSingleDelivery(order);
+    return;
+  }
 
-    <div class="order-grid">
-      <div>
-        <p><strong>Customer:</strong> ${order.customerName || ""}</p>
-        <p><strong>Phone:</strong> ${order.customerPhone || ""}</p>
-        <p><strong>Address:</strong> ${order.deliveryAddress || ""}</p>
-        <p><strong>Notes:</strong> ${order.orderNotes || "None"}</p>
-      </div>
+  if (action === "validate") {
+    await validateDelivery(order);
+    return;
+  }
 
-      <div>
-        <p><strong>Payment:</strong> ${order.paymentStatus || ""}</p>
-        <p><strong>Status:</strong> ${order.orderStatus || ""}</p>
-        <p><strong>Delivery Status:</strong> ${order.deliveryStatus || "Not started"}</p>
-        <p><strong>Assigned Driver:</strong> ${order.deliveryGuyName || "Not assigned"}</p>
-        <p><strong>Total:</strong> Rs ${order.grandTotal || 0}</p>
-      </div>
-    </div>
+  if (action === "reject") {
+    await rejectDelivery(order);
+    return;
+  }
 
-    <h4>Items</h4>
-    <ul>${itemsHtml || "<li>No items found.</li>"}</ul>
+  if (action === "out") {
+    await markOutForDelivery(order);
+    return;
+  }
+}
 
-    ${assignBox}
-    ${signatureBox}
+async function saveDeliverySchedule() {
+  const orderId = selectedDeliveryOrder?.value || "";
+  const driverId = scheduleDriverSelect?.value || "";
+  const date = scheduleDeliveryDate?.value || "";
+  const timeSlot = scheduleTimeSlot?.value || "";
+  const priority = schedulePriority?.value || "Normal";
+  const notes = scheduleNotes?.value || "";
 
-    <div class="seller-actions">
-      ${validateButton}
-      ${rejectButton}
-    </div>
-  `;
+  if (!orderId) {
+    showScheduleMessage("Please select an order.", "error");
+    return;
+  }
 
-  div.querySelector(".assign-driver-btn")?.addEventListener("click", async () => {
-    const driverId = div.querySelector(".driver-select").value;
+  if (!driverId) {
+    showScheduleMessage("Please select a delivery driver.", "error");
+    return;
+  }
 
-    if (!driverId) {
-      alert("Please select a delivery driver.");
-      return;
-    }
+  if (!date) {
+    showScheduleMessage("Please choose a delivery date.", "error");
+    return;
+  }
 
-    const driver = deliveryDrivers.find(d => d.id === driverId);
-    const driverName = driver?.name || driver?.email || "Delivery Driver";
+  if (!timeSlot) {
+    showScheduleMessage("Please choose a time slot.", "error");
+    return;
+  }
 
-    await updateDoc(doc(db, "orders", order.id), {
+  const order = allOrders.find((item) => item.id === orderId);
+
+  if (!order) {
+    showScheduleMessage("Order not found.", "error");
+    return;
+  }
+
+  const driver = deliveryDrivers.find((item) => item.id === driverId);
+  const driverName = driver?.name || driver?.fullName || driver?.email || "Delivery Driver";
+
+  try {
+    await updateDoc(doc(db, "orders", orderId), {
       deliveryGuyId: driverId,
       deliveryGuyName: driverName,
+      deliveryDate: date,
+      deliveryDateText: date,
+      deliveryTimeSlot: timeSlot,
+      deliveryPriority: priority,
+      deliveryNotes: notes,
       deliveryStatus: "assigned",
       assignedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
 
-    await setDoc(doc(db, "deliveryJobs", order.id), {
-      orderId: order.id,
+    await setDoc(doc(db, "deliveryJobs", orderId), {
+      orderId,
       driverId,
       driverName,
       customerName: order.customerName || "",
       customerPhone: order.customerPhone || "",
       deliveryAddress: order.deliveryAddress || "",
       orderNotes: order.orderNotes || "",
+      deliveryNotes: notes,
+      deliveryDate: date,
+      deliveryDateText: date,
+      deliveryTimeSlot: timeSlot,
+      deliveryPriority: priority,
       orderStatus: order.orderStatus || "",
       paymentStatus: order.paymentStatus || "",
       deliveryStatus: "assigned",
@@ -241,57 +698,470 @@ function renderOrderCard(order) {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    await loadDeliveryOrders();
-  });
+    showScheduleMessage("Delivery assignment saved successfully.", "success");
 
-  div.querySelector(".validate-delivery-btn")?.addEventListener("click", async () => {
-    await updateDoc(doc(db, "orders", order.id), {
-      orderStatus: "Delivered",
-      deliveryStatus: "validated",
-      adminDeliveryValidated: true,
-      deliveredAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-
-    await setDoc(doc(db, "deliveryJobs", order.id), {
-      orderStatus: "Delivered",
-      deliveryStatus: "validated",
-      adminDeliveryValidated: true,
-      deliveredAt: serverTimestamp(),
-      active: false,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    await loadDeliveryOrders();
-  });
-
-  div.querySelector(".reject-delivery-btn")?.addEventListener("click", async () => {
-    const reason = prompt("Why are you rejecting this delivery?");
-
-    await updateDoc(doc(db, "orders", order.id), {
-      orderStatus: "Out for Delivery",
-      deliveryStatus: "rejected",
-      adminDeliveryValidated: false,
-      adminDeliveryRejectReason: reason || "",
-      updatedAt: serverTimestamp()
-    });
-
-    await setDoc(doc(db, "deliveryJobs", order.id), {
-      orderStatus: "Out for Delivery",
-      deliveryStatus: "rejected",
-      adminDeliveryValidated: false,
-      adminDeliveryRejectReason: reason || "",
-      active: true,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    await loadDeliveryOrders();
-  });
-
-  deliveryOrdersList.appendChild(div);
+    await loadPage();
+  } catch (error) {
+    showScheduleMessage(error.message, "error");
+  }
 }
 
-function stepClass(currentStatus, stepStatus) {
+async function validateDelivery(order) {
+  if (!confirm("Validate this delivery as completed?")) return;
+
+  await updateDoc(doc(db, "orders", order.id), {
+    orderStatus: "Delivered",
+    deliveryStatus: "validated",
+    adminDeliveryValidated: true,
+    deliveredAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  await setDoc(doc(db, "deliveryJobs", order.id), {
+    orderStatus: "Delivered",
+    deliveryStatus: "validated",
+    adminDeliveryValidated: true,
+    deliveredAt: serverTimestamp(),
+    active: false,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await loadPage();
+}
+
+async function rejectDelivery(order) {
+  const reason = prompt("Why are you rejecting this delivery?");
+
+  if (reason === null) return;
+
+  await updateDoc(doc(db, "orders", order.id), {
+    orderStatus: "Out for Delivery",
+    deliveryStatus: "rejected",
+    adminDeliveryValidated: false,
+    adminDeliveryRejectReason: reason || "",
+    updatedAt: serverTimestamp()
+  });
+
+  await setDoc(doc(db, "deliveryJobs", order.id), {
+    orderStatus: "Out for Delivery",
+    deliveryStatus: "rejected",
+    adminDeliveryValidated: false,
+    adminDeliveryRejectReason: reason || "",
+    active: true,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await loadPage();
+}
+
+async function markOutForDelivery(order) {
+  if (!confirm("Mark this order as Out for Delivery?")) return;
+
+  await updateDoc(doc(db, "orders", order.id), {
+    orderStatus: "Out for Delivery",
+    deliveryStatus: "out_for_delivery",
+    outForDeliveryAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  await setDoc(doc(db, "deliveryJobs", order.id), {
+    orderStatus: "Out for Delivery",
+    deliveryStatus: "out_for_delivery",
+    outForDeliveryAt: serverTimestamp(),
+    active: true,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await loadPage();
+}
+
+/* =========================
+   SCHEDULER
+========================= */
+
+function fillScheduler(order) {
+  const driverId = order.deliveryGuyId || "";
+  const deliveryDate = getOrderDeliveryDate(order);
+  const timeSlot = order.deliveryTimeSlot || "";
+  const priority = order.deliveryPriority || "Normal";
+  const notes = order.deliveryNotes || order.orderNotes || "";
+
+  if (selectedDeliveryOrder) selectedDeliveryOrder.value = order.id;
+  if (scheduleDriverSelect) scheduleDriverSelect.value = driverId;
+  if (scheduleDeliveryDate) scheduleDeliveryDate.value = deliveryDate || "";
+  if (scheduleTimeSlot) scheduleTimeSlot.value = timeSlot;
+  if (schedulePriority) schedulePriority.value = priority;
+  if (scheduleNotes) scheduleNotes.value = notes;
+
+  showScheduleMessage(`Selected order #${order.id.slice(0, 8)}.`, "success");
+}
+
+function scrollToScheduler() {
+  document.querySelector(".delivery-scheduler-card")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function showScheduleMessage(message, type) {
+  if (!deliveryScheduleMessage) return;
+
+  deliveryScheduleMessage.textContent = message || "";
+  deliveryScheduleMessage.className = type ? `delivery-message ${type}` : "";
+}
+
+/* =========================
+   EXPORT / PRINT
+========================= */
+
+function exportDeliveriesCSV(orders) {
+  if (!orders.length) {
+    alert("No deliveries to export.");
+    return;
+  }
+
+  const rows = [
+    [
+      "Order ID",
+      "Customer",
+      "Phone",
+      "Address",
+      "Driver",
+      "Delivery Date",
+      "Time Slot",
+      "Priority",
+      "Order Status",
+      "Delivery Status",
+      "Total"
+    ]
+  ];
+
+  orders.forEach((order) => {
+    rows.push([
+      order.id,
+      order.customerName || "",
+      order.customerPhone || "",
+      order.deliveryAddress || "",
+      order.deliveryGuyName || "",
+      getOrderDeliveryDate(order) || "",
+      order.deliveryTimeSlot || "",
+      order.deliveryPriority || "",
+      order.orderStatus || "",
+      order.deliveryStatus || "",
+      Number(order.grandTotal || 0)
+    ]);
+  });
+
+  const csv = rows.map((row) => {
+    return row.map((cell) => {
+      return `"${String(cell).replaceAll('"', '""')}"`;
+    }).join(",");
+  }).join("\n");
+
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = `maumarket-deliveries-${getTodayDate()}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function printDeliveryReport(orders) {
+  if (!orders.length) {
+    alert("No deliveries to print.");
+    return;
+  }
+
+  const html = `
+    ${printStyles()}
+    <main class="print-page">
+      <header class="print-header">
+        <h1>MauMarket Delivery Report</h1>
+        <p>Generated on ${new Date().toLocaleString()}</p>
+      </header>
+
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Driver</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${orders.map((order) => `
+            <tr>
+              <td>#${escapeHtml(order.id.slice(0, 8))}</td>
+              <td>${escapeHtml(order.customerName || "Customer")}</td>
+              <td>${escapeHtml(order.deliveryGuyName || "Not assigned")}</td>
+              <td>${escapeHtml(getOrderDeliveryDate(order) || "Not scheduled")}</td>
+              <td>${escapeHtml(order.orderStatus || "")}</td>
+              <td>Rs ${formatMoney(order.grandTotal || 0)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </main>
+  `;
+
+  openPrintWindow(html);
+}
+
+function printSingleDelivery(order) {
+  const items = (order.items || []).map((item) => `
+    <tr>
+      <td>${escapeHtml(item.title || "Item")}</td>
+      <td>${Number(item.quantity || 1)}</td>
+      <td>Rs ${formatMoney(item.price || 0)}</td>
+      <td>Rs ${formatMoney(Number(item.price || 0) * Number(item.quantity || 1))}</td>
+    </tr>
+  `).join("");
+
+  const html = `
+    ${printStyles()}
+    <main class="print-page">
+      <header class="print-header">
+        <h1>MauMarket Delivery Note</h1>
+        <p>Order #${escapeHtml(order.id)}</p>
+      </header>
+
+      <section class="print-grid">
+        <div>
+          <h3>Customer</h3>
+          <p><strong>Name:</strong> ${escapeHtml(order.customerName || "")}</p>
+          <p><strong>Phone:</strong> ${escapeHtml(order.customerPhone || "")}</p>
+          <p><strong>Address:</strong> ${escapeHtml(order.deliveryAddress || "")}</p>
+        </div>
+
+        <div>
+          <h3>Delivery</h3>
+          <p><strong>Driver:</strong> ${escapeHtml(order.deliveryGuyName || "Not assigned")}</p>
+          <p><strong>Date:</strong> ${escapeHtml(getOrderDeliveryDate(order) || "Not scheduled")}</p>
+          <p><strong>Time Slot:</strong> ${escapeHtml(order.deliveryTimeSlot || "Not set")}</p>
+          <p><strong>Priority:</strong> ${escapeHtml(order.deliveryPriority || "Normal")}</p>
+        </div>
+      </section>
+
+      <h3>Items</h3>
+
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${items || `
+            <tr>
+              <td colspan="4">No items found.</td>
+            </tr>
+          `}
+        </tbody>
+      </table>
+
+      <section class="print-total">
+        <p><strong>Delivery Fee:</strong> Rs ${formatMoney(order.deliveryFee || 0)}</p>
+        <h2>Total: Rs ${formatMoney(order.grandTotal || 0)}</h2>
+      </section>
+
+      <section class="print-signature">
+        <div>
+          <p>Customer Signature</p>
+        </div>
+
+        <div>
+          <p>Driver Signature</p>
+        </div>
+      </section>
+    </main>
+  `;
+
+  openPrintWindow(html);
+}
+
+function openPrintWindow(html) {
+  const win = window.open("", "_blank", "width=1000,height=800");
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+
+  win.onload = () => {
+    win.focus();
+    win.print();
+  };
+}
+
+function printStyles() {
+  return `
+    <style>
+      body {
+        margin: 0;
+        padding: 30px;
+        font-family: Arial, sans-serif;
+        color: #111827;
+      }
+
+      .print-page {
+        max-width: 1000px;
+        margin: auto;
+      }
+
+      .print-header {
+        border-bottom: 3px solid #4f35f5;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+      }
+
+      .print-header h1 {
+        margin: 0;
+        color: #4f35f5;
+      }
+
+      .print-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 25px;
+      }
+
+      .print-grid div {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .print-table th,
+      .print-table td {
+        border: 1px solid #e5e7eb;
+        padding: 10px;
+        text-align: left;
+      }
+
+      .print-table th {
+        background: #f3f4f6;
+      }
+
+      .print-total {
+        margin-top: 25px;
+        text-align: right;
+      }
+
+      .print-signature {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 35px;
+        margin-top: 70px;
+      }
+
+      .print-signature div {
+        border-top: 2px solid #111827;
+        padding-top: 10px;
+      }
+    </style>
+  `;
+}
+
+/* =========================
+   HELPERS
+========================= */
+
+function setLoading() {
+  if (deliveryOrdersList) {
+    deliveryOrdersList.innerHTML = `
+      <div class="delivery-empty-state">
+        <h3>Loading deliveries...</h3>
+        <p>Please wait while MauMarket loads delivery orders.</p>
+      </div>
+    `;
+  }
+
+  if (deliveryResultCount) {
+    deliveryResultCount.textContent = "Loading delivery orders...";
+  }
+}
+
+function renderError(message) {
+  if (deliveryOrdersList) {
+    deliveryOrdersList.innerHTML = `
+      <div class="delivery-empty-state">
+        <h3>Could not load deliveries</h3>
+        <p>${escapeHtml(message)}</p>
+      </div>
+    `;
+  }
+}
+
+function getOrderDeliveryDate(order) {
+  if (order.deliveryDateText) return order.deliveryDateText;
+  if (order.deliveryDate) return order.deliveryDate;
+
+  if (order.scheduledDeliveryDate?.seconds) {
+    return timestampToDateInput(order.scheduledDeliveryDate);
+  }
+
+  return "";
+}
+
+function timestampToDateInput(timestamp) {
+  const date = new Date(timestamp.seconds * 1000);
+
+  return date.toISOString().slice(0, 10);
+}
+
+function getTodayDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function normalize(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim();
+}
+
+function getStatusClass(status) {
+  const value = normalize(status);
+
+  if (value.includes("delivered")) return "success";
+  if (value.includes("cancel")) return "danger";
+  if (value.includes("out")) return "warning";
+  if (value.includes("submitted")) return "info";
+  if (value.includes("picked")) return "info";
+  if (value.includes("ready")) return "purple";
+
+  return "neutral";
+}
+
+function getPriorityClass(priority) {
+  const value = normalize(priority);
+
+  if (value.includes("urgent")) return "danger";
+  if (value.includes("high")) return "warning";
+  if (value.includes("fragile")) return "purple";
+
+  return "neutral";
+}
+
+function timelineStep(currentStatus, stepStatus, label) {
   const steps = [
     "Preparing Order",
     "Ready for Pickup",
@@ -302,11 +1172,36 @@ function stepClass(currentStatus, stepStatus) {
   ];
 
   if (currentStatus === "Cancelled" || currentStatus === "Payment Rejected") {
-    return "track-step cancelled";
+    return `
+      <span class="delivery-step cancelled">
+        ${escapeHtml(label)}
+      </span>
+    `;
   }
 
   const currentIndex = steps.indexOf(currentStatus || "Preparing Order");
   const stepIndex = steps.indexOf(stepStatus);
 
-  return currentIndex >= stepIndex ? "track-step done" : "track-step";
+  const done = currentIndex >= stepIndex;
+
+  return `
+    <span class="delivery-step ${done ? "done" : ""}">
+      ${escapeHtml(label)}
+    </span>
+  `;
+}
+
+function formatMoney(value) {
+  return Number(value || 0).toLocaleString("en-US", {
+    maximumFractionDigits: 0
+  });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
