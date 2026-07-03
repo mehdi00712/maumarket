@@ -6,22 +6,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="navbar">
-  <h2>Payment Verification</h2>
-  <nav>
-    <a href="admin.html">Admin</a>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="products.html">Marketplace</a>
-  </nav>
-</header>
+<!-- Navigation is injected automatically by nav.js -->
 
-<main class="container">
-  <h1>Juice Payment Proofs</h1>
-  <div id="paymentsList">Loading payments...</div>
+<main class="container payment-admin-page">
+
+  <section class="payment-admin-hero">
+    <div>
+      <span class="hero-badge">Admin Payments</span>
+
+      <h1>Payment Verification</h1>
+
+      <p>
+        Review Juice payment proofs, approve or reject payments,
+        keep payment history, print records and export reports.
+      </p>
+    </div>
+
+    <div class="payment-admin-actions">
+      <button id="printPaymentsBtn" type="button" class="secondary-btn">
+        Print
+      </button>
+
+      <button id="exportPaymentsBtn" type="button" class="secondary-btn">
+        Export CSV
+      </button>
+
+      <a href="admin.html" class="btn">
+        Admin Dashboard
+      </a>
+    </div>
+  </section>
+
+  <section class="payment-stats-grid">
+    <div class="payment-stat-card">
+      <span>Total Payments</span>
+      <strong id="totalPaymentsCount">0</strong>
+      <small>All payment records</small>
+    </div>
+
+    <div class="payment-stat-card">
+      <span>Pending</span>
+      <strong id="pendingPaymentsCount">0</strong>
+      <small>Waiting for verification</small>
+    </div>
+
+    <div class="payment-stat-card">
+      <span>Verified</span>
+      <strong id="verifiedPaymentsCount">0</strong>
+      <small>Approved payments</small>
+    </div>
+
+    <div class="payment-stat-card">
+      <span>Rejected</span>
+      <strong id="rejectedPaymentsCount">0</strong>
+      <small>Rejected payment proofs</small>
+    </div>
+
+    <div class="payment-stat-card revenue-card">
+      <span>Verified Revenue</span>
+      <strong id="verifiedRevenueTotal">Rs 0</strong>
+      <small>Total approved order value</small>
+    </div>
+  </section>
+
+  <section class="payment-toolbar-card">
+    <div class="payment-toolbar-main">
+      <div class="payment-search-box">
+        <label>Search</label>
+        <input
+          id="paymentSearchInput"
+          type="search"
+          placeholder="Search order, customer, phone, product or status">
+      </div>
+
+      <div>
+        <label>Status</label>
+        <select id="paymentStatusFilter">
+          <option value="">All Statuses</option>
+          <option value="submitted">Pending Verification</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Date</label>
+        <input id="paymentDateFilter" type="date">
+      </div>
+    </div>
+
+    <div class="payment-toolbar-bottom">
+      <button id="clearPaymentFiltersBtn" type="button" class="secondary-btn">
+        Clear Filters
+      </button>
+
+      <button id="refreshPaymentsBtn" type="button" class="secondary-btn">
+        Refresh
+      </button>
+    </div>
+  </section>
+
+  <section class="payment-table-card">
+    <div class="section-row-title">
+      <div>
+        <h2>Juice Payment Records</h2>
+        <p id="paymentResultCount">Loading payments...</p>
+      </div>
+    </div>
+
+    <div id="paymentsList" class="payment-records-list">
+      Loading payments...
+    </div>
+  </section>
+
 </main>
 
-<script type="module" src="js/admin-payments.js"></script>
+<script type="module" src="js/nav.js?v=4.0"></script>
+<script type="module" src="js/admin-payments.js?v=5.0"></script>
+
 </body>
 </html>
