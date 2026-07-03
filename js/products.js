@@ -72,6 +72,7 @@ if (searchInput2) searchInput2.value = activeSearch;
 attachSearchEvents();
 attachFilterEvents();
 attachSharedNavSearch();
+attachInstantSearchEvent();
 
 await loadCategories();
 await loadTopBanner();
@@ -782,6 +783,11 @@ function setSearch(value) {
 
   if (searchInput) searchInput.value = activeSearch;
   if (searchInput2) searchInput2.value = activeSearch;
+
+  const navInput = document.getElementById("mmSearchInput");
+  if (navInput && navInput.value !== activeSearch) {
+    navInput.value = activeSearch;
+  }
 }
 
 function setCategory(value) {
@@ -790,6 +796,11 @@ function setCategory(value) {
   if (topCategoryFilter) topCategoryFilter.value = activeCategory;
   if (categoryFilter) categoryFilter.value = activeCategory;
   if (sideCategoryFilter) sideCategoryFilter.value = activeCategory;
+
+  const navCategory = document.getElementById("mmSearchCategory");
+  if (navCategory && navCategory.value !== activeCategory) {
+    navCategory.value = activeCategory;
+  }
 }
 
 function setSort(value) {
@@ -824,6 +835,24 @@ function scrollToProducts() {
   target?.scrollIntoView({
     behavior: "smooth",
     block: "start"
+  });
+}
+
+
+
+function attachInstantSearchEvent() {
+  window.addEventListener("maumarket:search", (event) => {
+    const detail = event.detail || {};
+
+    setSearch(detail.search || "");
+    setCategory(detail.category || "");
+    renderCategoryIcons();
+    updateUrlState();
+    renderItems(Boolean(detail.scroll));
+
+    if (detail.scroll) {
+      scrollToProducts();
+    }
   });
 }
 
