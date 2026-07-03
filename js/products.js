@@ -30,6 +30,8 @@ const productsGrid = document.getElementById("productsGrid");
 const productsGridTrending = document.getElementById("productsGridTrending");
 const productsGridDeals = document.getElementById("productsGridDeals");
 const resultCount = document.getElementById("resultCount");
+const marketTitle = document.getElementById("marketTitle");
+const clearSearchTop = document.getElementById("clearSearchTop");
 
 const categoryIconGrid = document.getElementById("categoryIconGrid");
 
@@ -69,6 +71,7 @@ if (searchInput2) searchInput2.value = activeSearch;
 
 attachSearchEvents();
 attachFilterEvents();
+attachSharedNavSearch();
 
 await loadCategories();
 await loadTopBanner();
@@ -303,7 +306,6 @@ async function loadItems() {
     }
 
     renderItems(false);
-    renderHomeProductSections();
     renderFeaturedShops();
   } catch (error) {
     productsGrid.innerHTML = `
@@ -536,12 +538,22 @@ function renderItems(shouldScroll = false) {
 
   filtered = sortItems(filtered, sort);
 
+  if (marketTitle) {
+    marketTitle.textContent = search
+      ? `Search results for "${escapeHtml(activeSearch)}"`
+      : "Products & Services";
+  }
+
+  if (clearSearchTop) {
+    clearSearchTop.style.display = search ? "inline-flex" : "none";
+  }
+
   if (resultCount) {
     const categoryText = activeCategory ? ` in ${activeCategory}` : "";
 
     resultCount.textContent = search
-      ? `${filtered.length} result(s) for "${escapeHtml(search)}"${categoryText}`
-      : `${filtered.length} result(s) found${categoryText}`;
+      ? `${filtered.length} matching item(s)${categoryText}`
+      : `${filtered.length} item(s) found${categoryText}`;
   }
 
   if (filtered.length === 0) {
@@ -815,6 +827,60 @@ function scrollToProducts() {
   });
 }
 
+
+function attachSharedNavSearch() {
+  /*
+    nav.js injects the main search bar dynamically.
+    This observer connects that search bar directly to products.js,
+    so when the buyer searches from the top bar, the products grid updates
+    immediately instead of feeling disconnected.
+  */
+
+  const connect = () => {
+    const navInput = document.getElementById("mmSearchInput");
+    const navCategory = document.getElementById("mmSearchCategory");
+    const navForm = document.getElementById("mmSearchForm");
+
+    if (!navInput || navInput.dataset.productsConnected === "true") return;
+
+    navInput.dataset.productsConnected = "true";
+
+    navInput.value = activeSearch;
+
+    navInput.addEventListener("input", () => {
+      setSearch(navInput.value);
+      renderItems(false);
+    });
+
+    navForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      setSearch(navInput.value);
+
+      if (navCategory?.value) {
+        setCategory(navCategory.value);
+      }
+
+      runSearch(true);
+    }, true);
+
+    navCategory?.addEventListener("change", () => {
+      setCategory(navCategory.value);
+      runSearch(true);
+    });
+  };
+
+  connect();
+
+  const observer = new MutationObserver(connect);
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+
 function attachSearchEvents() {
   searchInput?.addEventListener("input", () => {
     setSearch(searchInput.value);
@@ -878,6 +944,20 @@ function attachFilterEvents() {
   });
 
   typeFilter?.addEventListener("change", () => {
+    runSearch(true);
+  });
+
+  clearSearchTop?.addEventListener("click", () => {
+    setSearch("");
+    setCategory("");
+    setSort("newest");
+
+    const navInput = document.getElementById("mmSearchInput");
+    const navCategory = document.getElementById("mmSearchCategory");
+
+    if (navInput) navInput.value = "";
+    if (navCategory) navCategory.value = "";
+
     runSearch(true);
   });
 }
