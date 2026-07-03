@@ -3153,3 +3153,104 @@ hr {
     height: 118px !important;
   }
 }
+
+
+/* =========================================================
+   MAUMARKET SEARCH-FIRST MARKETPLACE OVERRIDE V4
+   - Removes messy Top Deals / Trending horizontal sections
+   - Makes search results feel direct
+   - Keeps product cards small and consistent
+   ========================================================= */
+
+#productsGridDeals,
+#productsGridTrending {
+  display: none !important;
+}
+
+.clean-products-section {
+  display: none !important;
+}
+
+.market-heading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+.clear-search-top {
+  width: auto !important;
+  min-height: 40px !important;
+  padding: 9px 14px !important;
+  white-space: nowrap !important;
+}
+
+#marketTitle {
+  font-size: 24px !important;
+  letter-spacing: -0.4px !important;
+}
+
+#resultCount {
+  font-size: 14px !important;
+}
+
+#productsGrid.market-product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.market-product-img,
+.pro-product-img {
+  height: 155px !important;
+}
+
+.market-product-body,
+.pro-product-body {
+  padding: 11px !important;
+}
+
+.market-product-body h3,
+.pro-product-body h3,
+.product-card h3 {
+  font-size: 13px !important;
+  min-height: 34px !important;
+}
+
+.product-main-btn {
+  min-height: 36px !important;
+  font-size: 12px !important;
+  border-radius: 10px !important;
+}
+
+.price,
+.pro-price,
+.product-price {
+  font-size: 16px !important;
+}
+
+.seller-line,
+.product-location,
+.rating-line-small {
+  font-size: 11px !important;
+}
+
+@media (max-width: 700px) {
+  .market-heading {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  .clear-search-top {
+    width: 100% !important;
+  }
+
+  #productsGrid.market-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .market-product-img,
+  .pro-product-img {
+    height: 125px !important;
+  }
+}
