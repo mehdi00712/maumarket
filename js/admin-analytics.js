@@ -11,30 +11,36 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const totalUsers = document.getElementById("totalUsers");
-const totalSellers = document.getElementById("totalSellers");
-const totalCustomers = document.getElementById("totalCustomers");
-const totalDelivery = document.getElementById("totalDelivery");
-const totalProducts = document.getElementById("totalProducts");
-const totalOrders = document.getElementById("totalOrders");
-const deliveredOrders = document.getElementById("deliveredOrders");
-const totalRevenue = document.getElementById("totalRevenue");
-const commissionRevenue = document.getElementById("commissionRevenue");
-const pendingPayouts = document.getElementById("pendingPayouts");
-const averageOrderValue = document.getElementById("averageOrderValue");
-const totalReviews = document.getElementById("totalReviews");
+const els = {
+  totalUsers: document.getElementById("totalUsers"),
+  totalSellers: document.getElementById("totalSellers"),
+  totalCustomers: document.getElementById("totalCustomers"),
+  totalDelivery: document.getElementById("totalDelivery"),
+  totalProducts: document.getElementById("totalProducts"),
+  totalOrders: document.getElementById("totalOrders"),
+  deliveredOrders: document.getElementById("deliveredOrders"),
+  totalRevenue: document.getElementById("totalRevenue"),
+  commissionRevenue: document.getElementById("commissionRevenue"),
+  pendingPayouts: document.getElementById("pendingPayouts"),
+  averageOrderValue: document.getElementById("averageOrderValue"),
+  totalReviews: document.getElementById("totalReviews"),
+  analyticsUpdatedAt: document.getElementById("analyticsUpdatedAt"),
 
-const recentOrders = document.getElementById("recentOrders");
-const topSellersBox = document.getElementById("topSellersBox");
-const topProductsBox = document.getElementById("topProductsBox");
-const platformHealthBox = document.getElementById("platformHealthBox");
-const sellerRevenueBox = document.getElementById("sellerRevenueBox");
-const deliveryStatusBox = document.getElementById("deliveryStatusBox");
+  recentOrders: document.getElementById("recentOrders"),
+  topSellersBox: document.getElementById("topSellersBox"),
+  topProductsBox: document.getElementById("topProductsBox"),
+  platformHealthBox: document.getElementById("platformHealthBox"),
+  sellerRevenueBox: document.getElementById("sellerRevenueBox"),
+  deliveryStatusBox: document.getElementById("deliveryStatusBox"),
 
-const adminRevenueChart = document.getElementById("adminRevenueChart");
-const adminOrdersChart = document.getElementById("adminOrdersChart");
-const userRolesChart = document.getElementById("userRolesChart");
-const adminOrderStatusChart = document.getElementById("adminOrderStatusChart");
+  adminRevenueChart: document.getElementById("adminRevenueChart"),
+  adminOrdersChart: document.getElementById("adminOrdersChart"),
+  userRolesChart: document.getElementById("userRolesChart"),
+  adminOrderStatusChart: document.getElementById("adminOrderStatusChart")
+};
+
+let latestStats = null;
+let resizeTimer = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -61,49 +67,27 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+
+  resizeTimer = setTimeout(() => {
+    if (latestStats) drawAllCharts(latestStats);
+  }, 200);
+});
+
 async function loadAnalytics() {
-  const users = [];
-  const products = [];
-  const orders = [];
-  const reviews = [];
-  const payouts = [];
+  setLoadingState();
 
-  try {
-    const snap = await getDocs(collection(db, "users"));
-    snap.forEach((docSnap) => users.push({ id: docSnap.id, ...docSnap.data() }));
-  } catch (error) {
-    console.warn("Users analytics unavailable:", error.message);
-  }
-
-  try {
-    const snap = await getDocs(collection(db, "products"));
-    snap.forEach((docSnap) => products.push({ id: docSnap.id, ...docSnap.data() }));
-  } catch (error) {
-    console.warn("Products analytics unavailable:", error.message);
-  }
-
-  try {
-    const snap = await getDocs(collection(db, "orders"));
-    snap.forEach((docSnap) => orders.push({ id: docSnap.id, ...docSnap.data() }));
-  } catch (error) {
-    console.warn("Orders analytics unavailable:", error.message);
-  }
-
-  try {
-    const snap = await getDocs(collection(db, "reviews"));
-    snap.forEach((docSnap) => reviews.push({ id: docSnap.id, ...docSnap.data() }));
-  } catch (error) {
-    console.warn("Reviews analytics unavailable:", error.message);
-  }
-
-  try {
-    const snap = await getDocs(collection(db, "payouts"));
-    snap.forEach((docSnap) => payouts.push({ id: docSnap.id, ...docSnap.data() }));
-  } catch (error) {
-    console.warn("Payouts analytics unavailable:", error.message);
-  }
+  const [users, products, orders, reviews, payouts] = await Promise.all([
+    fetchCollection("users"),
+    fetchCollection("products"),
+    fetchCollection("orders"),
+    fetchCollection("reviews"),
+    fetchCollection("payouts")
+  ]);
 
   const stats = calculateStats(users, products, orders, reviews, payouts);
+  latestStats = stats;
 
   updateCards(stats);
   renderTopSellers(stats.topSellers);
@@ -112,28 +96,66 @@ async function loadAnalytics() {
   renderPlatformHealth(stats);
   renderSellerRevenue(stats.sellerRevenueList);
   renderDeliveryStatus(stats.deliveryStatusCounts);
+  drawAllCharts(stats);
 
-  drawLineChart(adminRevenueChart, stats.revenueTrend, "revenue", "Revenue");
-  drawLineChart(adminOrdersChart, stats.ordersTrend, "orders", "Orders");
-  drawPieChart(userRolesChart, stats.userRoleCounts);
-  drawPieChart(adminOrderStatusChart, stats.orderStatusCounts);
+  if (els.analyticsUpdatedAt) {
+    els.analyticsUpdatedAt.textContent = `Updated ${new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    })}`;
+  }
+}
+
+async function fetchCollection(name) {
+  try {
+    const snapshot = await getDocs(collection(db, name));
+
+    return snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
+  } catch (error) {
+    console.warn(`${name} analytics unavailable:`, error.message);
+    return [];
+  }
+}
+
+function setLoadingState() {
+  [
+    els.totalUsers,
+    els.totalSellers,
+    els.totalCustomers,
+    els.totalDelivery,
+    els.totalProducts,
+    els.totalOrders,
+    els.deliveredOrders,
+    els.totalRevenue,
+    els.commissionRevenue,
+    els.pendingPayouts,
+    els.averageOrderValue,
+    els.totalReviews
+  ].forEach((el) => {
+    if (el) el.textContent = "...";
+  });
 }
 
 function calculateStats(users, products, orders, reviews, payouts) {
-  let sellers = 0;
-  let customers = 0;
-  let delivery = 0;
+  const roleCounts = {
+    Customers: 0,
+    Sellers: 0,
+    Delivery: 0
+  };
 
   users.forEach((user) => {
-    if (user.role === "seller") sellers++;
-    if (user.role === "customer") customers++;
-    if (user.role === "delivery") delivery++;
+    if (user.role === "seller") roleCounts.Sellers++;
+    else if (user.role === "delivery") roleCounts.Delivery++;
+    else roleCounts.Customers++;
   });
 
   let revenue = 0;
+  let commission = 0;
   let delivered = 0;
   let pending = 0;
-  let commission = 0;
 
   const sellerRevenueMap = {};
   const sellerNameMap = {};
@@ -145,8 +167,8 @@ function calculateStats(users, products, orders, reviews, payouts) {
   const dailyOrdersMap = {};
 
   orders.forEach((order) => {
-    const orderStatus = order.orderStatus || "Unknown";
-    const deliveryStatus = order.deliveryStatus || "Not started";
+    const orderStatus = order.orderStatus || "Pending";
+    const deliveryStatus = order.deliveryStatus || order.orderStatus || "Not Started";
 
     orderStatusCounts[orderStatus] = (orderStatusCounts[orderStatus] || 0) + 1;
     deliveryStatusCounts[deliveryStatus] = (deliveryStatusCounts[deliveryStatus] || 0) + 1;
@@ -157,26 +179,36 @@ function calculateStats(users, products, orders, reviews, payouts) {
       pending++;
     }
 
+    const dateLabel = getDateLabel(order.createdAt || order.updatedAt);
+    dailyOrdersMap[dateLabel] = (dailyOrdersMap[dateLabel] || 0) + 1;
+
     if (order.paymentStatus !== "verified") return;
 
     const orderTotal = Number(order.grandTotal || 0);
-    revenue += orderTotal;
-    commission += Number(order.platformCommission || order.commission || orderTotal * 0.1 || 0);
+    const orderCommission = Number(
+      order.commissionAmount ||
+      order.platformCommission ||
+      order.commission ||
+      orderTotal * 0.1 ||
+      0
+    );
 
-    const dateLabel = getDateLabel(order.createdAt || order.updatedAt);
+    revenue += orderTotal;
+    commission += orderCommission;
+
     dailyRevenueMap[dateLabel] = (dailyRevenueMap[dateLabel] || 0) + orderTotal;
-    dailyOrdersMap[dateLabel] = (dailyOrdersMap[dateLabel] || 0) + 1;
 
     (order.items || []).forEach((item) => {
       const sellerId = item.sellerId || "unknown";
-      const sellerName = item.shopName || item.sellerName || sellerId;
-      const productTitle = item.title || "Untitled";
-      const qty = Number(item.quantity || 1);
-      const subtotal = Number(item.price || 0) * qty;
+      const sellerName = item.shopName || item.sellerName || "Unknown Seller";
+      const productTitle = item.title || "Untitled Product";
+      const quantity = Number(item.quantity || 1);
+      const subtotal = Number(item.subtotal || Number(item.price || 0) * quantity);
 
       sellerNameMap[sellerId] = sellerName;
       sellerRevenueMap[sellerId] = (sellerRevenueMap[sellerId] || 0) + subtotal;
-      productSalesMap[productTitle] = (productSalesMap[productTitle] || 0) + qty;
+
+      productSalesMap[productTitle] = (productSalesMap[productTitle] || 0) + quantity;
       productRevenueMap[productTitle] = (productRevenueMap[productTitle] || 0) + subtotal;
     });
   });
@@ -184,10 +216,7 @@ function calculateStats(users, products, orders, reviews, payouts) {
   let pendingPayoutTotal = 0;
 
   payouts.forEach((payout) => {
-    if (
-      payout.status === "pending" ||
-      payout.paid !== true
-    ) {
+    if (payout.status === "pending" || payout.paid !== true) {
       pendingPayoutTotal += Number(payout.amount || payout.total || 0);
     }
   });
@@ -200,8 +229,6 @@ function calculateStats(users, products, orders, reviews, payouts) {
     }))
     .sort((a, b) => b.amount - a.amount);
 
-  const topSellers = sellerRevenueList.slice(0, 8);
-
   const topProducts = Object.entries(productSalesMap)
     .map(([title, sold]) => ({
       title,
@@ -211,18 +238,19 @@ function calculateStats(users, products, orders, reviews, payouts) {
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 8);
 
-  orders.sort((a, b) => {
-    return (b.createdAt?.seconds || b.updatedAt?.seconds || 0) -
-      (a.createdAt?.seconds || a.updatedAt?.seconds || 0);
+  const sortedOrders = [...orders].sort((a, b) => {
+    const aTime = a.createdAt?.seconds || a.updatedAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || b.updatedAt?.seconds || 0;
+    return bTime - aTime;
   });
 
   const labels = getLast7DaysLabels();
 
   return {
     totalUsers: users.length,
-    sellers,
-    customers,
-    delivery,
+    sellers: roleCounts.Sellers,
+    customers: roleCounts.Customers,
+    delivery: roleCounts.Delivery,
     products: products.length,
     orders: orders.length,
     delivered,
@@ -231,229 +259,284 @@ function calculateStats(users, products, orders, reviews, payouts) {
     commission,
     pendingPayoutTotal,
     reviews: reviews.length,
-    averageOrderValue: revenue > 0 && orders.length > 0 ? revenue / orders.length : 0,
+    averageOrderValue: revenue > 0 ? revenue / Math.max(orders.length, 1) : 0,
     orderStatusCounts,
     deliveryStatusCounts,
-    userRoleCounts: {
-      Customers: customers,
-      Sellers: sellers,
-      Delivery: delivery
-    },
+    userRoleCounts: roleCounts,
     sellerRevenueList,
-    topSellers,
+    topSellers: sellerRevenueList.slice(0, 8),
     topProducts,
-    recentOrders: orders.slice(0, 8),
+    recentOrders: sortedOrders.slice(0, 8),
     revenueTrend: labels.map((label) => ({
       label,
-      revenue: dailyRevenueMap[label] || 0
+      value: dailyRevenueMap[label] || 0
     })),
     ordersTrend: labels.map((label) => ({
       label,
-      orders: dailyOrdersMap[label] || 0
+      value: dailyOrdersMap[label] || 0
     }))
   };
 }
 
 function updateCards(stats) {
-  totalUsers.textContent = stats.totalUsers;
-  totalSellers.textContent = stats.sellers;
-  totalCustomers.textContent = stats.customers;
-  if (totalDelivery) totalDelivery.textContent = stats.delivery;
-  totalProducts.textContent = stats.products;
-  totalOrders.textContent = stats.orders;
-  if (deliveredOrders) deliveredOrders.textContent = stats.delivered;
-  totalRevenue.textContent = `Rs ${formatMoney(stats.revenue)}`;
-  if (commissionRevenue) commissionRevenue.textContent = `Rs ${formatMoney(stats.commission)}`;
-  if (pendingPayouts) pendingPayouts.textContent = `Rs ${formatMoney(stats.pendingPayoutTotal)}`;
-  if (averageOrderValue) averageOrderValue.textContent = `Rs ${formatMoney(stats.averageOrderValue)}`;
-  if (totalReviews) totalReviews.textContent = stats.reviews;
+  setText(els.totalUsers, stats.totalUsers);
+  setText(els.totalSellers, stats.sellers);
+  setText(els.totalCustomers, stats.customers);
+  setText(els.totalDelivery, stats.delivery);
+  setText(els.totalProducts, stats.products);
+  setText(els.totalOrders, stats.orders);
+  setText(els.deliveredOrders, stats.delivered);
+  setText(els.totalRevenue, `Rs ${formatMoney(stats.revenue)}`);
+  setText(els.commissionRevenue, `Rs ${formatMoney(stats.commission)}`);
+  setText(els.pendingPayouts, `Rs ${formatMoney(stats.pendingPayoutTotal)}`);
+  setText(els.averageOrderValue, `Rs ${formatMoney(stats.averageOrderValue)}`);
+  setText(els.totalReviews, stats.reviews);
 }
 
 function renderTopSellers(sellers) {
-  if (!topSellersBox) return;
+  if (!els.topSellersBox) return;
 
-  if (sellers.length === 0) {
-    topSellersBox.innerHTML = "<p>No seller sales yet.</p>";
+  if (!sellers.length) {
+    els.topSellersBox.innerHTML = emptyList("No seller sales yet.");
     return;
   }
 
-  topSellersBox.innerHTML = sellers.map((seller, index) => `
-    <div class="order-card">
-      <h3>#${index + 1} ${escapeHtml(seller.name)}</h3>
-      <p><strong>Sales:</strong> Rs ${formatMoney(seller.amount)}</p>
+  els.topSellersBox.innerHTML = sellers.map((seller, index) => `
+    <div class="analytics-list-item">
+      <div class="analytics-rank">${index + 1}</div>
+
+      <div>
+        <strong>${escapeHtml(seller.name)}</strong>
+        <span>Verified sales</span>
+      </div>
+
+      <b>Rs ${formatMoney(seller.amount)}</b>
     </div>
   `).join("");
 }
 
 function renderTopProducts(products) {
-  if (!topProductsBox) return;
+  if (!els.topProductsBox) return;
 
-  if (products.length === 0) {
-    topProductsBox.innerHTML = "<p>No product sales yet.</p>";
+  if (!products.length) {
+    els.topProductsBox.innerHTML = emptyList("No product sales yet.");
     return;
   }
 
-  topProductsBox.innerHTML = products.map((product, index) => `
-    <div class="order-card">
-      <h3>#${index + 1} ${escapeHtml(product.title)}</h3>
-      <p><strong>Sold:</strong> ${product.sold}</p>
-      <p><strong>Revenue:</strong> Rs ${formatMoney(product.revenue)}</p>
+  els.topProductsBox.innerHTML = products.map((product, index) => `
+    <div class="analytics-list-item">
+      <div class="analytics-rank">${index + 1}</div>
+
+      <div>
+        <strong>${escapeHtml(product.title)}</strong>
+        <span>${product.sold} sold</span>
+      </div>
+
+      <b>Rs ${formatMoney(product.revenue)}</b>
     </div>
   `).join("");
 }
 
 function renderRecentOrders(orders) {
-  if (!recentOrders) return;
+  if (!els.recentOrders) return;
 
-  if (orders.length === 0) {
-    recentOrders.innerHTML = "<p>No orders yet.</p>";
+  if (!orders.length) {
+    els.recentOrders.innerHTML = emptyList("No orders yet.");
     return;
   }
 
-  recentOrders.innerHTML = orders.map((order) => `
-    <div class="order-card">
-      <h3>Order #${escapeHtml(String(order.id).slice(0, 8))}</h3>
-      <p><strong>Customer:</strong> ${escapeHtml(order.customerName || "Customer")}</p>
-      <p><strong>Total:</strong> Rs ${formatMoney(order.grandTotal || 0)}</p>
-      <p><strong>Payment:</strong> ${escapeHtml(order.paymentStatus || "Pending")}</p>
-      <p><strong>Status:</strong> ${escapeHtml(order.orderStatus || "Pending")}</p>
+  els.recentOrders.innerHTML = orders.map((order) => `
+    <div class="analytics-list-item">
+      <div>
+        <strong>Order #${escapeHtml(String(order.id).slice(0, 8))}</strong>
+        <span>${escapeHtml(order.customerName || "Customer")} • ${escapeHtml(order.orderStatus || "Pending")}</span>
+      </div>
+
+      <b>Rs ${formatMoney(order.grandTotal || 0)}</b>
     </div>
   `).join("");
 }
 
 function renderPlatformHealth(stats) {
-  if (!platformHealthBox) return;
+  if (!els.platformHealthBox) return;
 
-  const conversionText = stats.orders > 0
-    ? `${((stats.delivered / stats.orders) * 100).toFixed(1)}% delivered`
-    : "No orders yet";
+  const deliveryRate = stats.orders > 0
+    ? `${((stats.delivered / stats.orders) * 100).toFixed(1)}%`
+    : "0%";
 
-  platformHealthBox.innerHTML = `
-    <p><strong>Delivery success:</strong> ${conversionText}</p>
-    <p><strong>Active sellers:</strong> ${stats.sellers}</p>
-    <p><strong>Products listed:</strong> ${stats.products}</p>
-    <p><strong>Reviews:</strong> ${stats.reviews}</p>
+  els.platformHealthBox.innerHTML = `
+    ${sideMetric("Delivery Success", deliveryRate)}
+    ${sideMetric("Active Sellers", stats.sellers)}
+    ${sideMetric("Products Listed", stats.products)}
+    ${sideMetric("Reviews", stats.reviews)}
   `;
 }
 
 function renderSellerRevenue(list) {
-  if (!sellerRevenueBox) return;
+  if (!els.sellerRevenueBox) return;
 
-  if (list.length === 0) {
-    sellerRevenueBox.innerHTML = "<p>No seller revenue yet.</p>";
+  if (!list.length) {
+    els.sellerRevenueBox.innerHTML = emptyList("No seller revenue yet.");
     return;
   }
 
-  sellerRevenueBox.innerHTML = list.slice(0, 8).map((seller) => `
-    <p><strong>${escapeHtml(seller.name)}:</strong> Rs ${formatMoney(seller.amount)}</p>
+  els.sellerRevenueBox.innerHTML = list.slice(0, 8).map((seller) => `
+    <div class="analytics-mini-row">
+      <span>${escapeHtml(seller.name)}</span>
+      <strong>Rs ${formatMoney(seller.amount)}</strong>
+    </div>
   `).join("");
 }
 
 function renderDeliveryStatus(statusCounts) {
-  if (!deliveryStatusBox) return;
+  if (!els.deliveryStatusBox) return;
 
-  const entries = Object.entries(statusCounts);
+  const entries = Object.entries(statusCounts || {});
 
-  if (entries.length === 0) {
-    deliveryStatusBox.innerHTML = "<p>No delivery data yet.</p>";
+  if (!entries.length) {
+    els.deliveryStatusBox.innerHTML = emptyList("No delivery data yet.");
     return;
   }
 
-  deliveryStatusBox.innerHTML = entries.map(([status, count]) => `
-    <p><strong>${escapeHtml(status)}:</strong> ${count}</p>
+  els.deliveryStatusBox.innerHTML = entries.map(([status, count]) => `
+    <div class="analytics-mini-row">
+      <span>${escapeHtml(status)}</span>
+      <strong>${count}</strong>
+    </div>
   `).join("");
 }
 
-/* Charts */
+function drawAllCharts(stats) {
+  drawLineChart(els.adminRevenueChart, stats.revenueTrend, {
+    title: "Revenue",
+    prefix: "Rs "
+  });
 
-function drawLineChart(canvas, data, key, label) {
+  drawLineChart(els.adminOrdersChart, stats.ordersTrend, {
+    title: "Orders",
+    prefix: ""
+  });
+
+  drawDonutChart(els.userRolesChart, stats.userRoleCounts);
+  drawDonutChart(els.adminOrderStatusChart, stats.orderStatusCounts);
+}
+
+function drawLineChart(canvas, data, options = {}) {
   if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
-  const width = canvas.clientWidth || canvas.parentElement.clientWidth || 600;
-  const height = Number(canvas.getAttribute("height") || 180);
+  const ctx = setupCanvas(canvas);
+  const { width, height } = getCanvasSize(canvas);
 
-  canvas.width = width * window.devicePixelRatio;
-  canvas.height = height * window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   ctx.clearRect(0, 0, width, height);
 
-  const padding = 34;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
-  const values = data.map((item) => Number(item[key] || 0));
+  const isMobile = width < 520;
+  const padding = {
+    top: 28,
+    right: 16,
+    bottom: isMobile ? 34 : 38,
+    left: isMobile ? 34 : 52
+  };
+
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const values = data.map((item) => Number(item.value || 0));
   const max = Math.max(...values, 1);
 
   ctx.strokeStyle = "#e5e7eb";
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= 4; i++) {
-    const y = padding + (chartHeight / 4) * i;
+    const y = padding.top + (chartHeight / 4) * i;
     ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
     ctx.stroke();
   }
 
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+  gradient.addColorStop(0, "rgba(79, 53, 245, 0.22)");
+  gradient.addColorStop(1, "rgba(79, 53, 245, 0.02)");
+
   ctx.beginPath();
-  ctx.strokeStyle = key === "revenue" ? "#0f766e" : "#f59e0b";
-  ctx.lineWidth = 3;
 
   data.forEach((item, index) => {
-    const x = padding + (chartWidth / Math.max(data.length - 1, 1)) * index;
-    const y = padding + chartHeight - (Number(item[key] || 0) / max) * chartHeight;
+    const x = padding.left + (chartWidth / Math.max(data.length - 1, 1)) * index;
+    const y = padding.top + chartHeight - (Number(item.value || 0) / max) * chartHeight;
 
     if (index === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
 
+  ctx.lineTo(width - padding.right, height - padding.bottom);
+  ctx.lineTo(padding.left, height - padding.bottom);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  ctx.beginPath();
+
+  data.forEach((item, index) => {
+    const x = padding.left + (chartWidth / Math.max(data.length - 1, 1)) * index;
+    const y = padding.top + chartHeight - (Number(item.value || 0) / max) * chartHeight;
+
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.strokeStyle = "#4f35f5";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
   data.forEach((item, index) => {
-    const x = padding + (chartWidth / Math.max(data.length - 1, 1)) * index;
-    const y = padding + chartHeight - (Number(item[key] || 0) / max) * chartHeight;
+    const x = padding.left + (chartWidth / Math.max(data.length - 1, 1)) * index;
+    const y = padding.top + chartHeight - (Number(item.value || 0) / max) * chartHeight;
 
     ctx.beginPath();
-    ctx.fillStyle = key === "revenue" ? "#14b8a6" : "#fbbf24";
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#6b7280";
-    ctx.font = "11px Arial";
+    ctx.beginPath();
+    ctx.fillStyle = "#4f35f5";
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#667085";
+    ctx.font = isMobile ? "10px Arial" : "11px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(item.label, x, height - 8);
+    ctx.fillText(item.label, x, height - 10);
   });
 
-  ctx.fillStyle = "#111827";
+  ctx.fillStyle = "#101828";
   ctx.font = "bold 13px Arial";
   ctx.textAlign = "left";
-  ctx.fillText(label, padding, 16);
+  ctx.fillText(options.title || "Trend", padding.left, 16);
 }
 
-function drawPieChart(canvas, counts) {
+function drawDonutChart(canvas, counts) {
   if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
-  const width = canvas.clientWidth || canvas.parentElement.clientWidth || 600;
-  const height = Number(canvas.getAttribute("height") || 180);
+  const ctx = setupCanvas(canvas);
+  const { width, height } = getCanvasSize(canvas);
 
-  canvas.width = width * window.devicePixelRatio;
-  canvas.height = height * window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   ctx.clearRect(0, 0, width, height);
 
-  const entries = Object.entries(counts || {});
+  const entries = Object.entries(counts || {}).filter((entry) => Number(entry[1]) > 0);
+
   if (!entries.length) {
     drawEmptyChart(ctx, width, height, "No data yet");
     return;
   }
 
+  const isMobile = width < 520;
+  const colors = ["#4f35f5", "#f59e0b", "#16a34a", "#2563eb", "#dc2626", "#9333ea"];
   const total = entries.reduce((sum, entry) => sum + Number(entry[1] || 0), 0);
-  const colors = ["#0f766e", "#f59e0b", "#3b82f6", "#8b5cf6", "#ef4444", "#14b8a6"];
 
-  const cx = width / 2 - 80;
-  const cy = height / 2;
-  const radius = Math.min(width, height) / 3;
+  const cx = isMobile ? width / 2 : width * 0.34;
+  const cy = isMobile ? height * 0.38 : height / 2;
+  const radius = Math.min(width, height) * (isMobile ? 0.20 : 0.26);
+  const innerRadius = radius * 0.58;
 
   let start = -Math.PI / 2;
 
@@ -461,8 +544,8 @@ function drawPieChart(canvas, counts) {
     const slice = (Number(count || 0) / total) * Math.PI * 2;
 
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, radius, start, start + slice);
+    ctx.arc(cx, cy, innerRadius, start + slice, start, true);
     ctx.closePath();
     ctx.fillStyle = colors[index % colors.length];
     ctx.fill();
@@ -470,21 +553,58 @@ function drawPieChart(canvas, counts) {
     start += slice;
   });
 
+  ctx.fillStyle = "#101828";
+  ctx.font = "bold 18px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(total, cx, cy + 6);
+
+  renderLegend(ctx, entries, colors, width, height, isMobile);
+}
+
+function renderLegend(ctx, entries, colors, width, height, isMobile) {
+  ctx.font = isMobile ? "11px Arial" : "12px Arial";
+  ctx.textAlign = "left";
+
+  const startX = isMobile ? 18 : width * 0.62;
+  const startY = isMobile ? height - entries.length * 21 - 10 : 42;
+
   entries.forEach(([label, count], index) => {
-    const y = 36 + index * 24;
+    const y = startY + index * 21;
 
     ctx.fillStyle = colors[index % colors.length];
-    ctx.fillRect(width - 170, y - 10, 12, 12);
+    ctx.fillRect(startX, y - 10, 11, 11);
 
-    ctx.fillStyle = "#111827";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "left";
-    ctx.fillText(`${label}: ${count}`, width - 150, y);
+    ctx.fillStyle = "#344054";
+    ctx.fillText(`${label}: ${count}`, startX + 18, y);
   });
 }
 
+function setupCanvas(canvas) {
+  const ctx = canvas.getContext("2d");
+  const { width, height } = getCanvasSize(canvas);
+  const ratio = window.devicePixelRatio || 1;
+
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  return ctx;
+}
+
+function getCanvasSize(canvas) {
+  const parent = canvas.parentElement;
+  const width = Math.max(parent?.clientWidth || canvas.clientWidth || 320, 260);
+  const height = Math.max(parent?.clientHeight || 280, 240);
+
+  return { width, height };
+}
+
 function drawEmptyChart(ctx, width, height, message) {
-  ctx.fillStyle = "#6b7280";
+  ctx.fillStyle = "#667085";
   ctx.font = "14px Arial";
   ctx.textAlign = "center";
   ctx.fillText(message, width / 2, height / 2);
@@ -520,6 +640,27 @@ function getDateLabel(timestamp) {
   });
 }
 
+function sideMetric(label, value) {
+  return `
+    <div class="analytics-mini-row">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `;
+}
+
+function emptyList(message) {
+  return `
+    <div class="analytics-empty">
+      ${escapeHtml(message)}
+    </div>
+  `;
+}
+
+function setText(el, value) {
+  if (el) el.textContent = value;
+}
+
 function formatMoney(value) {
   return Number(value || 0).toLocaleString("en-US", {
     maximumFractionDigits: 0
@@ -527,7 +668,7 @@ function formatMoney(value) {
 }
 
 function escapeHtml(value) {
-  return String(value || "")
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -536,11 +677,10 @@ function escapeHtml(value) {
 }
 
 function renderError(message) {
-  if (recentOrders) {
-    recentOrders.innerHTML = `
-      <div class="order-card">
-        <h3>Could not load admin analytics</h3>
-        <p>${escapeHtml(message)}</p>
+  if (els.recentOrders) {
+    els.recentOrders.innerHTML = `
+      <div class="analytics-empty">
+        Could not load admin analytics: ${escapeHtml(message)}
       </div>
     `;
   }
