@@ -3889,3 +3889,10 @@ hr {
     font-size: 25px;
   }
 }
+
+.cart-icon{
+    width:24px;
+    height:24px;
+    color:#fff;
+    display:block;
+}
