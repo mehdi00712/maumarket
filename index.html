@@ -4,112 +4,154 @@
   <meta charset="UTF-8">
   <title>MauMarket | Buy Local. Sell Local.</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="MauMarket is a Mauritian marketplace where local sellers can sell products and services, with Juice payments and local delivery.">
+  <meta name="description" content="MauMarket is a Mauritian marketplace for local products, services, secure checkout and delivery.">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="navbar">
-  <a href="dashboard.html" class="logo-brand">
-  <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="register.html">Become a Seller</a>
-    <a href="login.html">Login</a>
-    <a class="btn" href="register.html">Join Now</a>
-  </nav>
-</header>
+<main class="marketplace-home">
 
-<section class="home-hero">
-  <div class="home-hero-content">
-    <span class="hero-badge">Made for Mauritius</span>
-    <h1>Buy local. Sell local. Delivered by MauMarket.</h1>
-    <p>
-      Discover products and services from Mauritian sellers, pay easily with Juice,
-      and get your orders delivered locally.
-    </p>
+  <section class="market-hero clean-market-hero">
+    <div class="market-hero-bg"></div>
 
-    <div class="hero-actions">
-      <a class="btn" href="products.html">Shop Now</a>
-      <a class="btn secondary" href="register.html">Start Selling</a>
+    <div class="market-hero-content">
+      <span class="hero-badge">Made for Mauritius</span>
+
+      <h1>Buy local. Sell local. Delivered by MauMarket.</h1>
+
+      <p>
+        Discover products and services from Mauritian sellers, pay easily with Juice,
+        and get your orders delivered locally.
+      </p>
+
+      <div class="hero-buttons">
+        <a class="btn hero-primary" href="products.html">Shop Now</a>
+        <a class="btn-outline hero-secondary" href="register.html">Start Selling</a>
+      </div>
+
+      <div class="hero-features clean-hero-features">
+        <div>
+          <span>✓</span>
+          <strong>Local Sellers</strong>
+          <small>Support Mauritius businesses</small>
+        </div>
+
+        <div>
+          <span>✓</span>
+          <strong>Secure Checkout</strong>
+          <small>Payment handled safely</small>
+        </div>
+
+        <div>
+          <span>✓</span>
+          <strong>Delivery</strong>
+          <small>Across Mauritius</small>
+        </div>
+
+        <div>
+          <span>✓</span>
+          <strong>Verified Shops</strong>
+          <small>Approved sellers</small>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="hero-card">
-    <h3>How it works</h3>
-    <div class="step">
-      <strong>1</strong>
-      <p>Browse local products and services.</p>
-    </div>
-    <div class="step">
-      <strong>2</strong>
-      <p>Pay securely with Juice and upload proof.</p>
-    </div>
-    <div class="step">
-      <strong>3</strong>
-      <p>MauMarket manages pickup and delivery.</p>
-    </div>
-  </div>
-</section>
-
-<section class="container">
-  <div class="section-title">
-    <h2>Shop by Category</h2>
-    <p>Explore sellers across Mauritius.</p>
-  </div>
-
-  <div class="category-grid">
-    <a href="products.html" class="category-card">Beauty</a>
-    <a href="products.html" class="category-card">Electronics</a>
-    <a href="products.html" class="category-card">Fashion</a>
-    <a href="products.html" class="category-card">Food</a>
-    <a href="products.html" class="category-card">Hardware</a>
-    <a href="products.html" class="category-card">Services</a>
-  </div>
-</section>
-
-<section class="container">
-  <div class="section-title">
-    <h2>Why MauMarket?</h2>
-    <p>A marketplace designed for local businesses and local customers.</p>
-  </div>
-
-  <div class="cards">
-    <div class="card">
-      <h3>Juice Payments</h3>
-      <p>Customers pay using Juice, simple and familiar for Mauritius.</p>
+  <section class="homepage-section clean-category-section">
+    <div class="section-row-title">
+      <h2>Shop by Category</h2>
+      <a href="products.html">View all</a>
     </div>
 
-    <div class="card">
-      <h3>Local Delivery</h3>
-      <p>MauMarket helps manage pickup, delivery, and order tracking.</p>
+    <div class="category-icon-grid">
+      <a href="products.html?category=Beauty" class="category-icon-card">
+        <span class="category-icon-circle">B</span>
+        <span>Beauty</span>
+      </a>
+
+      <a href="products.html?category=Electronics" class="category-icon-card">
+        <span class="category-icon-circle">E</span>
+        <span>Electronics</span>
+      </a>
+
+      <a href="products.html?category=Fashion" class="category-icon-card">
+        <span class="category-icon-circle">F</span>
+        <span>Fashion</span>
+      </a>
+
+      <a href="products.html?category=Food" class="category-icon-card">
+        <span class="category-icon-circle">Fo</span>
+        <span>Food</span>
+      </a>
+
+      <a href="products.html?category=Hardware" class="category-icon-card">
+        <span class="category-icon-circle">H</span>
+        <span>Hardware</span>
+      </a>
+
+      <a href="products.html?category=Services" class="category-icon-card">
+        <span class="category-icon-circle">S</span>
+        <span>Services</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="homepage-section why-market">
+    <div class="section-row-title">
+      <h2>Why MauMarket?</h2>
     </div>
 
-    <div class="card">
-      <h3>Seller Shops</h3>
-      <p>Every approved seller gets their own shop page and product listings.</p>
-    </div>
-  </div>
-</section>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon">✓</div>
+        <h3>Juice Payments</h3>
+        <p>Customers pay using Juice, simple and familiar for Mauritius.</p>
+      </div>
 
-<section class="seller-cta">
-  <div>
-    <h2>Have a business?</h2>
-    <p>Create your MauMarket seller account and start selling online.</p>
-  </div>
-  <a class="btn secondary" href="register.html">Become a Seller</a>
-</section>
+      <div class="why-card">
+        <div class="why-icon">✓</div>
+        <h3>Local Delivery</h3>
+        <p>MauMarket helps manage pickup, delivery and order tracking.</p>
+      </div>
+
+      <div class="why-card">
+        <div class="why-icon">✓</div>
+        <h3>Seller Shops</h3>
+        <p>Approved sellers get their own shop page and product listings.</p>
+      </div>
+
+      <div class="why-card">
+        <div class="why-icon">✓</div>
+        <h3>Customer Support</h3>
+        <p>Support is available for payments, delivery and orders.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-banner">
+    <div>
+      <h2>Have a business?</h2>
+      <p>Create your MauMarket seller account and start selling online.</p>
+    </div>
+
+    <a class="btn-outline" href="register.html">Become a Seller</a>
+  </section>
+
+</main>
 
 <footer class="footer">
   <h3>MauMarket</h3>
   <p>Buy local. Sell local. Delivered locally.</p>
+
   <div>
     <a href="products.html">Marketplace</a>
     <a href="register.html">Sell</a>
     <a href="login.html">Login</a>
   </div>
 </footer>
+
+<script type="module" src="js/nav.js?v=4.0"></script>
 
 </body>
 </html>
