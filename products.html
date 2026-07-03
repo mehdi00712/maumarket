@@ -12,6 +12,8 @@
 
 <main class="marketplace-home">
 
+    <!-- Navigation is injected automatically by nav.js -->
+
     <section class="market-hero clean-market-hero">
 
         <div class="market-hero-bg"></div>
@@ -27,8 +29,8 @@
             </h1>
 
             <p>
-                Your one-stop marketplace in Mauritius. Shop from trusted local sellers,
-                discover quality products, and enjoy island-wide delivery.
+                Shop products and services from trusted Mauritian sellers with
+                secure checkout and island-wide delivery.
             </p>
 
             <div class="hero-buttons">
@@ -44,7 +46,7 @@
             <div class="hero-features clean-hero-features">
                 <div>
                     <span>✓</span>
-                    <strong>Local Marketplace</strong>
+                    <strong>Local Sellers</strong>
                     <small>Support local businesses</small>
                 </div>
 
@@ -56,14 +58,14 @@
 
                 <div>
                     <span>✓</span>
-                    <strong>Island-wide Delivery</strong>
-                    <small>Delivery across Mauritius</small>
+                    <strong>Delivery</strong>
+                    <small>Across Mauritius</small>
                 </div>
 
                 <div>
                     <span>✓</span>
-                    <strong>Top Deals</strong>
-                    <small>Great prices every day</small>
+                    <strong>Verified Shops</strong>
+                    <small>Approved sellers</small>
                 </div>
             </div>
 
@@ -84,17 +86,6 @@
 
     </section>
 
-    <section class="homepage-section clean-products-section">
-
-        <div class="section-row-title">
-            <h2>Top Deals for You</h2>
-            <a href="#marketProducts">View all deals</a>
-        </div>
-
-        <div id="productsGridDeals" class="market-product-grid compact-product-row"></div>
-
-    </section>
-
     <section id="featuredShopsSection" class="homepage-section clean-shops-section">
 
         <div class="section-row-title">
@@ -105,17 +96,6 @@
         <div id="featuredShops" class="featured-shops-row">
             Loading featured shops...
         </div>
-
-    </section>
-
-    <section class="homepage-section clean-products-section">
-
-        <div class="section-row-title">
-            <h2>Trending Today</h2>
-            <a href="#marketProducts">Explore</a>
-        </div>
-
-        <div id="productsGridTrending" class="market-product-grid compact-product-row"></div>
 
     </section>
 
@@ -176,9 +156,13 @@
 
             <div class="market-heading">
                 <div>
-                    <h2>Products & Services</h2>
+                    <h2 id="marketTitle">Products & Services</h2>
                     <p id="resultCount">Loading...</p>
                 </div>
+
+                <button id="clearSearchTop" class="secondary-btn clear-search-top" type="button" style="display:none;">
+                    Clear Search
+                </button>
             </div>
 
             <div id="productsGrid" class="market-product-grid">
@@ -227,8 +211,8 @@
 
 </main>
 
-<script type="module" src="js/nav.js?v=3.1"></script>
-<script type="module" src="js/products.js?v=6.1"></script>
+<script type="module" src="js/nav.js?v=3.3"></script>
+<script type="module" src="js/products.js?v=6.3"></script>
 
 </body>
 </html>
