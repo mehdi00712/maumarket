@@ -13,19 +13,15 @@ import {
 
 /*
   MauMarket products.js
-  Updated for:
-  - Shared nav.js header
-  - Cleaner marketplace UI
-  - Safer null checks
-  - Category icons
-  - Featured shops
-  - Premium ad banner
-  - Search/category/sort filters
+  Clean marketplace version
+  - Smaller product cards
+  - No messy emojis in headings
   - Buyer-facing price only
-  - No commission wording shown to buyers
-  - Trending Today section
-  - Best Deals section
-  - Premium marketplace product cards
+  - Categories
+  - Featured shops
+  - Top deals
+  - Trending
+  - Main marketplace filters
 */
 
 const COMMISSION_RATE = 0.10;
@@ -34,9 +30,12 @@ const productsGrid = document.getElementById("productsGrid");
 const productsGridTrending = document.getElementById("productsGridTrending");
 const productsGridDeals = document.getElementById("productsGridDeals");
 const resultCount = document.getElementById("resultCount");
+
 const categoryIconGrid = document.getElementById("categoryIconGrid");
+
 const featuredShops = document.getElementById("featuredShops");
 const featuredShopsSection = document.getElementById("featuredShopsSection");
+
 const topAdBanner = document.getElementById("topAdBanner");
 
 const searchInput = document.getElementById("searchInput");
@@ -48,6 +47,7 @@ const typeFilter = document.getElementById("typeFilter");
 const topCategoryFilter = document.getElementById("topCategoryFilter");
 const categoryFilter = document.getElementById("categoryFilter");
 const sideCategoryFilter = document.getElementById("sideCategoryFilter");
+
 const sortFilter = document.getElementById("sortFilter");
 const sideSortFilter = document.getElementById("sideSortFilter");
 
@@ -60,6 +60,7 @@ let activeCategory = "";
 let activeSort = "newest";
 
 const params = new URLSearchParams(window.location.search);
+
 activeSearch = params.get("search") || "";
 activeCategory = params.get("category") || "";
 
@@ -72,6 +73,10 @@ attachFilterEvents();
 await loadCategories();
 await loadTopBanner();
 await loadItems();
+
+/* =========================================================
+   LOAD CATEGORIES
+   ========================================================= */
 
 async function loadCategories() {
   try {
@@ -114,16 +119,14 @@ async function loadCategories() {
 
 function renderFallbackCategories() {
   allCategories = [
-    { name: "Beauty", icon: "beauty", sortOrder: 1 },
-    { name: "Electronics", icon: "electronics", sortOrder: 2 },
-    { name: "Phones", icon: "phone", sortOrder: 3 },
-    { name: "Fashion", icon: "fashion", sortOrder: 4 },
+    { name: "Electronics", icon: "electronics", sortOrder: 1 },
+    { name: "Fashion", icon: "fashion", sortOrder: 2 },
+    { name: "Home", icon: "home", sortOrder: 3 },
+    { name: "Beauty", icon: "beauty", sortOrder: 4 },
     { name: "Food", icon: "food", sortOrder: 5 },
     { name: "Hardware", icon: "hardware", sortOrder: 6 },
-    { name: "Home", icon: "home", sortOrder: 7 },
-    { name: "Services", icon: "services", sortOrder: 8 },
-    { name: "Vehicles", icon: "vehicles", sortOrder: 9 },
-    { name: "Other", icon: "other", sortOrder: 10 }
+    { name: "Services", icon: "services", sortOrder: 7 },
+    { name: "Other", icon: "other", sortOrder: 8 }
   ];
 
   renderCategoryDropdowns();
@@ -142,6 +145,7 @@ function renderCategoryDropdowns() {
 
     allCategories.forEach((category) => {
       const option = document.createElement("option");
+
       option.value = category.name || "";
       option.textContent = category.name || "Category";
 
@@ -172,6 +176,7 @@ function renderCategoryIcons() {
 
   categories.forEach((category) => {
     const button = document.createElement("button");
+
     button.type = "button";
     button.className = `category-icon-card ${activeCategory === category.name ? "active" : ""}`;
 
@@ -179,6 +184,7 @@ function renderCategoryIcons() {
       <span class="category-icon-circle">
         ${svgIcon(category.icon)}
       </span>
+
       <span>${escapeHtml(category.label)}</span>
     `;
 
@@ -190,6 +196,10 @@ function renderCategoryIcons() {
     categoryIconGrid.appendChild(button);
   });
 }
+
+/* =========================================================
+   LOAD BANNER
+   ========================================================= */
 
 async function loadTopBanner() {
   if (!topAdBanner) return;
@@ -228,10 +238,9 @@ async function loadTopBanner() {
     const targetShopId = banner.shopId || banner.sellerId || "";
 
     topAdBanner.style.display = "block";
-    topAdBanner.classList.add("market-premium-ad");
 
     topAdBanner.innerHTML = `
-      <div class="top-ad-inner compact-ad premium-ad-inner">
+      <div class="top-ad-inner premium-ad-inner">
         <img src="${escapeHtml(banner.imageUrl)}" alt="${escapeHtml(banner.title || "Featured shop")}">
 
         <div class="top-ad-content premium-ad-content">
@@ -264,6 +273,10 @@ async function loadTopBanner() {
   }
 }
 
+/* =========================================================
+   LOAD PRODUCTS
+   ========================================================= */
+
 async function loadItems() {
   if (!productsGrid) return;
 
@@ -294,7 +307,7 @@ async function loadItems() {
     renderFeaturedShops();
   } catch (error) {
     productsGrid.innerHTML = `
-      <div class="order-card empty-market-card">
+      <div class="empty-market-card">
         <h3>Marketplace could not load</h3>
         <p>${escapeHtml(error.message)}</p>
       </div>
@@ -303,14 +316,14 @@ async function loadItems() {
 }
 
 function renderSkeletonGrid() {
-  const skeletonHtml = Array.from({ length: 10 }).map(() => `
+  const skeletonHtml = Array.from({ length: 8 }).map(() => `
     <div class="market-product-card skeleton-card">
       <div class="market-product-img skeleton-box"></div>
+
       <div class="market-product-body">
         <div class="skeleton-line short"></div>
         <div class="skeleton-line"></div>
         <div class="skeleton-line medium"></div>
-        <div class="skeleton-line short"></div>
       </div>
     </div>
   `).join("");
@@ -358,21 +371,24 @@ function emptyShop(id) {
   };
 }
 
+/* =========================================================
+   HOME SECTIONS
+   ========================================================= */
 
 function renderHomeProductSections() {
   const visibleItems = allItems.filter((item) => item.active !== false);
 
-  const trendingItems = getTrendingItems(visibleItems).slice(0, 10);
-  const dealItems = getDealItems(visibleItems).slice(0, 10);
+  const deals = getDealItems(visibleItems).slice(0, 8);
+  const trending = getTrendingItems(visibleItems).slice(0, 8);
 
-  renderProductList(productsGridTrending, trendingItems, {
-    emptyTitle: "No trending products yet",
-    emptyMessage: "Trending products will appear here when more sellers add items."
+  renderProductList(productsGridDeals, deals, {
+    emptyTitle: "No deals yet",
+    emptyMessage: "Best deals will appear here when sellers add products."
   });
 
-  renderProductList(productsGridDeals, dealItems, {
-    emptyTitle: "No deals yet",
-    emptyMessage: "Best deals will appear here when sellers add discounted products."
+  renderProductList(productsGridTrending, trending, {
+    emptyTitle: "No trending products yet",
+    emptyMessage: "Trending products will appear here soon."
   });
 }
 
@@ -412,7 +428,7 @@ function renderProductList(grid, items, emptyState = {}) {
 
   if (!items.length) {
     grid.innerHTML = `
-      <div class="order-card empty-market-card">
+      <div class="empty-market-card small-empty">
         <h3>${escapeHtml(emptyState.emptyTitle || "No products found")}</h3>
         <p>${escapeHtml(emptyState.emptyMessage || "Products will appear here soon.")}</p>
       </div>
@@ -425,6 +441,9 @@ function renderProductList(grid, items, emptyState = {}) {
   });
 }
 
+/* =========================================================
+   FEATURED SHOPS
+   ========================================================= */
 
 function renderFeaturedShops() {
   if (!featuredShops || !featuredShopsSection) return;
@@ -447,7 +466,7 @@ function renderFeaturedShops() {
 
       return bScore - aScore;
     })
-    .slice(0, 12);
+    .slice(0, 10);
 
   if (shops.length === 0) {
     featuredShopsSection.style.display = "none";
@@ -462,24 +481,29 @@ function renderFeaturedShops() {
     const totalReviews = Number(shop.totalReviews || 0);
 
     const card = document.createElement("a");
-    card.className = "featured-shop-card featured-shop-wow";
+
+    card.className = "featured-shop-card";
     card.href = `shop.html?id=${encodeURIComponent(shop.id)}`;
 
     card.innerHTML = `
       ${
         shop.logoUrl
           ? `<img src="${escapeHtml(shop.logoUrl)}" alt="${escapeHtml(shop.shopName || "Shop")}">`
-          : `<div class="shop-logo-fallback">Shop</div>`
+          : `<div class="shop-logo-fallback">M</div>`
       }
 
       <strong>${escapeHtml(shop.shopName || "Shop")}</strong>
-      <span>✓ Verified</span>
-      <small>${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "New shop"}</small>
+      <span>Verified Seller</span>
+      <small>${rating > 0 ? `${rating.toFixed(1)} (${totalReviews})` : "New shop"}</small>
     `;
 
     featuredShops.appendChild(card);
   });
 }
+
+/* =========================================================
+   MAIN MARKETPLACE
+   ========================================================= */
 
 function renderItems(shouldScroll = false) {
   if (!productsGrid) return;
@@ -537,9 +561,10 @@ function renderItems(shouldScroll = false) {
 
 function renderEmptyState(search) {
   productsGrid.innerHTML = `
-    <div class="order-card empty-market-card">
+    <div class="empty-market-card">
       <h3>No items found</h3>
       <p>${search ? `No result for "${escapeHtml(search)}".` : "Try another search, category, or filter."}</p>
+
       <button type="button" id="clearMarketplaceSearch" class="secondary-btn">
         Clear Search
       </button>
@@ -569,6 +594,7 @@ function sortItems(items, sort) {
     copy.sort((a, b) => {
       const aTime = a.createdAt?.seconds || 0;
       const bTime = b.createdAt?.seconds || 0;
+
       return bTime - aTime;
     });
   }
@@ -585,26 +611,23 @@ function sortItems(items, sort) {
   return copy;
 }
 
+/* =========================================================
+   PRODUCT CARD
+   ========================================================= */
+
 function createProductCard(item) {
   const productRating = Number(item.averageRating || 0);
   const productReviews = Number(item.totalReviews || 0);
-  const shopRating = Number(item.shop?.averageRating || 0);
-  const shopReviews = Number(item.shop?.totalReviews || 0);
-  const sold = Number(item.soldCount || 0);
-
   const buyerPrice = getBuyerPrice(item);
   const location = safeArea(item.shop?.location || item.serviceArea || "Mauritius");
 
   const ratingText = productRating > 0
-    ? `⭐ ${productRating.toFixed(1)} (${productReviews})`
-    : "⭐ New item";
-
-  const sellerRatingText = shopRating > 0
-    ? `Seller ⭐ ${shopRating.toFixed(1)} (${shopReviews})`
-    : "Verified seller";
+    ? `${productRating.toFixed(1)} (${productReviews})`
+    : "New";
 
   const card = document.createElement("article");
-  card.className = "market-product-card market-wow-product-card";
+
+  card.className = "market-product-card compact-market-card";
 
   card.innerHTML = `
     <a class="market-product-img" href="product-details.html?id=${encodeURIComponent(item.id)}">
@@ -621,20 +644,22 @@ function createProductCard(item) {
     <div class="market-product-body">
       <div class="product-card-top-row">
         <span class="badge">${escapeHtml(item.type || "item")}</span>
-        <button class="product-heart" type="button" aria-label="Save product">♡</button>
+
+        <button class="product-heart" type="button" aria-label="Save product">
+          ♡
+        </button>
       </div>
 
       <h3>${escapeHtml(item.title || "Untitled")}</h3>
 
       <p class="seller-line">
-        <span>✓ Verified</span>
+        <span>Verified</span>
         ${escapeHtml(item.shop?.shopName || "Shop")}
       </p>
 
       <p class="rating-line-small">${ratingText}</p>
-      <p class="rating-line-small muted">${sellerRatingText}${sold > 0 ? ` • ${sold} sold` : ""}</p>
 
-      <p class="product-location">📍 ${escapeHtml(location)}</p>
+      <p class="product-location">${escapeHtml(location)}</p>
 
       <p class="price">${formatRs(buyerPrice)}</p>
 
@@ -677,15 +702,19 @@ function getStockBadge(item) {
   const stock = Number(item.stock || 0);
 
   if (stock <= 0) {
-    return `<span class="product-stock-badge danger">Out of stock</span>`;
+    return `<span class="product-stock-badge danger">Out</span>`;
   }
 
   if (stock <= 5) {
-    return `<span class="product-stock-badge">Only ${stock} left</span>`;
+    return `<span class="product-stock-badge">Only ${stock}</span>`;
   }
 
   return "";
 }
+
+/* =========================================================
+   SEARCH / FILTER EVENTS
+   ========================================================= */
 
 function runSearch(shouldScroll = true) {
   activeSearch = getSearchValue();
@@ -853,6 +882,10 @@ function attachFilterEvents() {
   });
 }
 
+/* =========================================================
+   PRICE / FORMAT HELPERS
+   ========================================================= */
+
 function getBuyerPrice(item) {
   const buyerPrice = Number(item.buyerPrice || 0);
 
@@ -901,6 +934,10 @@ function safeArea(location) {
 
   return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
 }
+
+/* =========================================================
+   CATEGORY SVG ICONS
+   ========================================================= */
 
 function normalizeIcon(icon) {
   const value = String(icon || "other").toLowerCase().trim();
@@ -951,12 +988,6 @@ function svgIcon(type) {
         <path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     `,
-    laptop: `
-      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
-        <rect x="5" y="4" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-        <path d="M3 19h18l-2-5H5l-2 5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-      </svg>
-    `,
     fashion: `
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
         <path d="M9 4 6 6l-3 5 4 2 2-3v10h10V10l2 3 4-2-3-5-3-2-3 3h-4L9 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -972,7 +1003,6 @@ function svgIcon(type) {
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
         <path d="M4 13h16a8 8 0 0 0-16 0Z" stroke="currentColor" stroke-width="2"/>
         <path d="M3 16h18M6 19h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M9 9h.01M13 7h.01M16 10h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
       </svg>
     `,
     grocery: `
@@ -993,7 +1023,6 @@ function svgIcon(type) {
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
         <path d="M5 11V7a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v4" stroke="currentColor" stroke-width="2"/>
         <path d="M4 11h16v8H4v-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M7 19v2M17 19v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     `,
     hardware: `
@@ -1020,12 +1049,6 @@ function svgIcon(type) {
         <circle cx="16" cy="18" r="1.5" stroke="currentColor" stroke-width="2"/>
       </svg>
     `,
-    baby: `
-      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="7" r="3" stroke="currentColor" stroke-width="2"/>
-        <path d="M6 21a6 6 0 0 1 12 0M9 13l-3 3M15 13l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    `,
     sports: `
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
@@ -1038,26 +1061,16 @@ function svgIcon(type) {
         <path d="M8 8h7M8 12h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     `,
-    pets: `
+    baby: `
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
-        <circle cx="7" cy="8" r="2" stroke="currentColor" stroke-width="2"/>
-        <circle cx="17" cy="8" r="2" stroke="currentColor" stroke-width="2"/>
-        <circle cx="9" cy="15" r="2" stroke="currentColor" stroke-width="2"/>
-        <circle cx="15" cy="15" r="2" stroke="currentColor" stroke-width="2"/>
-        <path d="M12 12c2 0 4 3 4 5s-2 3-4 3-4-1-4-3 2-5 4-5Z" stroke="currentColor" stroke-width="2"/>
-      </svg>
-    `,
-    health: `
-      <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
-        <path d="M12 21s-8-5-8-11a5 5 0 0 1 8-4 5 5 0 0 1 8 4c0 6-8 11-8 11Z" stroke="currentColor" stroke-width="2"/>
-        <path d="M12 8v6M9 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="7" r="3" stroke="currentColor" stroke-width="2"/>
+        <path d="M6 21a6 6 0 0 1 12 0M9 13l-3 3M15 13l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     `,
     gift: `
       <svg class="category-svg-icon" viewBox="0 0 24 24" fill="none">
         <path d="M4 10h16v10H4V10Z" stroke="currentColor" stroke-width="2"/>
         <path d="M3 7h18v3H3V7ZM12 7v13" stroke="currentColor" stroke-width="2"/>
-        <path d="M12 7C8 7 7 3 9 3s3 4 3 4Zm0 0c4 0 5-4 3-4s-3 4-3 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
       </svg>
     `,
     other: `
@@ -1071,6 +1084,10 @@ function svgIcon(type) {
 
   return icons[type] || icons.other;
 }
+
+/* =========================================================
+   ESCAPE
+   ========================================================= */
 
 function escapeHtml(value) {
   return String(value || "")
