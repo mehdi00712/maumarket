@@ -10,461 +10,215 @@
 
 <body>
 
-<!-- Shared Navigation -->
-<!-- Automatically injected by nav.js -->
-
 <main class="marketplace-home">
 
-    <!-- ===================================================== -->
-    <!-- HERO -->
-    <!-- ===================================================== -->
+    <section class="market-hero clean-market-hero">
 
-    <section class="market-hero">
+        <div class="market-hero-bg"></div>
 
         <div class="market-hero-content">
 
             <span class="hero-badge">
-                🇲🇺 Mauritius Local Marketplace
+                Mauritius Local Marketplace
             </span>
 
             <h1>
-                Discover Amazing Products From Local Businesses
+                Welcome to MauMarket
             </h1>
 
             <p>
-                Shop confidently from verified Mauritian sellers with secure payments,
-                fast island-wide delivery and customer protection on every order.
+                Your one-stop marketplace in Mauritius. Shop from trusted local sellers,
+                discover quality products, and enjoy island-wide delivery.
             </p>
 
             <div class="hero-buttons">
-
                 <a href="#marketProducts" class="btn hero-primary">
                     Shop Now
                 </a>
 
-                <a href="seller.html" class="btn-outline hero-secondary">
-                    Become a Seller
+                <a href="#featuredShopsSection" class="btn-outline hero-secondary">
+                    Explore Shops
                 </a>
-
             </div>
 
-            <div class="hero-features">
-
+            <div class="hero-features clean-hero-features">
                 <div>
-                    <span>✔</span>
-                    Verified Sellers
-                </div>
-
-                <div>
-                    <span>🔒</span>
-                    Secure Checkout
+                    <span>✓</span>
+                    <strong>Local Marketplace</strong>
+                    <small>Support local businesses</small>
                 </div>
 
                 <div>
-                    <span>🚚</span>
-                    Island-wide Delivery
+                    <span>✓</span>
+                    <strong>Secure Checkout</strong>
+                    <small>Protected payments</small>
                 </div>
 
                 <div>
-                    <span>⭐</span>
-                    Trusted Marketplace
+                    <span>✓</span>
+                    <strong>Island-wide Delivery</strong>
+                    <small>Delivery across Mauritius</small>
                 </div>
 
-            </div>
-
-        </div>
-
-        <div class="market-hero-image">
-
-            <!-- Replace with Mauritius image later -->
-
-            <div class="hero-image-placeholder">
-
-                <div class="hero-bag">
-                    M
+                <div>
+                    <span>✓</span>
+                    <strong>Top Deals</strong>
+                    <small>Great prices every day</small>
                 </div>
-
             </div>
 
         </div>
 
     </section>
 
-    <!-- ===================================================== -->
-    <!-- CATEGORIES -->
-    <!-- ===================================================== -->
-
-    <section class="homepage-section">
+    <section class="homepage-section clean-category-section">
 
         <div class="section-row-title">
-
-            <h2>
-                Shop by Category
-            </h2>
-
-            <a href="#marketProducts">
-                View All
-            </a>
-
+            <h2>Shop by Category</h2>
+            <a href="#marketProducts">View all categories</a>
         </div>
 
-        <div
-            id="categoryIconGrid"
-            class="category-icon-grid">
-
+        <div id="categoryIconGrid" class="category-icon-grid">
             Loading categories...
-
         </div>
 
     </section>
 
-    <!-- ===================================================== -->
-    <!-- TRENDING -->
-    <!-- ===================================================== -->
-
-    <section class="homepage-section">
+    <section class="homepage-section clean-products-section">
 
         <div class="section-row-title">
-
-            <h2>
-                🔥 Trending Today
-            </h2>
-
-            <a href="#marketProducts">
-                Explore
-            </a>
-
+            <h2>Top Deals for You</h2>
+            <a href="#marketProducts">View all deals</a>
         </div>
 
-        <div
-            id="productsGridTrending"
-            class="market-product-grid">
-
-        </div>
+        <div id="productsGridDeals" class="market-product-grid compact-product-row"></div>
 
     </section>
 
-    <!-- ===================================================== -->
-    <!-- FEATURED SHOPS -->
-    <!-- ===================================================== -->
-
-    <section
-        id="featuredShopsSection"
-        class="homepage-section">
+    <section id="featuredShopsSection" class="homepage-section clean-shops-section">
 
         <div class="section-row-title">
-
-            <h2>
-                ⭐ Featured Shops
-            </h2>
-
-            <a href="products.html">
-                View All
-            </a>
-
+            <h2>Featured Shops</h2>
+            <a href="products.html">View all</a>
         </div>
 
-        <div
-            id="featuredShops"
-            class="featured-shops-row">
-
+        <div id="featuredShops" class="featured-shops-row">
             Loading featured shops...
-
         </div>
 
     </section>
 
-    <!-- ===================================================== -->
-    <!-- BEST DEALS -->
-    <!-- ===================================================== -->
-
-    <section class="homepage-section">
+    <section class="homepage-section clean-products-section">
 
         <div class="section-row-title">
-
-            <h2>
-                Best Deals
-            </h2>
-
-            <a href="#marketProducts">
-                Shop Deals
-            </a>
-
+            <h2>Trending Today</h2>
+            <a href="#marketProducts">Explore</a>
         </div>
 
-        <div
-            id="productsGridDeals"
-            class="market-product-grid">
-
-        </div>
+        <div id="productsGridTrending" class="market-product-grid compact-product-row"></div>
 
     </section>
 
-    <!-- ===================================================== -->
-    <!-- AD -->
-    <!-- ===================================================== -->
+    <section id="topAdBanner" class="market-premium-ad" style="display:none;"></section>
 
-    <section
-        id="topAdBanner"
-        class="market-premium-ad"
-        style="display:none;">
-
-    </section>
-
-    <!-- ===================================================== -->
-    <!-- MARKETPLACE -->
-    <!-- ===================================================== -->
-
-    <section
-        id="marketProducts"
-        class="market-layout">
-
-        <!-- FILTERS -->
+    <section id="marketProducts" class="market-layout clean-market-layout">
 
         <aside class="market-sidebar">
 
             <div class="filter-card">
+                <h3>Filters</h3>
 
-                <h3>
-                    Filters
-                </h3>
-
-                <label>
-
-                    Category
-
-                </label>
-
+                <label>Category</label>
                 <select id="sideCategoryFilter">
-
-                    <option value="">
-                        All Categories
-                    </option>
-
+                    <option value="">All Categories</option>
                 </select>
 
-                <label>
-
-                    Sort
-
-                </label>
-
+                <label>Sort</label>
                 <select id="sideSortFilter">
-
-                    <option value="newest">
-                        Newest
-                    </option>
-
-                    <option value="low-high">
-                        Lowest Price
-                    </option>
-
-                    <option value="high-low">
-                        Highest Price
-                    </option>
-
-                    <option value="rating">
-                        Highest Rated
-                    </option>
-
+                    <option value="newest">Newest</option>
+                    <option value="low-high">Lowest Price</option>
+                    <option value="high-low">Highest Price</option>
+                    <option value="rating">Highest Rated</option>
                 </select>
-
             </div>
 
             <div class="filter-card">
-
-                <h3>
-
-                    Why MauMarket?
-
-                </h3>
+                <h3>Why MauMarket?</h3>
 
                 <div class="sidebar-benefit">
-
-                    <span>🛡</span>
-
+                    <span>✓</span>
                     <div>
-
-                        <strong>
-                            Verified Sellers
-                        </strong>
-
-                        <small>
-                            Every seller is manually approved.
-                        </small>
-
+                        <strong>Verified Sellers</strong>
+                        <small>Every seller is approved.</small>
                     </div>
-
                 </div>
 
                 <div class="sidebar-benefit">
-
-                    <span>🔒</span>
-
+                    <span>✓</span>
                     <div>
-
-                        <strong>
-                            Secure Payments
-                        </strong>
-
-                        <small>
-                            Buyer protection on every purchase.
-                        </small>
-
+                        <strong>Secure Payments</strong>
+                        <small>Safe checkout for buyers.</small>
                     </div>
-
                 </div>
 
                 <div class="sidebar-benefit">
-
-                    <span>🚚</span>
-
+                    <span>✓</span>
                     <div>
-
-                        <strong>
-                            Fast Delivery
-                        </strong>
-
-                        <small>
-                            Island-wide delivery service.
-                        </small>
-
+                        <strong>Delivery Support</strong>
+                        <small>Island-wide delivery.</small>
                     </div>
-
                 </div>
-
-                <div class="sidebar-benefit">
-
-                    <span>⭐</span>
-
-                    <div>
-
-                        <strong>
-                            Trusted Marketplace
-                        </strong>
-
-                        <small>
-                            Built for Mauritian businesses.
-                        </small>
-
-                    </div>
-
-                </div>
-
             </div>
 
         </aside>
 
-        <!-- PRODUCTS -->
-
         <section class="market-main">
 
             <div class="market-heading">
-
                 <div>
-
-                    <h2>
-                        Products & Services
-                    </h2>
-
-                    <p id="resultCount">
-                        Loading...
-                    </p>
-
+                    <h2>Products & Services</h2>
+                    <p id="resultCount">Loading...</p>
                 </div>
-
             </div>
 
-            <div
-                id="productsGrid"
-                class="market-product-grid">
-
+            <div id="productsGrid" class="market-product-grid">
                 Loading marketplace...
-
             </div>
 
         </section>
 
     </section>
 
-    <!-- ===================================================== -->
-    <!-- WHY SHOP -->
-    <!-- ===================================================== -->
-
     <section class="homepage-section why-market">
 
         <div class="section-row-title">
-
-            <h2>
-                Why Shop With MauMarket?
-            </h2>
-
+            <h2>Why Shop With MauMarket?</h2>
         </div>
 
         <div class="why-grid">
 
             <div class="why-card">
-
-                <div class="why-icon">
-                    🛡
-                </div>
-
-                <h3>
-                    Verified Sellers
-                </h3>
-
-                <p>
-                    Every seller goes through our approval process before selling.
-                </p>
-
+                <div class="why-icon">✓</div>
+                <h3>Verified Sellers</h3>
+                <p>Every seller goes through an approval process before selling.</p>
             </div>
 
             <div class="why-card">
-
-                <div class="why-icon">
-                    💳
-                </div>
-
-                <h3>
-                    Secure Payments
-                </h3>
-
-                <p>
-                    Safe checkout with payment verification.
-                </p>
-
+                <div class="why-icon">✓</div>
+                <h3>Secure Payments</h3>
+                <p>Checkout is handled safely through MauMarket.</p>
             </div>
 
             <div class="why-card">
-
-                <div class="why-icon">
-                    🚚
-                </div>
-
-                <h3>
-                    Island-wide Delivery
-                </h3>
-
-                <p>
-                    Fast delivery anywhere in Mauritius.
-                </p>
-
+                <div class="why-icon">✓</div>
+                <h3>Island-wide Delivery</h3>
+                <p>Delivery is available across Mauritius.</p>
             </div>
 
             <div class="why-card">
-
-                <div class="why-icon">
-                    ⭐
-                </div>
-
-                <h3>
-                    Customer Support
-                </h3>
-
-                <p>
-                    Friendly support whenever you need assistance.
-                </p>
-
+                <div class="why-icon">✓</div>
+                <h3>Customer Support</h3>
+                <p>Support is available for orders, payments, and delivery.</p>
             </div>
 
         </div>
@@ -473,11 +227,8 @@
 
 </main>
 
-<!-- Shared Navigation -->
-<script type="module" src="js/nav.js?v=3.0"></script>
-
-<!-- Marketplace -->
-<script type="module" src="js/products.js?v=6.0"></script>
+<script type="module" src="js/nav.js?v=3.1"></script>
+<script type="module" src="js/products.js?v=6.1"></script>
 
 </body>
 </html>
