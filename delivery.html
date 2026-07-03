@@ -1,37 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Delivery Dashboard | MauMarket</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Delivery Dashboard | MauMarket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="navbar">
-  <h2>Delivery Dashboard</h2>
+<!-- Navigation is injected automatically by nav.js -->
 
-  <nav>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="products.html">Marketplace</a>
-  </nav>
-</header>
+<main class="container driver-delivery-page">
 
-<main class="container">
+  <section class="driver-delivery-hero">
+    <div>
+      <span class="hero-badge">Delivery Driver</span>
 
-  <h1>Assigned Deliveries</h1>
+      <h1>Assigned Deliveries</h1>
 
-  <p>
-    Delivery drivers can collect customer signatures and submit completed deliveries.
-  </p>
+      <p>
+        View assigned deliveries, update order progress, collect customer
+        signatures and submit completed deliveries for admin validation.
+      </p>
+    </div>
 
-  <div id="deliveryOrdersList"></div>
+    <div class="driver-delivery-actions">
+      <button id="refreshDriverDeliveriesBtn" type="button" class="secondary-btn">
+        Refresh
+      </button>
+
+      <a href="dashboard.html" class="btn">
+        Dashboard
+      </a>
+    </div>
+  </section>
+
+  <section class="driver-delivery-stats">
+    <div class="driver-stat-card">
+      <span>Total Assigned</span>
+      <strong id="driverTotalDeliveries">0</strong>
+      <small>All assigned jobs</small>
+    </div>
+
+    <div class="driver-stat-card">
+      <span>Active</span>
+      <strong id="driverActiveDeliveries">0</strong>
+      <small>Still in progress</small>
+    </div>
+
+    <div class="driver-stat-card">
+      <span>Picked Up</span>
+      <strong id="driverPickedUpDeliveries">0</strong>
+      <small>Collected from seller</small>
+    </div>
+
+    <div class="driver-stat-card">
+      <span>Out for Delivery</span>
+      <strong id="driverOutDeliveries">0</strong>
+      <small>On the way</small>
+    </div>
+
+    <div class="driver-stat-card">
+      <span>Submitted</span>
+      <strong id="driverSubmittedDeliveries">0</strong>
+      <small>Waiting admin validation</small>
+    </div>
+
+    <div class="driver-stat-card">
+      <span>Delivered</span>
+      <strong id="driverDeliveredDeliveries">0</strong>
+      <small>Completed deliveries</small>
+    </div>
+  </section>
+
+  <section class="driver-delivery-toolbar">
+    <div>
+      <label>Search</label>
+      <input
+        id="driverDeliverySearch"
+        type="search"
+        placeholder="Search order, customer, phone or address">
+    </div>
+
+    <div>
+      <label>Status</label>
+      <select id="driverDeliveryStatusFilter">
+        <option value="">All Deliveries</option>
+        <option value="Ready for Pickup">Ready for Pickup</option>
+        <option value="Picked Up">Picked Up</option>
+        <option value="Out for Delivery">Out for Delivery</option>
+        <option value="Delivery Submitted">Delivery Submitted</option>
+        <option value="Delivered">Delivered</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Date</label>
+      <input id="driverDeliveryDateFilter" type="date">
+    </div>
+  </section>
+
+  <section class="driver-delivery-main-card">
+    <div class="section-row-title">
+      <div>
+        <h2>Active Deliveries</h2>
+        <p id="driverDeliveryResultCount">Loading assigned deliveries...</p>
+      </div>
+    </div>
+
+    <div id="deliveryOrdersList" class="driver-delivery-list">
+      Loading assigned deliveries...
+    </div>
+  </section>
 
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-
-<script type="module" src="js/delivery.js"></script>
+<script type="module" src="js/nav.js?v=4.0"></script>
+<script type="module" src="js/delivery.js?v=4.0"></script>
 
 </body>
 </html>
