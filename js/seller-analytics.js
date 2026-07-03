@@ -13,31 +13,35 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const sellerProducts = document.getElementById("sellerProducts");
-const sellerOrders = document.getElementById("sellerOrders");
-const sellerRevenue = document.getElementById("sellerRevenue");
-const sellerRatingAvg = document.getElementById("sellerRatingAvg");
-const sellerReviews = document.getElementById("sellerReviews");
+const els = {
+  sellerProducts: document.getElementById("sellerProducts"),
+  sellerOrders: document.getElementById("sellerOrders"),
+  sellerRevenue: document.getElementById("sellerRevenue"),
+  sellerRatingAvg: document.getElementById("sellerRatingAvg"),
+  sellerReviews: document.getElementById("sellerReviews"),
 
-const sellerDeliveredOrders = document.getElementById("sellerDeliveredOrders");
-const sellerPendingOrders = document.getElementById("sellerPendingOrders");
-const sellerAverageOrder = document.getElementById("sellerAverageOrder");
-const sellerReviewCount = document.getElementById("sellerReviewCount");
+  sellerDeliveredOrders: document.getElementById("sellerDeliveredOrders"),
+  sellerPendingOrders: document.getElementById("sellerPendingOrders"),
+  sellerAverageOrder: document.getElementById("sellerAverageOrder"),
+  sellerReviewCount: document.getElementById("sellerReviewCount"),
 
-const sellerBadge = document.getElementById("sellerBadge");
-const sellerPerformanceSummary = document.getElementById("sellerPerformanceSummary");
-const bestProductsBox = document.getElementById("bestProductsBox");
-const recentOrdersBox = document.getElementById("recentOrdersBox");
-const orderStatusBox = document.getElementById("orderStatusBox");
-const productRevenueBox = document.getElementById("productRevenueBox");
-const reviewSummaryText = document.getElementById("reviewSummaryText");
+  sellerBadge: document.getElementById("sellerBadge"),
+  sellerPerformanceSummary: document.getElementById("sellerPerformanceSummary"),
+  bestProductsBox: document.getElementById("bestProductsBox"),
+  recentOrdersBox: document.getElementById("recentOrdersBox"),
+  orderStatusBox: document.getElementById("orderStatusBox"),
+  productRevenueBox: document.getElementById("productRevenueBox"),
+  reviewSummaryText: document.getElementById("reviewSummaryText"),
 
-const salesTrendChart = document.getElementById("salesTrendChart");
-const ordersTrendChart = document.getElementById("ordersTrendChart");
-const productsSoldChart = document.getElementById("productsSoldChart");
-const orderStatusCanvas = document.getElementById("orderStatusCanvas");
+  salesTrendChart: document.getElementById("salesTrendChart"),
+  ordersTrendChart: document.getElementById("ordersTrendChart"),
+  productsSoldChart: document.getElementById("productsSoldChart"),
+  orderStatusCanvas: document.getElementById("orderStatusCanvas")
+};
 
 let currentUser = null;
+let latestStats = null;
+let resizeTimer = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -66,12 +70,25 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+
+  resizeTimer = setTimeout(() => {
+    if (latestStats) drawAllCharts(latestStats);
+  }, 200);
+});
+
 async function loadSellerAnalytics() {
-  const products = await loadSellerProducts();
-  const orders = await loadSellerOrders();
-  const reviews = await loadSellerReviews();
+  setLoadingState();
+
+  const [products, orders, reviews] = await Promise.all([
+    loadSellerProducts(),
+    loadSellerOrders(),
+    loadSellerReviews()
+  ]);
 
   const stats = calculateStats(products, orders, reviews);
+  latestStats = stats;
 
   updateMainCards(stats);
   renderPerformanceSummary(stats);
@@ -80,16 +97,10 @@ async function loadSellerAnalytics() {
   renderOrderStatusBreakdown(stats.statusCounts);
   renderProductRevenue(stats.productRevenueList);
   renderReviews(reviews, stats);
-
-  drawLineChart(salesTrendChart, stats.salesTrend, "revenue", "Revenue");
-  drawLineChart(ordersTrendChart, stats.ordersTrend, "orders", "Orders");
-  drawBarChart(productsSoldChart, stats.bestProducts.slice(0, 6), "sold", "Products sold");
-  drawPieChart(orderStatusCanvas, stats.statusCounts);
+  drawAllCharts(stats);
 }
 
 async function loadSellerProducts() {
-  const products = [];
-
   try {
     const q = query(
       collection(db, "products"),
@@ -98,22 +109,17 @@ async function loadSellerProducts() {
 
     const snap = await getDocs(q);
 
-    snap.forEach((docSnap) => {
-      products.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
-    });
+    return snap.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
   } catch (error) {
     console.warn("Products analytics unavailable:", error.message);
+    return [];
   }
-
-  return products;
 }
 
 async function loadSellerOrders() {
-  const orders = [];
-
   try {
     const q = query(
       collection(db, "orders"),
@@ -122,40 +128,35 @@ async function loadSellerOrders() {
 
     const snap = await getDocs(q);
 
-    snap.forEach((docSnap) => {
-      orders.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
-    });
+    return snap.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
   } catch (error) {
     console.warn("Orders analytics unavailable:", error.message);
+    return [];
   }
-
-  return orders;
 }
 
 async function loadSellerReviews() {
-  const reviews = [];
-
   try {
     const snap = await getDocs(collection(db, "reviews"));
 
-    snap.forEach((docSnap) => {
-      const review = {
+    return snap.docs
+      .map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data()
-      };
-
-      if ((review.sellerIds || []).includes(currentUser.uid)) {
-        reviews.push(review);
-      }
-    });
+      }))
+      .filter((review) => {
+        return (
+          review.sellerId === currentUser.uid ||
+          (review.sellerIds || []).includes(currentUser.uid)
+        );
+      });
   } catch (error) {
     console.warn("Reviews analytics unavailable:", error.message);
+    return [];
   }
-
-  return reviews;
 }
 
 function calculateStats(products, orders, reviews) {
@@ -171,15 +172,13 @@ function calculateStats(products, orders, reviews) {
   const dailyOrdersMap = {};
 
   orders.forEach((order) => {
-    const status = order.orderStatus || "Unknown";
+    const status = order.orderStatus || "Pending";
+
     statusCounts[status] = (statusCounts[status] || 0) + 1;
 
-    if (order.orderStatus === "Delivered") deliveredOrders++;
+    if (status === "Delivered") deliveredOrders++;
 
-    if (
-      order.orderStatus !== "Delivered" &&
-      order.orderStatus !== "Cancelled"
-    ) {
+    if (status !== "Delivered" && status !== "Cancelled") {
       pendingOrders++;
     }
 
@@ -189,7 +188,7 @@ function calculateStats(products, orders, reviews) {
       return item.sellerId === currentUser.uid;
     });
 
-    if (sellerItems.length === 0) return;
+    if (!sellerItems.length) return;
 
     verifiedOrders.push(order);
 
@@ -197,14 +196,16 @@ function calculateStats(products, orders, reviews) {
     dailyOrdersMap[dateLabel] = (dailyOrdersMap[dateLabel] || 0) + 1;
 
     sellerItems.forEach((item) => {
-      const title = item.title || "Untitled";
-      const qty = Number(item.quantity || 1);
-      const subtotal = Number(item.price || 0) * qty;
+      const title = item.title || "Untitled Product";
+      const quantity = Number(item.quantity || 1);
+      const subtotal = Number(
+        item.subtotal || Number(item.price || 0) * quantity
+      );
 
       revenue += subtotal;
 
       dailyRevenueMap[dateLabel] = (dailyRevenueMap[dateLabel] || 0) + subtotal;
-      productSalesMap[title] = (productSalesMap[title] || 0) + qty;
+      productSalesMap[title] = (productSalesMap[title] || 0) + quantity;
       productRevenueMap[title] = (productRevenueMap[title] || 0) + subtotal;
     });
   });
@@ -220,15 +221,6 @@ function calculateStats(products, orders, reviews) {
       deliveryRatingTotal += Number(review.deliveryRating || 0);
       deliveryRatingCount++;
     }
-  });
-
-  reviews.sort((a, b) => {
-    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-  });
-
-  verifiedOrders.sort((a, b) => {
-    return (b.createdAt?.seconds || b.updatedAt?.seconds || 0) -
-      (a.createdAt?.seconds || a.updatedAt?.seconds || 0);
   });
 
   const averageRating = reviews.length ? ratingTotal / reviews.length : 0;
@@ -256,23 +248,23 @@ function calculateStats(products, orders, reviews) {
     }))
     .sort((a, b) => b.amount - a.amount);
 
+  const sortedReviews = [...reviews].sort((a, b) => {
+    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+  });
+
+  const sortedVerifiedOrders = [...verifiedOrders].sort((a, b) => {
+    const aTime = a.createdAt?.seconds || a.updatedAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || b.updatedAt?.seconds || 0;
+    return bTime - aTime;
+  });
+
   const labels = getLast7DaysLabels();
-
-  const salesTrend = labels.map((label) => ({
-    label,
-    revenue: dailyRevenueMap[label] || 0
-  }));
-
-  const ordersTrend = labels.map((label) => ({
-    label,
-    orders: dailyOrdersMap[label] || 0
-  }));
 
   return {
     products,
     orders,
-    reviews,
-    verifiedOrders,
+    reviews: sortedReviews,
+    verifiedOrders: sortedVerifiedOrders,
     revenue,
     deliveredOrders,
     pendingOrders,
@@ -282,272 +274,306 @@ function calculateStats(products, orders, reviews) {
     bestProducts,
     productRevenueList,
     statusCounts,
-    salesTrend,
-    ordersTrend
+    salesTrend: labels.map((label) => ({
+      label,
+      value: dailyRevenueMap[label] || 0
+    })),
+    ordersTrend: labels.map((label) => ({
+      label,
+      value: dailyOrdersMap[label] || 0
+    }))
   };
 }
 
-function updateMainCards(stats) {
-  sellerProducts.textContent = stats.products.length;
-  sellerOrders.textContent = stats.verifiedOrders.length;
-  sellerRevenue.textContent = `Rs ${formatMoney(stats.revenue)}`;
-  sellerRatingAvg.textContent = stats.averageRating
-    ? stats.averageRating.toFixed(1)
-    : "0.0";
+function setLoadingState() {
+  [
+    els.sellerProducts,
+    els.sellerOrders,
+    els.sellerRevenue,
+    els.sellerRatingAvg,
+    els.sellerDeliveredOrders,
+    els.sellerPendingOrders,
+    els.sellerAverageOrder,
+    els.sellerReviewCount
+  ].forEach((el) => {
+    if (el) el.textContent = "...";
+  });
+}
 
-  if (sellerDeliveredOrders) sellerDeliveredOrders.textContent = stats.deliveredOrders;
-  if (sellerPendingOrders) sellerPendingOrders.textContent = stats.pendingOrders;
-  if (sellerAverageOrder) sellerAverageOrder.textContent = `Rs ${formatMoney(stats.averageOrderValue)}`;
-  if (sellerReviewCount) sellerReviewCount.textContent = stats.reviews.length;
+function updateMainCards(stats) {
+  setText(els.sellerProducts, stats.products.length);
+  setText(els.sellerOrders, stats.verifiedOrders.length);
+  setText(els.sellerRevenue, `Rs ${formatMoney(stats.revenue)}`);
+  setText(els.sellerRatingAvg, stats.averageRating ? stats.averageRating.toFixed(1) : "0.0");
+  setText(els.sellerDeliveredOrders, stats.deliveredOrders);
+  setText(els.sellerPendingOrders, stats.pendingOrders);
+  setText(els.sellerAverageOrder, `Rs ${formatMoney(stats.averageOrderValue)}`);
+  setText(els.sellerReviewCount, stats.reviews.length);
 }
 
 function renderPerformanceSummary(stats) {
   const badge = getSellerBadge(stats);
 
-  if (sellerBadge) sellerBadge.textContent = badge;
-  if (!sellerPerformanceSummary) return;
+  if (els.sellerBadge) els.sellerBadge.textContent = badge;
+  if (!els.sellerPerformanceSummary) return;
 
-  sellerPerformanceSummary.innerHTML = `
-    <div class="review-benefits">
-      <div class="review-benefit">
-        <span>🏆</span>
-        <strong>${badge}</strong>
-        <p class="muted">Seller status</p>
-      </div>
+  els.sellerPerformanceSummary.innerHTML = `
+    <div class="analytics-mini-row">
+      <span>Seller Status</span>
+      <strong>${escapeHtml(badge)}</strong>
+    </div>
 
-      <div class="review-benefit">
-        <span>⭐</span>
-        <strong>${stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"}</strong>
-        <p class="muted">Seller rating</p>
-      </div>
+    <div class="analytics-mini-row">
+      <span>Seller Rating</span>
+      <strong>${stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"}</strong>
+    </div>
 
-      <div class="review-benefit">
-        <span>🚚</span>
-        <strong>${stats.averageDeliveryRating ? stats.averageDeliveryRating.toFixed(1) : "0.0"}</strong>
-        <p class="muted">Delivery rating</p>
-      </div>
+    <div class="analytics-mini-row">
+      <span>Delivery Rating</span>
+      <strong>${stats.averageDeliveryRating ? stats.averageDeliveryRating.toFixed(1) : "0.0"}</strong>
+    </div>
 
-      <div class="review-benefit">
-        <span>💰</span>
-        <strong>Rs ${formatMoney(stats.averageOrderValue)}</strong>
-        <p class="muted">Average order value</p>
-      </div>
+    <div class="analytics-mini-row">
+      <span>Average Order</span>
+      <strong>Rs ${formatMoney(stats.averageOrderValue)}</strong>
     </div>
   `;
 }
 
 function renderBestProducts(bestProducts) {
-  if (!bestProductsBox) return;
+  if (!els.bestProductsBox) return;
 
-  if (bestProducts.length === 0) {
-    bestProductsBox.innerHTML = `
-      <div class="order-card">
-        <h3>No sales yet</h3>
-        <p class="muted">Best selling products will appear after verified orders.</p>
-      </div>
-    `;
+  if (!bestProducts.length) {
+    els.bestProductsBox.innerHTML = emptyList("No product sales yet.");
     return;
   }
 
-  bestProductsBox.innerHTML = bestProducts.slice(0, 5).map((item, index) => `
-    <div class="order-card">
-      <h3>#${index + 1} ${escapeHtml(item.title)}</h3>
-      <p><strong>Sold:</strong> ${item.sold}</p>
-      <p><strong>Revenue:</strong> Rs ${formatMoney(item.revenue)}</p>
+  els.bestProductsBox.innerHTML = bestProducts.slice(0, 8).map((item, index) => `
+    <div class="analytics-list-item">
+      <div class="analytics-rank">${index + 1}</div>
+
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${item.sold} sold</span>
+      </div>
+
+      <b>Rs ${formatMoney(item.revenue)}</b>
     </div>
   `).join("");
 }
 
 function renderRecentOrders(orders) {
-  if (!recentOrdersBox) return;
+  if (!els.recentOrdersBox) return;
 
-  if (orders.length === 0) {
-    recentOrdersBox.innerHTML = `
-      <div class="order-card">
-        <h3>No verified orders yet</h3>
-        <p class="muted">Recent orders will appear once payments are verified.</p>
-      </div>
-    `;
+  if (!orders.length) {
+    els.recentOrdersBox.innerHTML = emptyList("No verified orders yet.");
     return;
   }
 
-  recentOrdersBox.innerHTML = orders.slice(0, 5).map((order) => {
+  els.recentOrdersBox.innerHTML = orders.slice(0, 8).map((order) => {
     const sellerItems = (order.items || []).filter((item) => {
       return item.sellerId === currentUser.uid;
     });
 
     const total = sellerItems.reduce((sum, item) => {
-      return sum + Number(item.price || 0) * Number(item.quantity || 1);
+      return sum + Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 1));
     }, 0);
 
     return `
-      <div class="order-card">
-        <h3>Order #${escapeHtml(String(order.id).slice(0, 8))}</h3>
-        <p><strong>Customer:</strong> ${escapeHtml(order.customerName || "Customer")}</p>
-        <p><strong>Status:</strong> ${escapeHtml(order.orderStatus || "Pending")}</p>
-        <p><strong>Seller Total:</strong> Rs ${formatMoney(total)}</p>
+      <div class="analytics-list-item">
+        <div>
+          <strong>Order #${escapeHtml(String(order.id).slice(0, 8))}</strong>
+          <span>${escapeHtml(order.customerName || "Customer")} • ${escapeHtml(order.orderStatus || "Pending")}</span>
+        </div>
+
+        <b>Rs ${formatMoney(total)}</b>
       </div>
     `;
   }).join("");
 }
 
 function renderOrderStatusBreakdown(statusCounts) {
-  if (!orderStatusBox) return;
+  if (!els.orderStatusBox) return;
 
-  const entries = Object.entries(statusCounts);
+  const entries = Object.entries(statusCounts || {});
 
-  if (entries.length === 0) {
-    orderStatusBox.innerHTML = "<p>No orders yet.</p>";
+  if (!entries.length) {
+    els.orderStatusBox.innerHTML = emptyList("No orders yet.");
     return;
   }
 
-  orderStatusBox.innerHTML = entries.map(([status, count]) => `
-    <p><strong>${escapeHtml(status)}:</strong> ${count}</p>
+  els.orderStatusBox.innerHTML = entries.map(([status, count]) => `
+    <div class="analytics-mini-row">
+      <span>${escapeHtml(status)}</span>
+      <strong>${count}</strong>
+    </div>
   `).join("");
 }
 
 function renderProductRevenue(productRevenueList) {
-  if (!productRevenueBox) return;
+  if (!els.productRevenueBox) return;
 
-  if (productRevenueList.length === 0) {
-    productRevenueBox.innerHTML = "<p>No product revenue yet.</p>";
+  if (!productRevenueList.length) {
+    els.productRevenueBox.innerHTML = emptyList("No product revenue yet.");
     return;
   }
 
-  productRevenueBox.innerHTML = productRevenueList.slice(0, 6).map((item) => `
-    <p>
-      <strong>${escapeHtml(item.title)}:</strong>
-      Rs ${formatMoney(item.amount)}
-    </p>
+  els.productRevenueBox.innerHTML = productRevenueList.slice(0, 8).map((item) => `
+    <div class="analytics-mini-row">
+      <span>${escapeHtml(item.title)}</span>
+      <strong>Rs ${formatMoney(item.amount)}</strong>
+    </div>
   `).join("");
 }
 
 function renderReviews(reviews, stats) {
-  if (reviewSummaryText) {
-    reviewSummaryText.textContent =
-      `${reviews.length} review(s) • ${stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"} ⭐`;
+  if (els.reviewSummaryText) {
+    els.reviewSummaryText.textContent =
+      `${reviews.length} review(s) • ${stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"} average rating`;
   }
 
-  if (!sellerReviews) return;
+  if (!els.sellerReviews) return;
 
-  if (reviews.length === 0) {
-    sellerReviews.innerHTML = `
-      <div class="order-card">
-        <h3>No reviews yet</h3>
-        <p>Your customer reviews will appear here after delivered orders are reviewed.</p>
-      </div>
-    `;
+  if (!reviews.length) {
+    els.sellerReviews.innerHTML = emptyList("No reviews yet.");
     return;
   }
 
-  sellerReviews.innerHTML = "";
-
-  reviews.forEach((review) => {
+  els.sellerReviews.innerHTML = reviews.slice(0, 8).map((review) => {
     const sellerRating = Number(review.sellerRating || review.rating || 0);
     const deliveryRating = Number(review.deliveryRating || 0);
 
-    const div = document.createElement("div");
-    div.className = "order-card";
-
-    div.innerHTML = `
-      <h3>${stars(sellerRating)} ${sellerRating.toFixed(1)} Seller</h3>
-      <p><strong>Customer:</strong> ${escapeHtml(review.customerName || "Customer")}</p>
-      <p>${escapeHtml(review.reviewText || "")}</p>
-      <p class="muted">
-        Delivery:
-        ${
-          deliveryRating > 0
-            ? `${stars(deliveryRating)} ${deliveryRating.toFixed(1)}`
-            : "Not rated"
-        }
-      </p>
-      <p class="muted">Verified Purchase</p>
+    return `
+      <div class="analytics-list-item review-list-item">
+        <div>
+          <strong>${escapeHtml(review.customerName || "Customer")}</strong>
+          <span>Seller rating: ${sellerRating.toFixed(1)} • Delivery: ${
+            deliveryRating > 0 ? deliveryRating.toFixed(1) : "Not rated"
+          }</span>
+          <p>${escapeHtml(review.reviewText || "No written review.")}</p>
+        </div>
+      </div>
     `;
-
-    sellerReviews.appendChild(div);
-  });
+  }).join("");
 }
 
-/* ======================
-   REAL CANVAS CHARTS
-====================== */
+function drawAllCharts(stats) {
+  drawLineChart(els.salesTrendChart, stats.salesTrend, {
+    title: "Revenue",
+    prefix: "Rs "
+  });
 
-function drawLineChart(canvas, data, key, label) {
+  drawLineChart(els.ordersTrendChart, stats.ordersTrend, {
+    title: "Orders",
+    prefix: ""
+  });
+
+  drawBarChart(els.productsSoldChart, stats.bestProducts.slice(0, 6), {
+    title: "Products Sold",
+    key: "sold"
+  });
+
+  drawDonutChart(els.orderStatusCanvas, stats.statusCounts);
+}
+
+function drawLineChart(canvas, data, options = {}) {
   if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
-  const width = canvas.clientWidth || canvas.parentElement.clientWidth || 600;
-  const height = Number(canvas.getAttribute("height") || 180);
-
-  canvas.width = width * window.devicePixelRatio;
-  canvas.height = height * window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const ctx = setupCanvas(canvas);
+  const { width, height } = getCanvasSize(canvas);
 
   ctx.clearRect(0, 0, width, height);
 
-  const padding = 34;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
+  const isMobile = width < 520;
+  const padding = {
+    top: 28,
+    right: 16,
+    bottom: isMobile ? 34 : 38,
+    left: isMobile ? 34 : 52
+  };
 
-  const values = data.map((item) => Number(item[key] || 0));
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const values = data.map((item) => Number(item.value || 0));
   const max = Math.max(...values, 1);
 
   ctx.strokeStyle = "#e5e7eb";
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= 4; i++) {
-    const y = padding + (chartHeight / 4) * i;
+    const y = padding.top + (chartHeight / 4) * i;
     ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
     ctx.stroke();
   }
 
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+  gradient.addColorStop(0, "rgba(79, 53, 245, 0.22)");
+  gradient.addColorStop(1, "rgba(79, 53, 245, 0.02)");
+
   ctx.beginPath();
-  ctx.strokeStyle = key === "revenue" ? "#0f766e" : "#f59e0b";
-  ctx.lineWidth = 3;
 
   data.forEach((item, index) => {
-    const x = padding + (chartWidth / Math.max(data.length - 1, 1)) * index;
-    const y = padding + chartHeight - (Number(item[key] || 0) / max) * chartHeight;
+    const x = padding.left + (chartWidth / Math.max(data.length - 1, 1)) * index;
+    const y = padding.top + chartHeight - (Number(item.value || 0) / max) * chartHeight;
 
     if (index === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
 
+  ctx.lineTo(width - padding.right, height - padding.bottom);
+  ctx.lineTo(padding.left, height - padding.bottom);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  ctx.beginPath();
+
+  data.forEach((item, index) => {
+    const x = padding.left + (chartWidth / Math.max(data.length - 1, 1)) * index;
+    const y = padding.top + chartHeight - (Number(item.value || 0) / max) * chartHeight;
+
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.strokeStyle = "#4f35f5";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
   data.forEach((item, index) => {
-    const x = padding + (chartWidth / Math.max(data.length - 1, 1)) * index;
-    const y = padding + chartHeight - (Number(item[key] || 0) / max) * chartHeight;
+    const x = padding.left + (chartWidth / Math.max(data.length - 1, 1)) * index;
+    const y = padding.top + chartHeight - (Number(item.value || 0) / max) * chartHeight;
 
     ctx.beginPath();
-    ctx.fillStyle = key === "revenue" ? "#14b8a6" : "#fbbf24";
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#6b7280";
-    ctx.font = "11px Arial";
+    ctx.beginPath();
+    ctx.fillStyle = "#4f35f5";
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#667085";
+    ctx.font = isMobile ? "10px Arial" : "11px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(item.label, x, height - 8);
+    ctx.fillText(item.label, x, height - 10);
   });
 
-  ctx.fillStyle = "#111827";
+  ctx.fillStyle = "#101828";
   ctx.font = "bold 13px Arial";
   ctx.textAlign = "left";
-  ctx.fillText(label, padding, 16);
+  ctx.fillText(options.title || "Trend", padding.left, 16);
 }
 
-function drawBarChart(canvas, data, key, label) {
+function drawBarChart(canvas, data, options = {}) {
   if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
-  const width = canvas.clientWidth || canvas.parentElement.clientWidth || 600;
-  const height = Number(canvas.getAttribute("height") || 180);
+  const ctx = setupCanvas(canvas);
+  const { width, height } = getCanvasSize(canvas);
 
-  canvas.width = width * window.devicePixelRatio;
-  canvas.height = height * window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   ctx.clearRect(0, 0, width, height);
 
   if (!data.length) {
@@ -555,72 +581,78 @@ function drawBarChart(canvas, data, key, label) {
     return;
   }
 
-  const padding = 34;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
+  const isMobile = width < 520;
+  const padding = {
+    top: 28,
+    right: 12,
+    bottom: isMobile ? 48 : 44,
+    left: 36
+  };
 
-  const max = Math.max(...data.map((item) => Number(item[key] || 0)), 1);
-  const barWidth = chartWidth / data.length - 12;
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const max = Math.max(...data.map((item) => Number(item[options.key] || 0)), 1);
+  const gap = isMobile ? 8 : 12;
+  const barWidth = Math.max((chartWidth / data.length) - gap, 16);
 
   data.forEach((item, index) => {
-    const value = Number(item[key] || 0);
+    const value = Number(item[options.key] || 0);
     const barHeight = (value / max) * chartHeight;
-    const x = padding + index * (chartWidth / data.length) + 6;
-    const y = padding + chartHeight - barHeight;
+    const x = padding.left + index * (chartWidth / data.length) + gap / 2;
+    const y = padding.top + chartHeight - barHeight;
 
-    ctx.fillStyle = "#0f766e";
-    ctx.fillRect(x, y, barWidth, barHeight);
+    ctx.fillStyle = "#4f35f5";
+    roundRect(ctx, x, y, barWidth, barHeight, 8);
+    ctx.fill();
 
-    ctx.fillStyle = "#111827";
-    ctx.font = "bold 12px Arial";
+    ctx.fillStyle = "#101828";
+    ctx.font = "bold 11px Arial";
     ctx.textAlign = "center";
     ctx.fillText(value, x + barWidth / 2, y - 6);
 
-    ctx.fillStyle = "#6b7280";
-    ctx.font = "11px Arial";
-    ctx.fillText(shortText(item.title), x + barWidth / 2, height - 8);
+    ctx.fillStyle = "#667085";
+    ctx.font = isMobile ? "9px Arial" : "10px Arial";
+    ctx.fillText(shortText(item.title, isMobile ? 7 : 10), x + barWidth / 2, height - 12);
   });
 
-  ctx.fillStyle = "#111827";
+  ctx.fillStyle = "#101828";
   ctx.font = "bold 13px Arial";
   ctx.textAlign = "left";
-  ctx.fillText(label, padding, 16);
+  ctx.fillText(options.title || "Bars", padding.left, 16);
 }
 
-function drawPieChart(canvas, statusCounts) {
+function drawDonutChart(canvas, counts) {
   if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
-  const width = canvas.clientWidth || canvas.parentElement.clientWidth || 600;
-  const height = Number(canvas.getAttribute("height") || 180);
+  const ctx = setupCanvas(canvas);
+  const { width, height } = getCanvasSize(canvas);
 
-  canvas.width = width * window.devicePixelRatio;
-  canvas.height = height * window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   ctx.clearRect(0, 0, width, height);
 
-  const entries = Object.entries(statusCounts);
+  const entries = Object.entries(counts || {}).filter((entry) => Number(entry[1]) > 0);
 
   if (!entries.length) {
     drawEmptyChart(ctx, width, height, "No orders yet");
     return;
   }
 
+  const isMobile = width < 520;
+  const colors = ["#4f35f5", "#f59e0b", "#16a34a", "#2563eb", "#dc2626", "#9333ea"];
   const total = entries.reduce((sum, entry) => sum + Number(entry[1] || 0), 0);
-  const colors = ["#0f766e", "#f59e0b", "#3b82f6", "#8b5cf6", "#ef4444", "#14b8a6"];
 
-  const cx = width / 2 - 80;
-  const cy = height / 2;
-  const radius = Math.min(width, height) / 3;
+  const cx = isMobile ? width / 2 : width * 0.34;
+  const cy = isMobile ? height * 0.38 : height / 2;
+  const radius = Math.min(width, height) * (isMobile ? 0.20 : 0.26);
+  const innerRadius = radius * 0.58;
 
   let start = -Math.PI / 2;
 
-  entries.forEach(([status, count], index) => {
+  entries.forEach(([label, count], index) => {
     const slice = (Number(count || 0) / total) * Math.PI * 2;
 
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, radius, start, start + slice);
+    ctx.arc(cx, cy, innerRadius, start + slice, start, true);
     ctx.closePath();
     ctx.fillStyle = colors[index % colors.length];
     ctx.fill();
@@ -628,21 +660,57 @@ function drawPieChart(canvas, statusCounts) {
     start += slice;
   });
 
-  entries.forEach(([status, count], index) => {
-    const y = 36 + index * 24;
+  ctx.fillStyle = "#101828";
+  ctx.font = "bold 18px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(total, cx, cy + 6);
+
+  renderLegend(ctx, entries, colors, width, height, isMobile);
+}
+
+function renderLegend(ctx, entries, colors, width, height, isMobile) {
+  ctx.font = isMobile ? "11px Arial" : "12px Arial";
+  ctx.textAlign = "left";
+
+  const startX = isMobile ? 18 : width * 0.62;
+  const startY = isMobile ? height - entries.length * 21 - 10 : 42;
+
+  entries.forEach(([label, count], index) => {
+    const y = startY + index * 21;
 
     ctx.fillStyle = colors[index % colors.length];
-    ctx.fillRect(width - 170, y - 10, 12, 12);
+    ctx.fillRect(startX, y - 10, 11, 11);
 
-    ctx.fillStyle = "#111827";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "left";
-    ctx.fillText(`${status}: ${count}`, width - 150, y);
+    ctx.fillStyle = "#344054";
+    ctx.fillText(`${label}: ${count}`, startX + 18, y);
   });
 }
 
+function setupCanvas(canvas) {
+  const ctx = canvas.getContext("2d");
+  const { width, height } = getCanvasSize(canvas);
+  const ratio = window.devicePixelRatio || 1;
+
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  return ctx;
+}
+
+function getCanvasSize(canvas) {
+  const parent = canvas.parentElement;
+  const width = Math.max(parent?.clientWidth || canvas.clientWidth || 320, 260);
+  const height = Math.max(parent?.clientHeight || 280, 240);
+
+  return { width, height };
+}
+
 function drawEmptyChart(ctx, width, height, message) {
-  ctx.fillStyle = "#6b7280";
+  ctx.fillStyle = "#667085";
   ctx.font = "14px Arial";
   ctx.textAlign = "center";
   ctx.fillText(message, width / 2, height / 2);
@@ -678,45 +746,72 @@ function getDateLabel(timestamp) {
   });
 }
 
-function shortText(value) {
-  const text = String(value || "");
-  return text.length > 10 ? `${text.slice(0, 10)}...` : text;
-}
-
 function getSellerBadge(stats) {
   if (stats.averageRating >= 4.8 && stats.reviews.length >= 10) {
-    return "🏆 Top Rated Seller";
+    return "Top Rated Seller";
   }
 
   if (stats.averageRating >= 4.5 && stats.reviews.length >= 3) {
-    return "⭐ Trusted Seller";
+    return "Trusted Seller";
   }
 
   if (stats.verifiedOrders.length >= 5) {
-    return "📈 Rising Seller";
+    return "Rising Seller";
   }
 
   if (stats.products.length > 0) {
-    return "✅ Active Seller";
+    return "Active Seller";
   }
 
   return "New Seller";
 }
 
+function sideMetric(label, value) {
+  return `
+    <div class="analytics-mini-row">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `;
+}
+
+function emptyList(message) {
+  return `
+    <div class="analytics-empty">
+      ${escapeHtml(message)}
+    </div>
+  `;
+}
+
+function setText(el, value) {
+  if (el) el.textContent = value;
+}
+
+function shortText(value, max = 10) {
+  const text = String(value || "");
+  return text.length > max ? `${text.slice(0, max)}...` : text;
+}
+
 function showError(message) {
-  if (sellerReviews) {
-    sellerReviews.innerHTML = `
-      <div class="order-card">
-        <h3>Could not load seller analytics</h3>
-        <p>${escapeHtml(message)}</p>
+  if (els.sellerReviews) {
+    els.sellerReviews.innerHTML = `
+      <div class="analytics-empty">
+        Could not load seller analytics: ${escapeHtml(message)}
       </div>
     `;
   }
 }
 
-function stars(value) {
-  const rating = Math.max(1, Math.min(5, Math.round(Number(value || 0))));
-  return "⭐".repeat(rating);
+function roundRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
 }
 
 function formatMoney(value) {
@@ -726,7 +821,7 @@ function formatMoney(value) {
 }
 
 function escapeHtml(value) {
-  return String(value || "")
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
