@@ -5465,3 +5465,352 @@ grid-template-columns:1fr;
 }
 
 }
+
+/* ==========================================================
+   GOOGLE MAP PIN CHECKOUT
+========================================================== */
+
+.checkout-map-card{
+    margin-top:20px;
+    border:1px solid #e5e7eb;
+    border-radius:18px;
+    overflow:hidden;
+    background:#fff;
+    box-shadow:0 10px 30px rgba(0,0,0,.06);
+}
+
+.checkout-map-header{
+    padding:18px 24px;
+    border-bottom:1px solid #ececec;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    background:#fafafa;
+}
+
+.checkout-map-header h3{
+    margin:0;
+    font-size:20px;
+    color:#111827;
+}
+
+.checkout-map-header p{
+    margin-top:6px;
+    color:#6b7280;
+    font-size:14px;
+}
+
+#checkoutMap{
+    width:100%;
+    height:420px;
+}
+
+.selected-location-card{
+    padding:22px;
+    background:#fff;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+
+.location-info{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:18px;
+}
+
+.location-info strong{
+    display:block;
+    margin-bottom:8px;
+    color:#111827;
+}
+
+.location-info span{
+    color:#6b7280;
+    display:block;
+    line-height:1.6;
+}
+
+.location-success{
+    margin-top:18px;
+    padding:18px;
+    border-radius:16px;
+    background:#ecfdf5;
+    border:1px solid #10b981;
+    color:#065f46;
+    font-weight:700;
+}
+
+.location-warning{
+    margin-top:18px;
+    padding:18px;
+    border-radius:16px;
+    background:#fef3c7;
+    border:1px solid #f59e0b;
+    color:#92400e;
+}
+
+.location-actions{
+    display:flex;
+    gap:14px;
+    margin-top:18px;
+    flex-wrap:wrap;
+}
+
+.location-actions .btn{
+    flex:1;
+}
+
+.google-map{
+    width:100%;
+    height:420px;
+}
+
+.map-pin-indicator{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#4f35f5;
+    font-weight:700;
+}
+
+.map-pin-indicator::before{
+    content:"📍";
+    font-size:22px;
+}
+
+/* ==========================================================
+   DRIVER DELIVERY LOCATION
+========================================================== */
+
+.driver-location-box{
+    margin-top:18px;
+    padding:20px;
+    background:#eef2ff;
+    border:1px solid #c7d2fe;
+    border-radius:18px;
+}
+
+.driver-location-box strong{
+    display:block;
+    margin-bottom:10px;
+    color:#4338ca;
+    font-size:16px;
+}
+
+.driver-location-box p{
+    margin:0;
+    color:#3730a3;
+    font-weight:600;
+    line-height:1.6;
+}
+
+.driver-card-actions{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:22px;
+}
+
+.driver-card-actions a,
+.driver-card-actions button{
+    flex:1;
+    min-width:180px;
+}
+
+.map-btn{
+    background:#4f35f5;
+    color:#fff!important;
+    border:none;
+    border-radius:12px;
+    padding:13px 18px;
+    cursor:pointer;
+    transition:.25s;
+    font-weight:700;
+    text-decoration:none;
+    text-align:center;
+}
+
+.map-btn:hover{
+    background:#3c27d8;
+    transform:translateY(-3px);
+    box-shadow:0 12px 24px rgba(79,53,245,.25);
+}
+
+.driver-signature-preview{
+    margin-top:22px;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:18px;
+    padding:20px;
+}
+
+.driver-signature-preview img{
+    width:100%;
+    max-width:420px;
+    border-radius:12px;
+    border:1px solid #ddd;
+    background:#fff;
+    margin-top:12px;
+}
+
+.driver-warning-box{
+    margin-top:18px;
+    padding:18px;
+    border-radius:16px;
+    background:#fff7ed;
+    border:1px solid #fb923c;
+    color:#9a3412;
+}
+
+.driver-warning-box strong{
+    display:block;
+    margin-bottom:8px;
+}
+
+.driver-progress{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:22px 0;
+}
+
+.driver-step{
+    padding:10px 18px;
+    border-radius:999px;
+    background:#f3f4f6;
+    color:#6b7280;
+    font-weight:600;
+}
+
+.driver-step.done{
+    background:#10b981;
+    color:#fff;
+}
+
+.driver-step.cancelled{
+    background:#ef4444;
+    color:#fff;
+}
+
+.driver-info-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;
+    margin:24px 0;
+}
+
+.driver-info-grid>div{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:18px;
+}
+
+.driver-info-grid small{
+    display:block;
+    color:#6b7280;
+    margin-bottom:8px;
+}
+
+.driver-info-grid strong{
+    display:block;
+    color:#111827;
+    font-size:18px;
+    margin-bottom:8px;
+}
+
+.driver-info-grid span{
+    color:#6b7280;
+    line-height:1.5;
+}
+
+.driver-info-grid div:nth-child(2){
+    border-left:5px solid #4f35f5;
+}
+
+.driver-details{
+    margin-top:22px;
+}
+
+.driver-details summary{
+    cursor:pointer;
+    font-weight:700;
+    color:#111827;
+    padding:16px;
+    background:#f9fafb;
+    border-radius:14px;
+}
+
+.driver-detail-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin-top:18px;
+}
+
+.driver-items-list{
+    padding-left:20px;
+}
+
+.driver-items-list li{
+    margin-bottom:10px;
+}
+
+.driver-items-list strong{
+    display:block;
+}
+
+.driver-empty-state{
+    text-align:center;
+    padding:70px 20px;
+    background:#fff;
+    border-radius:18px;
+    border:1px solid #e5e7eb;
+}
+
+.driver-empty-state h3{
+    margin-bottom:10px;
+    color:#111827;
+}
+
+.driver-empty-state p{
+    color:#6b7280;
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media(max-width:768px){
+
+    #checkoutMap,
+    .google-map{
+        height:320px;
+    }
+
+    .driver-detail-grid{
+        grid-template-columns:1fr;
+    }
+
+    .driver-card-actions{
+        flex-direction:column;
+    }
+
+    .driver-card-actions a,
+    .driver-card-actions button{
+        width:100%;
+    }
+
+    .selected-location-card{
+        grid-template-columns:1fr;
+    }
+
+    .checkout-map-header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+}
