@@ -18,8 +18,23 @@ import {
 
 const deliveryOrdersList = document.getElementById("deliveryOrdersList");
 
+const refreshBtn = document.getElementById("refreshDriverDeliveriesBtn");
+const searchInput = document.getElementById("driverDeliverySearch");
+const statusFilter = document.getElementById("driverDeliveryStatusFilter");
+const dateFilter = document.getElementById("driverDeliveryDateFilter");
+const resultCount = document.getElementById("driverDeliveryResultCount");
+
+const totalEl = document.getElementById("driverTotalDeliveries");
+const activeEl = document.getElementById("driverActiveDeliveries");
+const pickedEl = document.getElementById("driverPickedUpDeliveries");
+const outEl = document.getElementById("driverOutDeliveries");
+const submittedEl = document.getElementById("driverSubmittedDeliveries");
+const deliveredEl = document.getElementById("driverDeliveredDeliveries");
+
 let currentUser = null;
 let currentUserData = null;
+let allJobs = [];
+let filteredJobs = [];
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -29,25 +44,36 @@ onAuthStateChanged(auth, async (user) => {
 
   currentUser = user;
 
-  const userSnap = await getDoc(doc(db, "users", user.uid));
+  try {
+    const userSnap = await getDoc(doc(db, "users", user.uid));
 
-  if (
-    !userSnap.exists() ||
-    userSnap.data().role !== "delivery" ||
-    userSnap.data().blocked === true
-  ) {
-    window.location.href = "dashboard.html";
-    return;
+    if (
+      !userSnap.exists() ||
+      userSnap.data().role !== "delivery" ||
+      userSnap.data().blocked === true
+    ) {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
+    currentUserData = userSnap.data();
+
+    bindEvents();
+    await loadOrders();
+  } catch (error) {
+    renderError(error.message);
   }
-
-  currentUserData = userSnap.data();
-  await loadOrders();
 });
 
+function bindEvents() {
+  refreshBtn?.addEventListener("click", loadOrders);
+  searchInput?.addEventListener("input", applyFilters);
+  statusFilter?.addEventListener("change", applyFilters);
+  dateFilter?.addEventListener("change", applyFilters);
+}
+
 async function loadOrders() {
-  deliveryOrdersList.innerHTML = `
-    <div class="order-card">Loading assigned deliveries...</div>
-  `;
+  setLoading();
 
   try {
     const q = query(
@@ -57,192 +83,357 @@ async function loadOrders() {
 
     const snapshot = await getDocs(q);
 
-    const jobs = [];
+    allJobs = [];
 
     snapshot.forEach((docSnap) => {
-      jobs.push({
+      allJobs.push({
         id: docSnap.id,
         ...docSnap.data()
       });
     });
 
-    jobs.sort((a, b) => {
-      return (b.updatedAt?.seconds || b.assignedAt?.seconds || 0) -
-             (a.updatedAt?.seconds || a.assignedAt?.seconds || 0);
+    allJobs.sort((a, b) => {
+      return getJobTime(b) - getJobTime(a);
     });
 
-    if (jobs.length === 0) {
-      deliveryOrdersList.innerHTML = `
-        <div class="order-card">
-          <h3>No assigned deliveries</h3>
-          <p>Admin has not assigned you any deliveries yet.</p>
-        </div>
-      `;
-      return;
-    }
+    applyFilters();
+  } catch (error) {
+    renderError(error.message);
+  }
+}
 
-    const activeJobs = jobs.filter(job =>
+function applyFilters() {
+  const search = normalize(searchInput?.value || "");
+  const status = statusFilter?.value || "";
+  const date = dateFilter?.value || "";
+
+  filteredJobs = allJobs.filter((job) => {
+    const text = normalize(`
+      ${job.id}
+      ${job.orderId || ""}
+      ${job.customerName || ""}
+      ${job.customerPhone || ""}
+      ${job.deliveryAddress || ""}
+      ${job.orderNotes || ""}
+      ${job.orderStatus || ""}
+      ${job.deliveryStatus || ""}
+      ${(job.items || []).map((item) => item.title || "").join(" ")}
+    `);
+
+    const jobDate = getJobDate(job);
+
+    const matchesSearch = !search || text.includes(search);
+    const matchesStatus = !status || job.orderStatus === status;
+    const matchesDate = !date || jobDate === date;
+
+    return matchesSearch && matchesStatus && matchesDate;
+  });
+
+  updateStats();
+  renderJobs(filteredJobs);
+}
+
+function updateStats() {
+  const total = allJobs.length;
+
+  const active = allJobs.filter((job) => {
+    return (
       job.orderStatus !== "Delivered" &&
       job.orderStatus !== "Cancelled" &&
       job.active !== false
     );
+  }).length;
 
-    const completedJobs = jobs.filter(job =>
-      job.orderStatus === "Delivered" ||
-      job.active === false
-    );
+  const picked = allJobs.filter((job) => job.orderStatus === "Picked Up").length;
+  const out = allJobs.filter((job) => job.orderStatus === "Out for Delivery").length;
+  const submitted = allJobs.filter((job) => job.orderStatus === "Delivery Submitted").length;
 
-    deliveryOrdersList.innerHTML = `
-      <section class="form-card">
-        <h2>Active Deliveries</h2>
-        <div id="activeDeliveries"></div>
-      </section>
+  const delivered = allJobs.filter((job) => {
+    return job.orderStatus === "Delivered" || job.active === false;
+  }).length;
 
-      <section class="form-card">
-        <h2>Completed Deliveries</h2>
-        <div id="completedDeliveries"></div>
-      </section>
-    `;
+  if (totalEl) totalEl.textContent = total;
+  if (activeEl) activeEl.textContent = active;
+  if (pickedEl) pickedEl.textContent = picked;
+  if (outEl) outEl.textContent = out;
+  if (submittedEl) submittedEl.textContent = submitted;
+  if (deliveredEl) deliveredEl.textContent = delivered;
 
-    const activeDeliveries = document.getElementById("activeDeliveries");
-    const completedDeliveries = document.getElementById("completedDeliveries");
-
-    activeDeliveries.innerHTML = activeJobs.length
-      ? ""
-      : `<p class="muted">No active deliveries.</p>`;
-
-    completedDeliveries.innerHTML = completedJobs.length
-      ? ""
-      : `<p class="muted">No completed deliveries yet.</p>`;
-
-    activeJobs.forEach(job => renderOrderCard(job, activeDeliveries, false));
-    completedJobs.forEach(job => renderOrderCard(job, completedDeliveries, true));
-  } catch (error) {
-    deliveryOrdersList.innerHTML = `
-      <div class="order-card">
-        <h3>Could not load deliveries</h3>
-        <p>${error.message}</p>
-      </div>
-    `;
+  if (resultCount) {
+    resultCount.textContent = `${filteredJobs.length} assigned deliver${filteredJobs.length === 1 ? "y" : "ies"} found`;
   }
 }
 
-function renderOrderCard(order, container, completed) {
-  const card = document.createElement("div");
-  card.className = "order-card";
+function renderJobs(jobs) {
+  if (!deliveryOrdersList) return;
 
+  if (jobs.length === 0) {
+    deliveryOrdersList.innerHTML = `
+      <div class="driver-empty-state">
+        <h3>No deliveries found</h3>
+        <p>No assigned deliveries match your current filters.</p>
+      </div>
+    `;
+    return;
+  }
+
+  deliveryOrdersList.innerHTML = jobs.map((job) => deliveryCardHtml(job)).join("");
+
+  deliveryOrdersList.querySelectorAll("[data-driver-action]").forEach((button) => {
+    button.addEventListener("click", handleDriverAction);
+  });
+
+  deliveryOrdersList.querySelectorAll(".signature-canvas").forEach((canvas) => {
+    const orderId = canvas.dataset.orderId;
+    const card = canvas.closest(".driver-delivery-card");
+
+    setupSignature(orderId, card);
+  });
+}
+
+function deliveryCardHtml(order) {
   const orderId = order.orderId || order.id;
-
-  const itemsHtml = (order.items || []).map((item) => `
-    <li>
-      <strong>${item.title || "Item"}</strong>
-      — Rs ${Number(item.price || 0)} x ${Number(item.quantity || 1)}
-      ${item.shopName ? `— ${item.shopName}` : ""}
-    </li>
-  `).join("");
+  const status = order.orderStatus || "Ready for Pickup";
+  const deliveryStatus = order.deliveryStatus || "assigned";
+  const isCompleted = status === "Delivered" || order.active === false;
 
   const showPickupButton =
-    !completed &&
+    !isCompleted &&
     (
-      order.orderStatus === "Ready for Pickup" ||
-      order.deliveryStatus === "assigned"
+      status === "Ready for Pickup" ||
+      deliveryStatus === "assigned"
     );
 
   const showOutButton =
-    !completed &&
-    order.orderStatus === "Picked Up";
+    !isCompleted &&
+    status === "Picked Up";
 
   const showSignatureBox =
-    !completed &&
+    !isCompleted &&
     (
-      order.orderStatus === "Out for Delivery" ||
-      order.deliveryStatus === "rejected"
+      status === "Out for Delivery" ||
+      deliveryStatus === "rejected"
     );
 
-  const signaturePreview = order.deliverySignature
-    ? `
-      <div class="form-card">
-        <h4>Customer Signature</h4>
-        <img src="${order.deliverySignature}" alt="Customer signature" style="max-width:100%; background:#fff; border:1px solid #ddd; border-radius:12px;">
-        <p><strong>Signed by:</strong> ${order.deliverySignedBy || "Customer"}</p>
-        <p><strong>Delivery note:</strong> ${order.deliveryNote || "None"}</p>
-      </div>
-    `
-    : "";
+  const itemsHtml = (order.items || []).map((item) => `
+    <li>
+      <strong>${escapeHtml(item.title || "Item")}</strong>
+      <span>
+        Rs ${formatMoney(item.price || 0)} × ${Number(item.quantity || 1)}
+        ${item.shopName ? `— ${escapeHtml(item.shopName)}` : ""}
+      </span>
+    </li>
+  `).join("");
 
-  card.innerHTML = `
-    <h3>Order #${String(orderId).slice(0, 8)}</h3>
+  return `
+    <article class="driver-delivery-card" data-order-id="${escapeHtml(orderId)}">
 
-    <div class="tracking-box">
-      <span class="${stepClass(order.orderStatus, "Ready for Pickup")}">Ready</span>
-      <span class="${stepClass(order.orderStatus, "Picked Up")}">Picked Up</span>
-      <span class="${stepClass(order.orderStatus, "Out for Delivery")}">Out</span>
-      <span class="${stepClass(order.orderStatus, "Delivery Submitted")}">Submitted</span>
-      <span class="${stepClass(order.orderStatus, "Delivered")}">Delivered</span>
-    </div>
+      <div class="driver-card-head">
+        <div>
+          <span class="driver-order-id">Order #${escapeHtml(String(orderId).slice(0, 8))}</span>
+          <h3>${escapeHtml(order.customerName || "Customer")}</h3>
+          <p>${escapeHtml(order.deliveryAddress || "No delivery address")}</p>
+        </div>
 
-    <div class="order-grid">
-      <div>
-        <p><strong>Customer:</strong> ${order.customerName || "Not provided"}</p>
-        <p><strong>Phone:</strong> ${order.customerPhone || "Not provided"}</p>
-        <p><strong>Address:</strong> ${order.deliveryAddress || "Not provided"}</p>
-        <p><strong>Customer Notes:</strong> ${order.orderNotes || "None"}</p>
+        <span class="driver-status-pill ${statusClass(status)}">
+          ${escapeHtml(status)}
+        </span>
       </div>
 
-      <div>
-        <p><strong>Status:</strong> ${order.orderStatus || "Not started"}</p>
-        <p><strong>Delivery Status:</strong> ${order.deliveryStatus || "assigned"}</p>
-        <p><strong>Total:</strong> Rs ${Number(order.grandTotal || 0)}</p>
-        <p><strong>Delivery Fee:</strong> Rs ${Number(order.deliveryFee || 0)}</p>
+      <div class="driver-progress">
+        ${progressStep(status, "Ready for Pickup", "Ready")}
+        ${progressStep(status, "Picked Up", "Picked Up")}
+        ${progressStep(status, "Out for Delivery", "Out")}
+        ${progressStep(status, "Delivery Submitted", "Submitted")}
+        ${progressStep(status, "Delivered", "Delivered")}
       </div>
-    </div>
 
-    <h4>Items</h4>
-    <ul>${itemsHtml || "<li>No items found.</li>"}</ul>
+      <div class="driver-info-grid">
+        <div>
+          <small>Customer</small>
+          <strong>${escapeHtml(order.customerName || "Customer")}</strong>
+          <span>${escapeHtml(order.customerPhone || "No phone")}</span>
+        </div>
 
-    ${
-      order.adminDeliveryRejectReason
-        ? `<p class="muted"><strong>Admin reject reason:</strong> ${order.adminDeliveryRejectReason}</p>`
-        : ""
-    }
+        <div>
+          <small>Address</small>
+          <strong>${escapeHtml(shortText(order.deliveryAddress || "No address", 42))}</strong>
+          <span>${escapeHtml(order.orderNotes || "No notes")}</span>
+        </div>
 
-    ${signaturePreview}
+        <div>
+          <small>Total</small>
+          <strong>Rs ${formatMoney(order.grandTotal || 0)}</strong>
+          <span>Delivery fee: Rs ${formatMoney(order.deliveryFee || 0)}</span>
+        </div>
 
-    <div class="seller-actions">
-      ${showPickupButton ? `<button class="ready-btn pickup-btn">Mark Picked Up</button>` : ""}
-      ${showOutButton ? `<button class="update-status-btn out-btn">Start Delivery</button>` : ""}
-    </div>
+        <div>
+          <small>Schedule</small>
+          <strong>${escapeHtml(getJobDate(order) || "Not scheduled")}</strong>
+          <span>${escapeHtml(order.deliveryTimeSlot || "No time slot")}</span>
+        </div>
+      </div>
 
-    ${
-      showSignatureBox
-        ? `
-          <div class="form-card signature-section">
-            <h3>Customer Signature</h3>
-            <p class="muted">Ask the customer to sign below after receiving the order.</p>
+      <details class="driver-details">
+        <summary>View package details</summary>
 
-            <canvas
-              class="signature-canvas"
-              width="600"
-              height="220"
-              style="border:1px solid #ddd; background:#fff; width:100%; border-radius:12px;">
-            </canvas>
-
-            <input class="customer-name" placeholder="Customer full name">
-            <textarea class="delivery-note" placeholder="Delivery note optional"></textarea>
-
-            <div class="seller-actions">
-              <button class="secondary-btn clear-signature-btn" type="button">Clear Signature</button>
-              <button class="submit-delivery-btn" type="button">Submit Delivery</button>
-            </div>
+        <div class="driver-detail-grid">
+          <div>
+            <h4>Items</h4>
+            <ul class="driver-items-list">
+              ${itemsHtml || "<li>No items found.</li>"}
+            </ul>
           </div>
-        `
-        : ""
-    }
+
+          <div>
+            <h4>Delivery Notes</h4>
+            <p>${escapeHtml(order.orderNotes || order.deliveryNotes || "No notes.")}</p>
+
+            ${
+              order.adminDeliveryRejectReason
+                ? `
+                  <div class="driver-warning-box">
+                    <strong>Admin rejected previous submission</strong>
+                    <p>${escapeHtml(order.adminDeliveryRejectReason)}</p>
+                  </div>
+                `
+                : ""
+            }
+          </div>
+        </div>
+      </details>
+
+      ${
+        order.deliverySignature
+          ? `
+            <div class="driver-signature-preview">
+              <h4>Submitted Signature</h4>
+              <img src="${escapeHtml(order.deliverySignature)}" alt="Customer signature">
+              <p><strong>Signed by:</strong> ${escapeHtml(order.deliverySignedBy || "Customer")}</p>
+              <p><strong>Note:</strong> ${escapeHtml(order.deliveryNote || "None")}</p>
+            </div>
+          `
+          : ""
+      }
+
+      <div class="driver-card-actions">
+        ${
+          showPickupButton
+            ? `
+              <button
+                type="button"
+                class="ready-btn"
+                data-driver-action="pickup"
+                data-order-id="${escapeHtml(orderId)}">
+                Mark Picked Up
+              </button>
+            `
+            : ""
+        }
+
+        ${
+          showOutButton
+            ? `
+              <button
+                type="button"
+                class="update-status-btn"
+                data-driver-action="out"
+                data-order-id="${escapeHtml(orderId)}">
+                Start Delivery
+              </button>
+            `
+            : ""
+        }
+
+        <button
+          type="button"
+          class="secondary-btn"
+          data-driver-action="print"
+          data-order-id="${escapeHtml(orderId)}">
+          Print Note
+        </button>
+
+        ${
+          order.customerPhone
+            ? `
+              <a
+                class="secondary-btn"
+                href="tel:${escapeHtml(order.customerPhone)}">
+                Call Customer
+              </a>
+            `
+            : ""
+        }
+
+        ${
+          order.deliveryAddress
+            ? `
+              <a
+                class="secondary-btn"
+                target="_blank"
+                rel="noopener"
+                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.deliveryAddress)}">
+                Open Map
+              </a>
+            `
+            : ""
+        }
+      </div>
+
+      ${
+        showSignatureBox
+          ? `
+            <section class="driver-signature-section">
+              <div class="section-row-title">
+                <div>
+                  <h3>Customer Signature</h3>
+                  <p>Ask the customer to sign after receiving the order.</p>
+                </div>
+              </div>
+
+              <canvas
+                class="signature-canvas"
+                data-order-id="${escapeHtml(orderId)}">
+              </canvas>
+
+              <div class="driver-signature-fields">
+                <input class="customer-name" placeholder="Customer full name">
+                <textarea class="delivery-note" placeholder="Delivery note optional"></textarea>
+              </div>
+
+              <div class="driver-card-actions">
+                <button class="secondary-btn clear-signature-btn" type="button">
+                  Clear Signature
+                </button>
+
+                <button class="submit-delivery-btn" type="button">
+                  Submit Delivery
+                </button>
+              </div>
+            </section>
+          `
+          : ""
+      }
+
+    </article>
   `;
+}
 
-  container.appendChild(card);
+async function handleDriverAction(event) {
+  const button = event.currentTarget;
+  const action = button.dataset.driverAction;
+  const orderId = button.dataset.orderId;
 
-  card.querySelector(".pickup-btn")?.addEventListener("click", async () => {
+  const job = allJobs.find((item) => {
+    return (item.orderId || item.id) === orderId || item.id === orderId;
+  });
+
+  if (!job) {
+    alert("Delivery job not found.");
+    return;
+  }
+
+  if (action === "pickup") {
     await updateDelivery(orderId, {
       orderStatus: "Picked Up",
       deliveryStatus: "picked_up",
@@ -251,9 +442,10 @@ function renderOrderCard(order, container, completed) {
     });
 
     await loadOrders();
-  });
+    return;
+  }
 
-  card.querySelector(".out-btn")?.addEventListener("click", async () => {
+  if (action === "out") {
     await updateDelivery(orderId, {
       orderStatus: "Out for Delivery",
       deliveryStatus: "out_for_delivery",
@@ -262,10 +454,11 @@ function renderOrderCard(order, container, completed) {
     });
 
     await loadOrders();
-  });
+    return;
+  }
 
-  if (showSignatureBox) {
-    setupSignature(orderId, card);
+  if (action === "print") {
+    printDeliveryNote(job);
   }
 }
 
@@ -273,10 +466,15 @@ function setupSignature(orderId, card) {
   const canvas = card.querySelector(".signature-canvas");
 
   if (!canvas || typeof SignaturePad === "undefined") {
-    card.querySelector(".signature-section").innerHTML = `
-      <h3>Signature Error</h3>
-      <p>SignaturePad library is missing. Check delivery.html script link.</p>
-    `;
+    const section = card.querySelector(".driver-signature-section");
+
+    if (section) {
+      section.innerHTML = `
+        <h3>Signature Error</h3>
+        <p>SignaturePad library is missing. Check delivery.html script link.</p>
+      `;
+    }
+
     return;
   }
 
@@ -284,7 +482,8 @@ function setupSignature(orderId, card) {
 
   const signaturePad = new SignaturePad(canvas, {
     minWidth: 1,
-    maxWidth: 2.5
+    maxWidth: 2.5,
+    backgroundColor: "#ffffff"
   });
 
   card.querySelector(".clear-signature-btn")?.addEventListener("click", () => {
@@ -297,48 +496,46 @@ function setupSignature(orderId, card) {
       return;
     }
 
-    const customerName = card.querySelector(".customer-name").value.trim();
+    const customerName = card.querySelector(".customer-name")?.value.trim();
 
     if (!customerName) {
       alert("Customer full name is required.");
       return;
     }
 
-    const deliveryNote = card.querySelector(".delivery-note").value.trim();
-
+    const deliveryNote = card.querySelector(".delivery-note")?.value.trim() || "";
     const submitBtn = card.querySelector(".submit-delivery-btn");
+
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
 
-    const signature = signaturePad.toDataURL("image/png");
+    try {
+      const signature = signaturePad.toDataURL("image/png");
 
-    await updateDelivery(orderId, {
-      deliverySignature: signature,
-      deliverySignedBy: customerName,
-      deliveryNote,
-      deliveryGuyId: currentUser.uid,
-      deliveryGuyName:
-        currentUserData?.name ||
-        currentUser.displayName ||
-        currentUser.email ||
-        "Delivery Driver",
-      driverId: currentUser.uid,
-      driverName:
-        currentUserData?.name ||
-        currentUser.displayName ||
-        currentUser.email ||
-        "Delivery Driver",
-      deliveryStatus: "awaiting_admin_validation",
-      orderStatus: "Delivery Submitted",
-      deliverySubmittedAt: serverTimestamp(),
-      adminDeliveryValidated: false,
-      adminDeliveryRejectReason: "",
-      active: true,
-      updatedAt: serverTimestamp()
-    });
+      await updateDelivery(orderId, {
+        deliverySignature: signature,
+        deliverySignedBy: customerName,
+        deliveryNote,
+        deliveryGuyId: currentUser.uid,
+        deliveryGuyName: getDriverName(),
+        driverId: currentUser.uid,
+        driverName: getDriverName(),
+        deliveryStatus: "awaiting_admin_validation",
+        orderStatus: "Delivery Submitted",
+        deliverySubmittedAt: serverTimestamp(),
+        adminDeliveryValidated: false,
+        adminDeliveryRejectReason: "",
+        active: true,
+        updatedAt: serverTimestamp()
+      });
 
-    alert("Delivery submitted for admin validation.");
-    await loadOrders();
+      alert("Delivery submitted for admin validation.");
+      await loadOrders();
+    } catch (error) {
+      alert(error.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Delivery";
+    }
   });
 }
 
@@ -349,6 +546,193 @@ async function updateDelivery(orderId, data) {
     await updateDoc(doc(db, "orders", orderId), data);
   } catch (error) {
     console.warn("Order update skipped:", error.message);
+  }
+}
+
+function printDeliveryNote(job) {
+  const orderId = job.orderId || job.id;
+
+  const itemsRows = (job.items || []).map((item) => `
+    <tr>
+      <td>${escapeHtml(item.title || "Item")}</td>
+      <td>${Number(item.quantity || 1)}</td>
+      <td>Rs ${formatMoney(item.price || 0)}</td>
+      <td>Rs ${formatMoney(Number(item.price || 0) * Number(item.quantity || 1))}</td>
+    </tr>
+  `).join("");
+
+  const html = `
+    <html>
+      <head>
+        <title>Delivery Note</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            color: #111827;
+            padding: 30px;
+          }
+
+          .print-page {
+            max-width: 900px;
+            margin: auto;
+          }
+
+          .print-head {
+            border-bottom: 3px solid #4f35f5;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+          }
+
+          .print-head h1 {
+            margin: 0;
+            color: #4f35f5;
+          }
+
+          .print-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 24px;
+          }
+
+          .print-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+
+          th,
+          td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            text-align: left;
+          }
+
+          th {
+            background: #f3f4f6;
+          }
+
+          .total {
+            margin-top: 24px;
+            text-align: right;
+          }
+
+          .signature {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 36px;
+            margin-top: 70px;
+          }
+
+          .signature div {
+            border-top: 2px solid #111827;
+            padding-top: 10px;
+          }
+        </style>
+      </head>
+
+      <body>
+        <main class="print-page">
+          <header class="print-head">
+            <h1>MauMarket Delivery Note</h1>
+            <p>Order #${escapeHtml(orderId)}</p>
+          </header>
+
+          <section class="print-grid">
+            <div class="print-box">
+              <h3>Customer</h3>
+              <p><strong>Name:</strong> ${escapeHtml(job.customerName || "")}</p>
+              <p><strong>Phone:</strong> ${escapeHtml(job.customerPhone || "")}</p>
+              <p><strong>Address:</strong> ${escapeHtml(job.deliveryAddress || "")}</p>
+            </div>
+
+            <div class="print-box">
+              <h3>Delivery</h3>
+              <p><strong>Driver:</strong> ${escapeHtml(getDriverName())}</p>
+              <p><strong>Status:</strong> ${escapeHtml(job.orderStatus || "")}</p>
+              <p><strong>Time slot:</strong> ${escapeHtml(job.deliveryTimeSlot || "Not set")}</p>
+              <p><strong>Notes:</strong> ${escapeHtml(job.orderNotes || "None")}</p>
+            </div>
+          </section>
+
+          <h3>Items</h3>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              ${
+                itemsRows ||
+                `
+                  <tr>
+                    <td colspan="4">No items found.</td>
+                  </tr>
+                `
+              }
+            </tbody>
+          </table>
+
+          <div class="total">
+            <p><strong>Delivery Fee:</strong> Rs ${formatMoney(job.deliveryFee || 0)}</p>
+            <h2>Total: Rs ${formatMoney(job.grandTotal || 0)}</h2>
+          </div>
+
+          <section class="signature">
+            <div>Customer Signature</div>
+            <div>Driver Signature</div>
+          </section>
+        </main>
+      </body>
+    </html>
+  `;
+
+  const win = window.open("", "_blank", "width=1000,height=800");
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+
+  win.onload = () => {
+    win.focus();
+    win.print();
+  };
+}
+
+function setLoading() {
+  if (deliveryOrdersList) {
+    deliveryOrdersList.innerHTML = `
+      <div class="driver-empty-state">
+        <h3>Loading assigned deliveries...</h3>
+        <p>Please wait while MauMarket loads your delivery jobs.</p>
+      </div>
+    `;
+  }
+
+  if (resultCount) {
+    resultCount.textContent = "Loading assigned deliveries...";
+  }
+}
+
+function renderError(message) {
+  if (deliveryOrdersList) {
+    deliveryOrdersList.innerHTML = `
+      <div class="driver-empty-state">
+        <h3>Could not load deliveries</h3>
+        <p>${escapeHtml(message)}</p>
+      </div>
+    `;
   }
 }
 
@@ -363,7 +747,7 @@ function resizeCanvas(canvas) {
   ctx.scale(ratio, ratio);
 }
 
-function stepClass(currentStatus, stepStatus) {
+function progressStep(currentStatus, stepStatus, label) {
   const steps = [
     "Ready for Pickup",
     "Picked Up",
@@ -373,11 +757,94 @@ function stepClass(currentStatus, stepStatus) {
   ];
 
   if (currentStatus === "Cancelled" || currentStatus === "Payment Rejected") {
-    return "track-step cancelled";
+    return `
+      <span class="driver-step cancelled">
+        ${escapeHtml(label)}
+      </span>
+    `;
   }
 
   const currentIndex = steps.indexOf(currentStatus || "Ready for Pickup");
   const stepIndex = steps.indexOf(stepStatus);
 
-  return currentIndex >= stepIndex ? "track-step done" : "track-step";
+  return `
+    <span class="driver-step ${currentIndex >= stepIndex ? "done" : ""}">
+      ${escapeHtml(label)}
+    </span>
+  `;
+}
+
+function statusClass(status) {
+  const value = normalize(status);
+
+  if (value.includes("delivered")) return "success";
+  if (value.includes("submitted")) return "info";
+  if (value.includes("out")) return "warning";
+  if (value.includes("picked")) return "purple";
+  if (value.includes("ready")) return "neutral";
+
+  return "neutral";
+}
+
+function getJobTime(job) {
+  return (
+    job.updatedAt?.seconds ||
+    job.assignedAt?.seconds ||
+    job.createdAt?.seconds ||
+    0
+  );
+}
+
+function getJobDate(job) {
+  if (job.deliveryDateText) return job.deliveryDateText;
+  if (job.deliveryDate) return job.deliveryDate;
+
+  const timestamp =
+    job.scheduledDeliveryDate ||
+    job.assignedAt ||
+    job.updatedAt ||
+    job.createdAt;
+
+  if (!timestamp?.seconds) return "";
+
+  return new Date(timestamp.seconds * 1000).toISOString().slice(0, 10);
+}
+
+function getDriverName() {
+  return (
+    currentUserData?.name ||
+    currentUserData?.fullName ||
+    currentUser.displayName ||
+    currentUser.email ||
+    "Delivery Driver"
+  );
+}
+
+function normalize(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim();
+}
+
+function shortText(value, max = 40) {
+  const text = String(value || "");
+
+  if (text.length <= max) return text;
+
+  return `${text.slice(0, max)}...`;
+}
+
+function formatMoney(value) {
+  return Number(value || 0).toLocaleString("en-US", {
+    maximumFractionDigits: 0
+  });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
