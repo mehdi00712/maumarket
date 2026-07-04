@@ -22,6 +22,11 @@ import {
 const customerName = document.getElementById("customerName");
 const customerPhone = document.getElementById("customerPhone");
 const deliveryAddress = document.getElementById("deliveryAddress");
+const deliveryLatitude = document.getElementById("deliveryLatitude");
+const deliveryLongitude = document.getElementById("deliveryLongitude");
+const selectedAddressText = document.getElementById("selectedAddressText");
+const locationSearchInput = document.getElementById("locationSearchInput");
+const useCurrentLocationBtn = document.getElementById("useCurrentLocationBtn");
 const orderNotes = document.getElementById("orderNotes");
 const paymentProof = document.getElementById("paymentProof");
 
@@ -37,6 +42,117 @@ const COMMISSION_RATE = 0.10;
 
 let currentUser = null;
 let cartItems = [];
+
+let checkoutMap = null;
+let checkoutMarker = null;
+let checkoutGeocoder = null;
+let checkoutAutocomplete = null;
+
+let selectedLocation = {
+  address: "",
+  lat: null,
+  lng: null
+};
+
+window.initCheckoutMap = function () {
+  const mapElement = document.getElementById("checkoutMap");
+
+  if (!mapElement || !window.google || !google.maps) {
+    return;
+  }
+
+  const mauritiusCenter = {
+    lat: -20.2409,
+    lng: 57.5201
+  };
+
+  checkoutMap = new google.maps.Map(mapElement, {
+    center: mauritiusCenter,
+    zoom: 11,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: true,
+    clickableIcons: true
+  });
+
+  checkoutGeocoder = new google.maps.Geocoder();
+
+  checkoutMarker = new google.maps.Marker({
+    position: mauritiusCenter,
+    map: checkoutMap,
+    draggable: true,
+    visible: false,
+    title: "Delivery location"
+  });
+
+  checkoutMap.addListener("click", (event) => {
+    if (!event.latLng) return;
+
+    setLocationFromLatLng(event.latLng.lat(), event.latLng.lng());
+  });
+
+  checkoutMarker.addListener("dragend", (event) => {
+    if (!event.latLng) return;
+
+    setLocationFromLatLng(event.latLng.lat(), event.latLng.lng());
+  });
+
+  if (locationSearchInput) {
+    checkoutAutocomplete = new google.maps.places.Autocomplete(locationSearchInput, {
+      fields: ["formatted_address", "geometry", "name"],
+      componentRestrictions: {
+        country: "mu"
+      }
+    });
+
+    checkoutAutocomplete.addListener("place_changed", () => {
+      const place = checkoutAutocomplete.getPlace();
+
+      if (!place.geometry || !place.geometry.location) {
+        showCheckoutMessage("Please select a valid location from the suggestions.");
+        return;
+      }
+
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const address = place.formatted_address || place.name || "";
+
+      setSelectedLocation(lat, lng, address);
+    });
+  }
+};
+
+useCurrentLocationBtn?.addEventListener("click", () => {
+  if (!navigator.geolocation) {
+    showCheckoutMessage("Your browser does not support location detection.");
+    return;
+  }
+
+  useCurrentLocationBtn.disabled = true;
+  useCurrentLocationBtn.textContent = "Detecting...";
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      setLocationFromLatLng(lat, lng);
+
+      useCurrentLocationBtn.disabled = false;
+      useCurrentLocationBtn.textContent = "Use My Location";
+    },
+    () => {
+      showCheckoutMessage("Could not get your current location. Please search or tap the map.");
+      useCurrentLocationBtn.disabled = false;
+      useCurrentLocationBtn.textContent = "Use My Location";
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 0
+    }
+  );
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -153,27 +269,34 @@ function updateTotals(itemsTotal) {
 placeOrderBtn.addEventListener("click", async () => {
   if (!currentUser) return;
 
-  if (
-    !customerName.value.trim() ||
-    !customerPhone.value.trim() ||
-    !deliveryAddress.value.trim()
-  ) {
-    checkoutMessage.textContent = "Please fill name, phone, and delivery address.";
+  const name = customerName.value.trim();
+  const phone = customerPhone.value.trim();
+  const address = deliveryAddress.value.trim();
+  const lat = Number(deliveryLatitude?.value || selectedLocation.lat || 0);
+  const lng = Number(deliveryLongitude?.value || selectedLocation.lng || 0);
+
+  if (!name || !phone) {
+    showCheckoutMessage("Please fill in your name and phone number.");
+    return;
+  }
+
+  if (!address || !lat || !lng) {
+    showCheckoutMessage("Please pin your exact delivery location on the map.");
     return;
   }
 
   if (!paymentProof.files[0]) {
-    checkoutMessage.textContent = "Please upload your Juice payment screenshot before placing the order.";
+    showCheckoutMessage("Please upload your Juice payment screenshot before placing the order.");
     return;
   }
 
   if (cartItems.length === 0) {
-    checkoutMessage.textContent = "Your cart is empty.";
+    showCheckoutMessage("Your cart is empty.");
     return;
   }
 
   placeOrderBtn.disabled = true;
-  checkoutMessage.textContent = "Uploading proof and creating order...";
+  showCheckoutMessage("Uploading proof and creating order...");
 
   try {
     const itemsTotal = roundMoney(
@@ -236,9 +359,17 @@ placeOrderBtn.addEventListener("click", async () => {
       customerId: currentUser.uid,
       customerEmail: currentUser.email,
 
-      customerName: customerName.value.trim(),
-      customerPhone: customerPhone.value.trim(),
-      deliveryAddress: deliveryAddress.value.trim(),
+      customerName: name,
+      customerPhone: phone,
+
+      deliveryAddress: address,
+      deliveryLatitude: lat,
+      deliveryLongitude: lng,
+      deliveryLocation: {
+        lat,
+        lng
+      },
+
       orderNotes: orderNotes.value.trim(),
 
       items: orderItems,
@@ -269,16 +400,75 @@ placeOrderBtn.addEventListener("click", async () => {
       await deleteDoc(doc(db, "carts", currentUser.uid, "items", item.cartItemId));
     }
 
-    checkoutMessage.textContent = "Order placed. Waiting for admin payment verification.";
+    showCheckoutMessage("Order placed. Waiting for admin payment verification.");
 
     setTimeout(() => {
       window.location.href = "my-orders.html";
     }, 1200);
   } catch (error) {
-    checkoutMessage.textContent = error.message;
+    showCheckoutMessage(error.message);
     placeOrderBtn.disabled = false;
   }
 });
+
+async function setLocationFromLatLng(lat, lng) {
+  if (!checkoutGeocoder) {
+    setSelectedLocation(lat, lng, `${lat}, ${lng}`);
+    return;
+  }
+
+  checkoutGeocoder.geocode(
+    {
+      location: {
+        lat,
+        lng
+      }
+    },
+    (results, status) => {
+      if (status === "OK" && results && results[0]) {
+        setSelectedLocation(lat, lng, results[0].formatted_address);
+      } else {
+        setSelectedLocation(lat, lng, `${lat}, ${lng}`);
+      }
+    }
+  );
+}
+
+function setSelectedLocation(lat, lng, address) {
+  selectedLocation = {
+    lat,
+    lng,
+    address
+  };
+
+  if (deliveryAddress) {
+    deliveryAddress.value = address;
+  }
+
+  if (deliveryLatitude) {
+    deliveryLatitude.value = String(lat);
+  }
+
+  if (deliveryLongitude) {
+    deliveryLongitude.value = String(lng);
+  }
+
+  if (selectedAddressText) {
+    selectedAddressText.textContent = address;
+  }
+
+  if (checkoutMarker && checkoutMap) {
+    const position = {
+      lat,
+      lng
+    };
+
+    checkoutMarker.setPosition(position);
+    checkoutMarker.setVisible(true);
+    checkoutMap.panTo(position);
+    checkoutMap.setZoom(16);
+  }
+}
 
 function buildSellerBreakdown(items) {
   const breakdown = {};
@@ -298,12 +488,15 @@ function buildSellerBreakdown(items) {
     }
 
     breakdown[sellerId].itemCount += Number(item.quantity || 1);
+
     breakdown[sellerId].itemsTotal = roundMoney(
       breakdown[sellerId].itemsTotal + Number(item.subtotal || 0)
     );
+
     breakdown[sellerId].sellerAmount = roundMoney(
       breakdown[sellerId].sellerAmount + Number(item.sellerSubtotal || 0)
     );
+
     breakdown[sellerId].commissionAmount = roundMoney(
       breakdown[sellerId].commissionAmount + Number(item.commissionSubtotal || 0)
     );
@@ -361,6 +554,12 @@ function getCommissionAmount(item) {
   const buyerPrice = getBuyerPrice(item);
 
   return roundMoney(Math.max(0, buyerPrice - sellerPrice));
+}
+
+function showCheckoutMessage(message) {
+  if (checkoutMessage) {
+    checkoutMessage.textContent = message || "";
+  }
 }
 
 function roundMoney(value) {
