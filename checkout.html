@@ -13,331 +13,178 @@
 <main class="container checkout-page">
 
     <section class="dashboard-section-title">
-
         <h1>Secure Checkout</h1>
-
-        <p>
-            You're one step away from receiving your order.
-        </p>
-
+        <p>Pin your exact delivery location and complete your order securely.</p>
     </section>
 
-    <!-- TRUST -->
-
     <section class="buyer-trust-strip">
-
         <div>
-
-            <strong>
-                🛡 Secure Payment
-            </strong>
-
-            <span>
-                Every payment is reviewed by MauMarket before your order is processed.
-            </span>
-
+            <strong>Secure Payment</strong>
+            <span>Every payment is reviewed by MauMarket before your order is processed.</span>
         </div>
 
         <div>
-
-            <strong>
-                ✔ Verified Sellers
-            </strong>
-
-            <span>
-                All sellers are approved before they can sell on MauMarket.
-            </span>
-
+            <strong>Verified Sellers</strong>
+            <span>All sellers are approved before they can sell on MauMarket.</span>
         </div>
 
         <div>
-
-            <strong>
-                🚚 Delivery by MauMarket
-            </strong>
-
-            <span>
-                Your order is collected and delivered through MauMarket.
-            </span>
-
+            <strong>Delivery by MauMarket</strong>
+            <span>Your order is collected and delivered through MauMarket.</span>
         </div>
-
     </section>
 
     <section class="checkout-layout">
 
-        <!-- LEFT -->
-
         <div class="checkout-main">
 
-            <!-- DELIVERY -->
-
             <section class="form-card">
-
                 <div class="section-row-title">
-
                     <div>
-
                         <h2>Delivery Information</h2>
-
-                        <p>
-                            Please provide accurate delivery details.
-                        </p>
-
+                        <p>Search or tap the map to pin your delivery location.</p>
                     </div>
-
                 </div>
 
                 <div class="form-group">
-
-                    <label>
-                        Full Name
-                    </label>
-
-                    <input
-                        id="customerName"
-                        type="text"
-                        placeholder="Enter your full name">
-
+                    <label>Full Name</label>
+                    <input id="customerName" type="text" placeholder="Enter your full name">
                 </div>
 
                 <div class="form-group">
-
-                    <label>
-                        Phone Number
-                    </label>
-
-                    <input
-                        id="customerPhone"
-                        type="text"
-                        placeholder="Example: 57750662">
-
+                    <label>Phone Number</label>
+                    <input id="customerPhone" type="text" placeholder="Example: 57750662">
                 </div>
 
                 <div class="form-group">
+                    <label>Delivery Location</label>
 
-                    <label>
-                        Delivery Address
-                    </label>
+                    <div class="checkout-location-box">
+                        <div class="location-map-toolbar">
+                            <input
+                                id="locationSearchInput"
+                                type="text"
+                                placeholder="Search area, road, village or town">
 
-                    <textarea
-                        id="deliveryAddress"
-                        placeholder="House number, street, village or town"></textarea>
+                            <button id="useCurrentLocationBtn" type="button" class="secondary-btn">
+                                Use My Location
+                            </button>
+                        </div>
 
+                        <div id="checkoutMap" class="checkout-map">
+                            <div class="map-loading-message">Loading map...</div>
+                        </div>
+
+                        <div class="selected-location-card">
+                            <strong>Selected Delivery Address</strong>
+                            <p id="selectedAddressText">
+                                No location selected yet. Search or click on the map to drop a pin.
+                            </p>
+
+                            <input id="deliveryAddress" type="hidden">
+                            <input id="deliveryLatitude" type="hidden">
+                            <input id="deliveryLongitude" type="hidden">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
-
-                    <label>
-                        Order Notes
-                    </label>
-
+                    <label>Order Notes</label>
                     <textarea
                         id="orderNotes"
-                        placeholder="Optional instructions for delivery"></textarea>
-
+                        placeholder="Apartment number, gate details, nearby landmark or delivery instructions"></textarea>
                 </div>
-
             </section>
 
-            <!-- ITEMS -->
-
             <section class="form-card">
-
                 <div class="section-row-title">
-
                     <div>
-
                         <h2>Your Order</h2>
-
-                        <p>
-                            Review all items before payment.
-                        </p>
-
+                        <p>Review all items before payment.</p>
                     </div>
-
                 </div>
 
-                <div id="checkoutItems">
-
-                    Loading your order...
-
-                </div>
-
+                <div id="checkoutItems">Loading your order...</div>
             </section>
 
-            <!-- PAYMENT -->
-
             <section class="form-card">
-
                 <div class="juice-box">
-
-                    <h2>
-                        Juice Payment
-                    </h2>
-
-                    <p>
-
-                        Please transfer the amount shown in the summary.
-
-                    </p>
+                    <h2>Juice Payment</h2>
+                    <p>Please transfer the amount shown in the summary.</p>
 
                     <div class="payment-details">
-
                         <div>
-
-                            <strong>
-                                Pay To
-                            </strong>
-
-                            <p>
-                                MauMarket
-                            </p>
-
+                            <strong>Pay To</strong>
+                            <p>MauMarket</p>
                         </div>
 
                         <div>
-
-                            <strong>
-                                Juice Number
-                            </strong>
-
-                            <p>
-                                +230 5775 0662
-                            </p>
-
+                            <strong>Juice Number</strong>
+                            <p>+230 5775 0662</p>
                         </div>
-
                     </div>
-
                 </div>
 
                 <div class="form-group">
-
-                    <label>
-                        Upload Payment Screenshot
-                    </label>
-
-                    <input
-                        id="paymentProof"
-                        type="file"
-                        accept="image/*">
-
+                    <label>Upload Payment Screenshot</label>
+                    <input id="paymentProof" type="file" accept="image/*">
                 </div>
 
-                <button
-                    id="placeOrderBtn"
-                    class="btn checkout-submit-btn"
-                    type="button">
-
+                <button id="placeOrderBtn" class="btn checkout-submit-btn" type="button">
                     Complete Order
-
                 </button>
 
                 <p id="checkoutMessage"></p>
-
             </section>
 
         </div>
 
-        <!-- RIGHT -->
-
         <aside class="checkout-summary-card">
-
-            <h2>
-                Order Summary
-            </h2>
+            <h2>Order Summary</h2>
 
             <div class="summary-row">
-
-                <span>
-                    Items Total
-                </span>
-
-                <strong>
-
-                    Rs
-                    <span id="itemsTotal">
-                        0
-                    </span>
-
-                </strong>
-
+                <span>Items Total</span>
+                <strong>Rs <span id="itemsTotal">0</span></strong>
             </div>
 
             <div class="summary-row">
-
-                <span>
-                    Delivery Fee
-                </span>
-
-                <strong>
-
-                    Rs
-                    <span id="deliveryFee">
-                        150
-                    </span>
-
-                </strong>
-
+                <span>Delivery Fee</span>
+                <strong>Rs <span id="deliveryFee">150</span></strong>
             </div>
 
             <hr>
 
             <div class="summary-total">
-
-                <span>
-
-                    Total to Pay
-
-                </span>
-
-                <strong>
-
-                    Rs
-                    <span id="grandTotal">
-                        0
-                    </span>
-
-                </strong>
-
+                <span>Total to Pay</span>
+                <strong>Rs <span id="grandTotal">0</span></strong>
             </div>
 
             <div class="cart-guarantee">
-
-                <h3>
-
-                    Why shop with MauMarket?
-
-                </h3>
+                <h3>Why shop with MauMarket?</h3>
 
                 <ul>
-
-                    <li>✔ Verified Sellers</li>
-
-                    <li>✔ Secure Payment Verification</li>
-
-                    <li>✔ Island-wide Delivery</li>
-
-                    <li>✔ Order Tracking</li>
-
-                    <li>✔ Customer Support</li>
-
+                    <li>Verified Sellers</li>
+                    <li>Secure Payment Verification</li>
+                    <li>Pin-based Delivery Location</li>
+                    <li>Order Tracking</li>
+                    <li>Customer Support</li>
                 </ul>
-
             </div>
-
         </aside>
 
     </section>
 
 </main>
 
-<!-- Shared navigation (desktop + mobile + role-aware) -->
-<script type="module" src="js/nav.js?v=2.0"></script>
+<script type="module" src="js/nav.js?v=4.0"></script>
 
-<!-- Checkout logic -->
-<script type="module" src="js/checkout.js?v=5.0"></script>
+<script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB1riEuyvrZU2cE7wHLok_lp2HPbvVelxk&libraries=places&callback=initCheckoutMap"
+    async
+    defer>
+</script>
+
+<script type="module" src="js/checkout.js?v=6.0"></script>
 
 </body>
 </html>
