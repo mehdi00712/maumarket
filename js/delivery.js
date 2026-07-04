@@ -197,6 +197,8 @@ function deliveryCardHtml(order) {
   const deliveryStatus = order.deliveryStatus || "assigned";
   const isCompleted = status === "Delivered" || order.active === false;
 
+  const mapUrl = getMapUrl(order);
+
   const showPickupButton =
     !isCompleted &&
     (
@@ -256,9 +258,9 @@ function deliveryCardHtml(order) {
         </div>
 
         <div>
-          <small>Address</small>
+          <small>Pinned Location</small>
           <strong>${escapeHtml(shortText(order.deliveryAddress || "No address", 42))}</strong>
-          <span>${escapeHtml(order.orderNotes || "No notes")}</span>
+          <span>${hasCoordinates(order) ? "Exact map pin available" : "Address only"}</span>
         </div>
 
         <div>
@@ -288,6 +290,17 @@ function deliveryCardHtml(order) {
           <div>
             <h4>Delivery Notes</h4>
             <p>${escapeHtml(order.orderNotes || order.deliveryNotes || "No notes.")}</p>
+
+            ${
+              hasCoordinates(order)
+                ? `
+                  <div class="driver-location-box">
+                    <strong>Pinned Coordinates</strong>
+                    <p>${Number(getLatitude(order)).toFixed(6)}, ${Number(getLongitude(order)).toFixed(6)}</p>
+                  </div>
+                `
+                : ""
+            }
 
             ${
               order.adminDeliveryRejectReason
@@ -366,14 +379,14 @@ function deliveryCardHtml(order) {
         }
 
         ${
-          order.deliveryAddress
+          mapUrl
             ? `
               <a
-                class="secondary-btn"
+                class="secondary-btn map-btn"
                 target="_blank"
                 rel="noopener"
-                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.deliveryAddress)}">
-                Open Map
+                href="${escapeHtml(mapUrl)}">
+                Open Pinned Location
               </a>
             `
             : ""
@@ -551,6 +564,7 @@ async function updateDelivery(orderId, data) {
 
 function printDeliveryNote(job) {
   const orderId = job.orderId || job.id;
+  const mapUrl = getMapUrl(job);
 
   const itemsRows = (job.items || []).map((item) => `
     <tr>
@@ -633,6 +647,11 @@ function printDeliveryNote(job) {
             border-top: 2px solid #111827;
             padding-top: 10px;
           }
+
+          .map-link {
+            color: #4f35f5;
+            font-weight: bold;
+          }
         </style>
       </head>
 
@@ -649,6 +668,16 @@ function printDeliveryNote(job) {
               <p><strong>Name:</strong> ${escapeHtml(job.customerName || "")}</p>
               <p><strong>Phone:</strong> ${escapeHtml(job.customerPhone || "")}</p>
               <p><strong>Address:</strong> ${escapeHtml(job.deliveryAddress || "")}</p>
+              ${
+                hasCoordinates(job)
+                  ? `<p><strong>Pin:</strong> ${Number(getLatitude(job)).toFixed(6)}, ${Number(getLongitude(job)).toFixed(6)}</p>`
+                  : ""
+              }
+              ${
+                mapUrl
+                  ? `<p><a class="map-link" href="${escapeHtml(mapUrl)}" target="_blank">Open pinned location</a></p>`
+                  : ""
+              }
             </div>
 
             <div class="print-box">
@@ -808,6 +837,43 @@ function getJobDate(job) {
   if (!timestamp?.seconds) return "";
 
   return new Date(timestamp.seconds * 1000).toISOString().slice(0, 10);
+}
+
+function getLatitude(job) {
+  return (
+    Number(job.deliveryLatitude || 0) ||
+    Number(job.deliveryLocation?.lat || 0) ||
+    Number(job.location?.lat || 0) ||
+    Number(job.lat || 0)
+  );
+}
+
+function getLongitude(job) {
+  return (
+    Number(job.deliveryLongitude || 0) ||
+    Number(job.deliveryLocation?.lng || 0) ||
+    Number(job.location?.lng || 0) ||
+    Number(job.lng || 0)
+  );
+}
+
+function hasCoordinates(job) {
+  return Boolean(getLatitude(job) && getLongitude(job));
+}
+
+function getMapUrl(job) {
+  const lat = getLatitude(job);
+  const lng = getLongitude(job);
+
+  if (lat && lng) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
+  }
+
+  if (job.deliveryAddress) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.deliveryAddress)}`;
+  }
+
+  return "";
 }
 
 function getDriverName() {
