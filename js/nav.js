@@ -322,7 +322,7 @@ function getLinksForRole() {
     { label: "Marketplace", icon: "⌂", href: "products.html" },
     { label: "Wishlist", icon: "♡", href: "wishlist.html" },
     { label: "Orders", icon: "□", href: "my-orders.html" },
-    { label: "Account", icon: "○", href: "dashboard.html" },
+    { label: "My Account", icon: "○", href: "dashboard.html" },
     { label: "Cart", icon: "▣", href: "cart.html" },
     { label: "Logout", icon: "×", isButton: true, action: "logout", desktop: false }
   ];
@@ -335,7 +335,7 @@ function getBottomLinks() {
       { label: "Admin", icon: "⚙", href: "admin.html" },
       { label: "Products", icon: "□", href: "admin-products.html" },
       { label: "Payments", icon: "▣", href: "admin-payments.html" },
-      { label: "Account", icon: "○", href: "dashboard.html" }
+      { label: "My Account", icon: "○", href: "dashboard.html" }
     ];
   }
 
@@ -345,7 +345,7 @@ function getBottomLinks() {
       { label: "Shop", icon: "▣", href: "seller.html" },
       { label: "Orders", icon: "□", href: "seller-orders.html" },
       { label: "Market", icon: "◇", href: "products.html" },
-      { label: "Account", icon: "○", href: "dashboard.html" }
+      { label: "My Account", icon: "○", href: "dashboard.html" }
     ];
   }
 
@@ -354,7 +354,7 @@ function getBottomLinks() {
     { label: "Market", icon: "◇", href: "products.html" },
     { label: "Wishlist", icon: "♡", href: "wishlist.html" },
     { label: "Cart", icon: "▣", href: "cart.html" },
-    { label: "Account", icon: "○", href: currentUser ? "dashboard.html" : "login.html" }
+    { label: "My Account", icon: "○", href: currentUser ? "dashboard.html" : "login.html" }
   ];
 }
 
