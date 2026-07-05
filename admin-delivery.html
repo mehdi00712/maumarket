@@ -18,23 +18,15 @@
       <span class="hero-badge">Admin Delivery</span>
       <h1>Delivery Management</h1>
       <p>
-        Assign drivers, schedule delivery dates, track order progress,
+        Assign drivers, schedule deliveries, track pinned locations,
         print delivery notes and export delivery reports.
       </p>
     </div>
 
     <div class="delivery-admin-actions">
-      <button id="printDeliveriesBtn" type="button" class="secondary-btn">
-        Print
-      </button>
-
-      <button id="exportDeliveriesBtn" type="button" class="secondary-btn">
-        Export CSV
-      </button>
-
-      <a href="admin.html" class="btn">
-        Admin Dashboard
-      </a>
+      <button id="printDeliveriesBtn" type="button" class="secondary-btn">Print</button>
+      <button id="exportDeliveriesBtn" type="button" class="secondary-btn">Export CSV</button>
+      <a href="admin.html" class="btn">Admin Dashboard</a>
     </div>
   </section>
 
@@ -84,6 +76,7 @@
         <label>Status</label>
         <select id="deliveryStatusFilter">
           <option value="">All Statuses</option>
+          <option value="Payment Submitted">Payment Submitted</option>
           <option value="Preparing Order">Preparing Order</option>
           <option value="Ready for Pickup">Ready for Pickup</option>
           <option value="Picked Up">Picked Up</option>
@@ -108,21 +101,13 @@
 
       <div>
         <label>Area</label>
-        <input
-          id="deliveryAreaFilter"
-          type="text"
-          placeholder="Area">
+        <input id="deliveryAreaFilter" type="text" placeholder="Area">
       </div>
     </div>
 
     <div class="delivery-toolbar-bottom">
-      <button id="clearDeliveryFiltersBtn" type="button" class="secondary-btn">
-        Clear Filters
-      </button>
-
-      <button id="refreshDeliveriesBtn" type="button" class="secondary-btn">
-        Refresh
-      </button>
+      <button id="clearDeliveryFiltersBtn" type="button" class="secondary-btn">Clear Filters</button>
+      <button id="refreshDeliveriesBtn" type="button" class="secondary-btn">Refresh</button>
     </div>
   </section>
 
@@ -131,7 +116,7 @@
       <div>
         <h2>Schedule Selected Delivery</h2>
         <p>
-          Choose an order below, then assign the driver, delivery date,
+          Select an order, assign a driver, choose a delivery date,
           time slot and delivery priority.
         </p>
       </div>
@@ -181,22 +166,13 @@
 
       <div>
         <label>Notes</label>
-        <input
-          id="scheduleNotes"
-          type="text"
-          placeholder="Optional delivery notes">
+        <input id="scheduleNotes" type="text" placeholder="Optional delivery notes">
       </div>
     </div>
 
     <div class="delivery-scheduler-actions">
-      <button id="saveDeliveryScheduleBtn" type="button" class="btn">
-        Save Assignment
-      </button>
-
-      <button id="printSelectedDeliveryBtn" type="button" class="secondary-btn">
-        Print Selected
-      </button>
-
+      <button id="saveDeliveryScheduleBtn" type="button" class="btn">Save Assignment</button>
+      <button id="printSelectedDeliveryBtn" type="button" class="secondary-btn">Print Selected</button>
       <p id="deliveryScheduleMessage"></p>
     </div>
   </section>
@@ -209,6 +185,10 @@
       </div>
     </div>
 
+    <div class="delivery-admin-note">
+      Orders with pinned checkout locations will show an exact Google Maps route button in the delivery card.
+    </div>
+
     <div id="deliveryOrdersList" class="delivery-orders-list">
       Loading delivery orders...
     </div>
@@ -217,7 +197,7 @@
 </main>
 
 <script type="module" src="js/nav.js?v=4.0"></script>
-<script type="module" src="js/admin-delivery.js?v=5.0"></script>
+<script type="module" src="js/admin-delivery.js?v=6.0"></script>
 
 </body>
 </html>
