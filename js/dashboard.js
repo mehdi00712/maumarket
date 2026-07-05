@@ -468,7 +468,7 @@ async function renderAdminDashboard() {
 
   actions.innerHTML = `
     ${dashboardCard({
-      label: "Admin",
+      label: "Control",
       title: "Admin Panel",
       description: "Open the main MauMarket control center.",
       link: "admin.html",
@@ -476,7 +476,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Users",
+      label: "Accounts",
       title: "Users",
       description: "Manage buyers, sellers, delivery users and admins.",
       link: "admin-users.html",
@@ -484,7 +484,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Products",
+      label: "Catalog",
       title: "Products",
       description: "Review, hide, approve or remove marketplace listings.",
       link: "admin-products.html",
@@ -492,7 +492,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Payments",
+      label: "Finance",
       title: "Payments",
       description: "Verify Juice payment screenshots and view payment history.",
       link: "admin-payments.html",
@@ -500,7 +500,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Delivery",
+      label: "Logistics",
       title: "Delivery",
       description: "Assign drivers, schedule deliveries and validate drop-offs.",
       link: "admin-delivery.html",
@@ -508,7 +508,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Commission",
+      label: "Revenue",
       title: "Commission Dashboard",
       description: "Track MauMarket revenue, seller amounts and commission.",
       link: "admin-commission.html",
@@ -516,7 +516,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Payouts",
+      label: "Sellers",
       title: "Payouts",
       description: "Manage seller payout status and payout records.",
       link: "admin-payouts.html",
@@ -524,7 +524,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Reviews",
+      label: "Trust",
       title: "Reviews",
       description: "Moderate customer reviews and ratings.",
       link: "admin-reviews.html",
@@ -532,7 +532,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Categories",
+      label: "Structure",
       title: "Categories",
       description: "Create and manage marketplace categories.",
       link: "admin-categories.html",
@@ -540,7 +540,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Banners",
+      label: "Marketing",
       title: "Ad Banners",
       description: "Manage featured shop and marketplace banners.",
       link: "admin-banners.html",
@@ -548,7 +548,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Quota",
+      label: "Requests",
       title: "Slot Requests",
       description: "Approve seller requests for more product slots.",
       link: "admin-quota.html",
@@ -556,7 +556,7 @@ async function renderAdminDashboard() {
     })}
 
     ${dashboardCard({
-      label: "Analytics",
+      label: "Reports",
       title: "Admin Analytics",
       description: "View platform performance, revenue and reports.",
       link: "admin-analytics.html",
