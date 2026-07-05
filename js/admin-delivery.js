@@ -424,6 +424,8 @@ function orderCardHtml(order) {
 
   const statusClass = getStatusClass(status);
   const priorityClass = getPriorityClass(priority);
+  const mapUrl = getMapUrl(order);
+  const hasPin = hasCoordinates(order);
 
   return `
     <article class="delivery-order-card" data-order-id="${escapeHtml(order.id)}">
@@ -460,6 +462,12 @@ function orderCardHtml(order) {
           <small>Customer</small>
           <strong>${escapeHtml(order.customerName || "Customer")}</strong>
           <span>${escapeHtml(order.customerPhone || "No phone")}</span>
+        </div>
+
+        <div class="delivery-info-box pinned-location-box">
+          <small>Pinned Location</small>
+          <strong>${hasPin ? "Exact pin available" : "Address only"}</strong>
+          <span>${hasPin ? `${Number(getLatitude(order)).toFixed(6)}, ${Number(getLongitude(order)).toFixed(6)}` : escapeHtml(shortText(order.deliveryAddress || "No pin", 36))}</span>
         </div>
 
         <div class="delivery-info-box">
@@ -512,6 +520,20 @@ function orderCardHtml(order) {
             <p>${escapeHtml(order.orderNotes || order.deliveryNotes || "No notes.")}</p>
 
             ${
+              mapUrl
+                ? `
+                  <div class="delivery-map-box">
+                    <h4>Customer Pin Location</h4>
+                    <p>${hasPin ? `${Number(getLatitude(order)).toFixed(6)}, ${Number(getLongitude(order)).toFixed(6)}` : escapeHtml(order.deliveryAddress || "No address")}</p>
+                    <a class="secondary-btn map-btn" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">
+                      Open in Google Maps
+                    </a>
+                  </div>
+                `
+                : ""
+            }
+
+            ${
               order.deliverySignature
                 ? `
                   <div class="delivery-signature-box">
@@ -543,6 +565,20 @@ function orderCardHtml(order) {
           data-order-id="${escapeHtml(order.id)}">
           Print
         </button>
+
+        ${
+          mapUrl
+            ? `
+              <a
+                class="secondary-btn map-btn"
+                href="${escapeHtml(mapUrl)}"
+                target="_blank"
+                rel="noopener">
+                Open Map
+              </a>
+            `
+            : ""
+        }
 
         ${
           status === "Delivery Submitted"
@@ -681,6 +717,14 @@ async function saveDeliverySchedule() {
       customerName: order.customerName || "",
       customerPhone: order.customerPhone || "",
       deliveryAddress: order.deliveryAddress || "",
+      deliveryLatitude: getLatitude(order) || null,
+      deliveryLongitude: getLongitude(order) || null,
+      deliveryLocation: hasCoordinates(order)
+        ? {
+            lat: getLatitude(order),
+            lng: getLongitude(order)
+          }
+        : null,
       orderNotes: order.orderNotes || "",
       deliveryNotes: notes,
       deliveryDate: date,
@@ -826,6 +870,8 @@ function exportDeliveriesCSV(orders) {
       "Customer",
       "Phone",
       "Address",
+      "Latitude",
+      "Longitude",
       "Driver",
       "Delivery Date",
       "Time Slot",
@@ -842,6 +888,8 @@ function exportDeliveriesCSV(orders) {
       order.customerName || "",
       order.customerPhone || "",
       order.deliveryAddress || "",
+      getLatitude(order) || "",
+      getLongitude(order) || "",
       order.deliveryGuyName || "",
       getOrderDeliveryDate(order) || "",
       order.deliveryTimeSlot || "",
@@ -918,6 +966,8 @@ function printDeliveryReport(orders) {
 }
 
 function printSingleDelivery(order) {
+  const mapUrl = getMapUrl(order);
+
   const items = (order.items || []).map((item) => `
     <tr>
       <td>${escapeHtml(item.title || "Item")}</td>
@@ -941,6 +991,16 @@ function printSingleDelivery(order) {
           <p><strong>Name:</strong> ${escapeHtml(order.customerName || "")}</p>
           <p><strong>Phone:</strong> ${escapeHtml(order.customerPhone || "")}</p>
           <p><strong>Address:</strong> ${escapeHtml(order.deliveryAddress || "")}</p>
+          ${
+            hasCoordinates(order)
+              ? `<p><strong>Pin:</strong> ${Number(getLatitude(order)).toFixed(6)}, ${Number(getLongitude(order)).toFixed(6)}</p>`
+              : ""
+          }
+          ${
+            mapUrl
+              ? `<p><strong>Map:</strong> ${escapeHtml(mapUrl)}</p>`
+              : ""
+          }
         </div>
 
         <div>
@@ -1109,6 +1169,52 @@ function renderError(message) {
       </div>
     `;
   }
+}
+
+
+function getLatitude(order) {
+  return (
+    Number(order.deliveryLatitude || 0) ||
+    Number(order.deliveryLocation?.lat || 0) ||
+    Number(order.location?.lat || 0) ||
+    Number(order.lat || 0)
+  );
+}
+
+function getLongitude(order) {
+  return (
+    Number(order.deliveryLongitude || 0) ||
+    Number(order.deliveryLocation?.lng || 0) ||
+    Number(order.location?.lng || 0) ||
+    Number(order.lng || 0)
+  );
+}
+
+function hasCoordinates(order) {
+  return Boolean(getLatitude(order) && getLongitude(order));
+}
+
+function getMapUrl(order) {
+  const lat = getLatitude(order);
+  const lng = getLongitude(order);
+
+  if (lat && lng) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
+  }
+
+  if (order.deliveryAddress) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.deliveryAddress)}`;
+  }
+
+  return "";
+}
+
+function shortText(value, max = 40) {
+  const text = String(value || "");
+
+  if (text.length <= max) return text;
+
+  return `${text.slice(0, max)}...`;
 }
 
 function getOrderDeliveryDate(order) {
