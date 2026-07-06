@@ -641,8 +641,6 @@ function dashboardCard({
 }) {
   return `
     <a class="dashboard-card real-action-card" href="${escapeHtml(link)}">
-      <span class="action-label">${escapeHtml(label)}</span>
-
       <h3>${escapeHtml(title)}</h3>
 
       <p>${escapeHtml(description)}</p>
