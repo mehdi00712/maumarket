@@ -470,6 +470,13 @@ async function addToCart() {
   }, { merge: true });
 
   cartMessage.textContent = "Added to cart.";
+
+  window.dispatchEvent(new CustomEvent("cart-updated", {
+    detail: {
+      productId: currentItem.id,
+      quantity: qty
+    }
+  }));
 }
 
 function getBuyerPrice(item) {
