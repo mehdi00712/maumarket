@@ -38,6 +38,7 @@ async function loadCart() {
 
   if (snapshot.empty) {
     renderEmptyCart();
+    updateCartBadge(0);
     return;
   }
 
@@ -187,6 +188,8 @@ async function loadCart() {
     itemCount,
     total
   });
+
+  updateCartBadge(itemCount);
 }
 
 function renderSummary({ itemCount, total }) {
@@ -218,6 +221,14 @@ function renderEmptyCart() {
   if (summaryItems) summaryItems.textContent = "0";
   if (productsTotal) productsTotal.textContent = "0";
   if (cartTotal) cartTotal.textContent = "0";
+}
+
+function updateCartBadge(count) {
+  window.dispatchEvent(new CustomEvent("cart-updated", {
+    detail: {
+      count: Number(count || 0)
+    }
+  }));
 }
 
 function getBuyerPrice(item) {
