@@ -26,6 +26,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
+  localStorage.removeItem("cart");
   await loadCart();
 });
 
@@ -73,6 +74,7 @@ async function loadCart() {
     sellerSection.className = "cart-seller-section";
 
     let sellerTotal = 0;
+    let sellerItemCount = 0;
 
     sellerSection.innerHTML = `
       <div class="cart-seller-head">
@@ -95,6 +97,7 @@ async function loadCart() {
       const lineTotal = roundMoney(price * quantity);
 
       sellerTotal += lineTotal;
+      sellerItemCount += quantity;
       total += lineTotal;
       itemCount += quantity;
 
@@ -176,7 +179,7 @@ async function loadCart() {
     footer.className = "cart-seller-footer";
 
     footer.innerHTML = `
-      <span>${group.items.length} item(s) from this seller</span>
+      <span>${sellerItemCount} item(s) from this seller</span>
       <strong>${formatRs(sellerTotal)}</strong>
     `;
 
@@ -193,17 +196,9 @@ async function loadCart() {
 }
 
 function renderSummary({ itemCount, total }) {
-  if (summaryItems) {
-    summaryItems.textContent = String(itemCount);
-  }
-
-  if (productsTotal) {
-    productsTotal.textContent = formatPlainNumber(total);
-  }
-
-  if (cartTotal) {
-    cartTotal.textContent = formatPlainNumber(total);
-  }
+  if (summaryItems) summaryItems.textContent = String(itemCount);
+  if (productsTotal) productsTotal.textContent = formatPlainNumber(total);
+  if (cartTotal) cartTotal.textContent = formatPlainNumber(total);
 }
 
 function renderEmptyCart() {
@@ -233,22 +228,13 @@ function updateCartBadge(count) {
 
 function getBuyerPrice(item) {
   const buyerPrice = Number(item.buyerPrice || 0);
-
-  if (buyerPrice > 0) {
-    return roundMoney(buyerPrice);
-  }
+  if (buyerPrice > 0) return roundMoney(buyerPrice);
 
   const price = Number(item.price || 0);
-
-  if (price > 0) {
-    return roundMoney(price);
-  }
+  if (price > 0) return roundMoney(price);
 
   const sellerPrice = Number(item.sellerPrice || 0);
-
-  if (sellerPrice > 0) {
-    return roundMoney(sellerPrice * 1.1);
-  }
+  if (sellerPrice > 0) return roundMoney(sellerPrice * 1.1);
 
   return 0;
 }
