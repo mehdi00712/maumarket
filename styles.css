@@ -6431,3 +6431,43 @@ flex-direction:column;
 }
 
 }
+
+@media (max-width: 768px){
+
+  body{
+    padding-bottom: 105px;
+  }
+
+  .mm-side-menu{
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow-y: auto;
+    padding-bottom: 135px;
+  }
+
+  .mm-mobile-links{
+    padding-bottom: 140px;
+  }
+
+  .mm-user-box{
+    margin-bottom: 16px;
+  }
+
+  .mm-bottom-nav{
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 9999;
+  }
+
+  .mm-mobile-search-wrap{
+    position: sticky;
+    top: 86px;
+    z-index: 9998;
+  }
+
+  .mm-side-menu.show{
+    padding-bottom: 150px;
+  }
+}
