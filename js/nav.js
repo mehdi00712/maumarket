@@ -7,7 +7,9 @@ import {
 
 import {
   doc,
-  getDoc
+  getDoc,
+  collection,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 /*
@@ -52,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     renderNavLinks();
+    await updateCartBadge();
   });
 });
 
@@ -540,23 +543,68 @@ function markCurrentLinks() {
 
 
 
-function updateCartBadge() {
+async function updateCartBadge(event) {
   const badge = document.getElementById("mmCartBadge");
   if (!badge) return;
-  let cart=[];
-  try{cart=JSON.parse(localStorage.getItem("cart")||"[]");}catch(e){}
-  const count=cart.reduce((t,i)=>t+Number(i.quantity||1),0);
-  badge.textContent=count;
-  badge.style.display=count? "flex":"none";
-  if(count){
+
+  /*
+    MauMarket cart is stored in Firestore:
+    carts/{uid}/items
+
+    We do NOT use localStorage here anymore.
+    This avoids fake cart numbers staying in the navbar.
+  */
+  localStorage.removeItem("cart");
+
+  if (!currentUser) {
+    setCartBadgeCount(0);
+    return;
+  }
+
+  if (event?.detail?.count !== undefined) {
+    setCartBadgeCount(Number(event.detail.count || 0));
+    return;
+  }
+
+  try {
+    const snapshot = await getDocs(
+      collection(db, "carts", currentUser.uid, "items")
+    );
+
+    let count = 0;
+
+    snapshot.forEach((docSnap) => {
+      const item = docSnap.data();
+      count += Number(item.quantity || 1);
+    });
+
+    setCartBadgeCount(count);
+  } catch (error) {
+    console.warn("Could not load cart badge:", error.message);
+    setCartBadgeCount(0);
+  }
+}
+
+function setCartBadgeCount(count) {
+  const badge = document.getElementById("mmCartBadge");
+  if (!badge) return;
+
+  const cleanCount = Number(count || 0);
+
+  badge.textContent = cleanCount > 99 ? "99+" : String(cleanCount);
+  badge.style.display = cleanCount > 0 ? "flex" : "none";
+
+  if (cleanCount > 0) {
     badge.classList.remove("cart-bounce");
     void badge.offsetWidth;
     badge.classList.add("cart-bounce");
   }
 }
-window.addEventListener("storage",updateCartBadge);
-window.addEventListener("cart-updated",updateCartBadge);
-document.addEventListener("DOMContentLoaded",()=>setTimeout(updateCartBadge,100));
+
+window.addEventListener("cart-updated", updateCartBadge);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) updateCartBadge();
+});
 
 function escapeHtml(value) {
   return String(value || "")
