@@ -6471,3 +6471,35 @@ flex-direction:column;
     padding-bottom: 150px;
   }
 }
+
+@media (max-width: 768px){
+
+  .mm-side-menu{
+    padding-top: 95px !important;
+  }
+
+  .mm-side-head{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(390px, 88vw);
+    height: 74px;
+    z-index: 10002;
+    background: #0b0b3f;
+  }
+
+  .mm-user-box{
+    margin-top: 18px !important;
+  }
+
+  .mm-mobile-search-wrap{
+    position: fixed;
+    top: 74px;
+    left: 0;
+    width: min(390px, 88vw);
+    z-index: 10001;
+    background: #fff;
+    padding: 10px 14px;
+  }
+
+}
