@@ -840,15 +840,14 @@ async function addProductToCart(item, card, button) {
 function updateAddButton(button) {
   if (!button) return;
 
-  const oldText = button.textContent;
   button.disabled = true;
   button.classList.add("added");
-  button.textContent = "Added";
+  button.textContent = "Added ✓";
 
   setTimeout(() => {
     button.disabled = false;
     button.classList.remove("added");
-    button.textContent = oldText || "Add to Cart";
+    button.textContent = "Add to Cart";
   }, 1100);
 }
 
