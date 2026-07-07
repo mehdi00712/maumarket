@@ -25,6 +25,7 @@ import {
 */
 
 const COMMISSION_RATE = 0.10;
+const CART_STORAGE_KEY = "cart";
 
 const productsGrid = document.getElementById("productsGrid");
 const productsGridTrending = document.getElementById("productsGridTrending");
@@ -676,9 +677,15 @@ function createProductCard(item) {
 
       <p class="price">${formatRs(buyerPrice)}</p>
 
-      <a class="btn product-main-btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
-        View Product
-      </a>
+      <div class="product-card-actions">
+        <a class="btn product-main-btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
+          View Product
+        </a>
+
+        <button class="btn product-add-cart-btn" type="button">
+          Add to Cart
+        </button>
+      </div>
     </div>
   `;
 
@@ -687,6 +694,13 @@ function createProductCard(item) {
     event.stopPropagation();
 
     window.location.href = `product-details.html?id=${encodeURIComponent(item.id)}`;
+  });
+
+  card.querySelector(".product-add-cart-btn")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    addProductToCart(item, card, event.currentTarget);
   });
 
   return card;
@@ -723,6 +737,191 @@ function getStockBadge(item) {
   }
 
   return "";
+}
+
+
+/* =========================================================
+   CART UX
+   ========================================================= */
+
+function addProductToCart(item, card, button) {
+  const buyerPrice = getBuyerPrice(item);
+
+  if (item.type !== "service" && Number(item.stock || 0) <= 0) {
+    showCartToast("This product is currently out of stock.", "error");
+    return;
+  }
+
+  const cartItem = {
+    productId: item.id,
+    id: item.id,
+    sellerId: item.sellerId || "",
+    title: item.title || "Untitled",
+    type: item.type || "product",
+    category: item.category || "",
+    imageUrl: item.imageUrl || "",
+    shopName: item.shop?.shopName || item.shopName || "MauMarket Seller",
+    price: buyerPrice,
+    buyerPrice,
+    sellerPrice: getSellerPrice(item),
+    commissionAmount: getCommissionAmount(item),
+    commissionRate: COMMISSION_RATE,
+    quantity: 1
+  };
+
+  const cart = getLocalCart();
+  const existingIndex = cart.findIndex((existing) => {
+    return String(existing.productId || existing.id) === String(item.id);
+  });
+
+  if (existingIndex >= 0) {
+    cart[existingIndex].quantity = Number(cart[existingIndex].quantity || 1) + 1;
+  } else {
+    cart.push(cartItem);
+  }
+
+  saveLocalCart(cart);
+  animateProductToCart(card);
+  shakeCartIcon();
+  updateAddButton(button);
+  showCartToast(`${item.title || "Product"} added to cart.`, "success");
+
+  window.dispatchEvent(new CustomEvent("cart-updated", {
+    detail: {
+      count: getCartCount(cart),
+      item: cartItem
+    }
+  }));
+}
+
+function getLocalCart() {
+  try {
+    const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
+    return Array.isArray(cart) ? cart : [];
+  } catch (error) {
+    console.warn("Could not read cart:", error.message);
+    return [];
+  }
+}
+
+function saveLocalCart(cart) {
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+}
+
+function getCartCount(cart = getLocalCart()) {
+  return cart.reduce((total, item) => {
+    return total + Number(item.quantity || 1);
+  }, 0);
+}
+
+function updateAddButton(button) {
+  if (!button) return;
+
+  const oldText = button.textContent;
+  button.disabled = true;
+  button.classList.add("added");
+  button.textContent = "Added";
+
+  setTimeout(() => {
+    button.disabled = false;
+    button.classList.remove("added");
+    button.textContent = oldText || "Add to Cart";
+  }, 1100);
+}
+
+function animateProductToCart(card) {
+  const img = card?.querySelector(".market-product-img img");
+  const cartButton = document.querySelector(".mm-cart-btn");
+
+  if (!img || !cartButton) return;
+
+  const imgRect = img.getBoundingClientRect();
+  const cartRect = cartButton.getBoundingClientRect();
+
+  const flyingImg = img.cloneNode(true);
+  flyingImg.className = "fly-to-cart-img";
+
+  flyingImg.style.left = `${imgRect.left}px`;
+  flyingImg.style.top = `${imgRect.top}px`;
+  flyingImg.style.width = `${imgRect.width}px`;
+  flyingImg.style.height = `${imgRect.height}px`;
+
+  document.body.appendChild(flyingImg);
+
+  requestAnimationFrame(() => {
+    flyingImg.style.transform = `
+      translate(${cartRect.left - imgRect.left}px, ${cartRect.top - imgRect.top}px)
+      scale(.12)
+    `;
+    flyingImg.style.opacity = "0.2";
+  });
+
+  setTimeout(() => {
+    flyingImg.remove();
+  }, 850);
+}
+
+function shakeCartIcon() {
+  const cartButton = document.querySelector(".mm-cart-btn");
+
+  if (!cartButton) return;
+
+  cartButton.classList.remove("cart-shake");
+  void cartButton.offsetWidth;
+  cartButton.classList.add("cart-shake");
+}
+
+function showCartToast(message, type = "success") {
+  let toast = document.getElementById("cartToast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "cartToast";
+    toast.className = "cart-toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.className = `cart-toast show ${type}`;
+  toast.innerHTML = `
+    <strong>${type === "success" ? "Added to cart" : "Cart update"}</strong>
+    <span>${escapeHtml(message)}</span>
+    <a href="cart.html">View Cart</a>
+  `;
+
+  clearTimeout(toast._timer);
+
+  toast._timer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2800);
+}
+
+function getSellerPrice(item) {
+  const sellerPrice = Number(item.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    return roundMoney(sellerPrice);
+  }
+
+  const buyerPrice = getBuyerPrice(item);
+
+  if (buyerPrice > 0) {
+    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
+  }
+
+  return 0;
+}
+
+function getCommissionAmount(item) {
+  const commissionAmount = Number(item.commissionAmount || 0);
+
+  if (commissionAmount > 0) {
+    return roundMoney(commissionAmount);
+  }
+
+  const buyerPrice = getBuyerPrice(item);
+  const sellerPrice = getSellerPrice(item);
+
+  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
 }
 
 /* =========================================================
