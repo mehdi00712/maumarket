@@ -469,7 +469,19 @@ async function addToCart() {
     addedAt: serverTimestamp()
   }, { merge: true });
 
+  animateToCart();
   cartMessage.textContent = "Added to cart.";
+
+  const btn=document.getElementById("addToCartBtn");
+  if(btn){
+    btn.disabled=true;
+    const old=btn.textContent;
+    btn.textContent="Added ✓";
+    setTimeout(()=>{
+      btn.disabled=false;
+      btn.textContent=old;
+    },1200);
+  }
 
   window.dispatchEvent(new CustomEvent("cart-updated", {
     detail: {
@@ -477,6 +489,23 @@ async function addToCart() {
       quantity: qty
     }
   }));
+}
+
+function animateToCart(){
+  const img=document.querySelector(".main-product-img");
+  const cart=document.querySelector(".mm-cart-btn");
+  if(!img||!cart)return;
+  const a=img.getBoundingClientRect();
+  const b=cart.getBoundingClientRect();
+  const clone=img.cloneNode(true);
+  clone.className="fly-to-cart-img";
+  clone.style.cssText=`position:fixed;left:${a.left}px;top:${a.top}px;width:${a.width}px;height:${a.height}px;z-index:9999;transition:.8s ease;pointer-events:none;border-radius:12px;`;
+  document.body.appendChild(clone);
+  requestAnimationFrame(()=>{
+    clone.style.transform=`translate(${b.left-a.left}px,${b.top-a.top}px) scale(.15)`;
+    clone.style.opacity="0";
+  });
+  setTimeout(()=>clone.remove(),850);
 }
 
 function getBuyerPrice(item) {
