@@ -6503,3 +6503,296 @@ flex-direction:column;
   }
 
 }
+
+
+/* =========================================================
+   FINAL MOBILE NAV + SEARCH FIX
+   Fixes mobile search overflow, side menu overlap, and bottom nav coverage.
+   Keep this at the very bottom of styles.css.
+   ========================================================= */
+
+@media (max-width: 768px){
+
+  html,
+  body{
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  body{
+    padding-bottom: 110px !important;
+  }
+
+  .container,
+  .marketplace-home,
+  .market-pro-page,
+  .dashboard-page,
+  .cart-page,
+  .checkout-page,
+  .orders-page,
+  .wishlist-page,
+  .shop-page,
+  .product-page{
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    overflow-x: hidden !important;
+  }
+
+  /* NAV HEADER */
+  .mm-nav{
+    position: sticky !important;
+    top: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    z-index: 5000 !important;
+    background: transparent !important;
+    border-bottom: none !important;
+  }
+
+  .mm-nav-inner{
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 88px !important;
+    margin: 0 !important;
+    padding: 14px 18px !important;
+    display: grid !important;
+    grid-template-columns: 64px 1fr 64px !important;
+    gap: 12px !important;
+    align-items: center !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .mm-logo{
+    height: 58px !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .mm-logo img{
+    height: 52px !important;
+    max-width: 130px !important;
+    object-fit: contain !important;
+  }
+
+  .mm-icon-btn,
+  .mm-cart-btn{
+    width: 58px !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    border-radius: 20px !important;
+  }
+
+  .mm-desktop-links,
+  .mm-search{
+    display: none !important;
+  }
+
+  /* MOBILE SEARCH BAR */
+  .mm-mobile-search-wrap{
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 16px !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    z-index: 20 !important;
+    border-bottom: 1px solid #e6e8f0 !important;
+  }
+
+  .mm-mobile-search{
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 58px !important;
+    display: flex !important;
+    align-items: stretch !important;
+    margin: 0 !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    border: 1px solid #e6e8f0 !important;
+    box-shadow: 0 10px 25px rgba(15,23,42,.08) !important;
+    box-sizing: border-box !important;
+  }
+
+  .mm-mobile-search input{
+    width: auto !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-size: 15px !important;
+  }
+
+  .mm-mobile-search button{
+    width: 72px !important;
+    min-width: 72px !important;
+    flex: 0 0 72px !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* SIDE MENU */
+  .mm-side-menu{
+    width: min(360px, 88vw) !important;
+    max-width: 88vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding: 18px !important;
+    padding-bottom: 150px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .mm-side-head{
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    z-index: auto !important;
+    background: transparent !important;
+    margin-bottom: 16px !important;
+  }
+
+  .mm-side-head img{
+    height: 58px !important;
+    max-width: 140px !important;
+    object-fit: contain !important;
+  }
+
+  .mm-user-box{
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+    padding: 16px !important;
+    display: block !important;
+  }
+
+  .mm-mobile-links{
+    padding-bottom: 150px !important;
+  }
+
+  .mm-mobile-link{
+    min-height: 58px !important;
+    padding: 15px 16px !important;
+    border-radius: 18px !important;
+  }
+
+  /* BOTTOM NAV */
+  .mm-bottom-nav{
+    position: fixed !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    height: 78px !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 8px !important;
+    border-radius: 24px !important;
+    background: rgba(255,255,255,.96) !important;
+    border: 1px solid rgba(230,232,240,.95) !important;
+    box-shadow: 0 18px 44px rgba(15,23,42,.18) !important;
+    z-index: 9000 !important;
+    backdrop-filter: blur(16px) !important;
+  }
+
+  .mm-bottom-link{
+    min-width: 0 !important;
+    height: 62px !important;
+    padding: 6px 4px !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 16px !important;
+  }
+
+  .mm-bottom-link small{
+    max-width: 100% !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+
+  .mm-bottom-link.active{
+    background: var(--primary-soft) !important;
+    color: var(--primary) !important;
+  }
+
+  /* PAGE CARDS DO NOT GO UNDER NAV */
+  .dashboard-hero,
+  .dashboard-banner,
+  .form-card,
+  .cart-summary-card,
+  .checkout-summary-card,
+  .order-card,
+  .card{
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .dashboard-hero{
+    margin-top: 18px !important;
+  }
+}
+
+@media (max-width: 420px){
+
+  .mm-nav-inner{
+    grid-template-columns: 58px 1fr 58px !important;
+    padding: 12px 14px !important;
+  }
+
+  .mm-icon-btn,
+  .mm-cart-btn{
+    width: 54px !important;
+    height: 54px !important;
+    min-height: 54px !important;
+  }
+
+  .mm-logo img{
+    height: 46px !important;
+    max-width: 118px !important;
+  }
+
+  .mm-mobile-search-wrap{
+    padding: 9px 12px !important;
+  }
+
+  .mm-mobile-search button{
+    width: 64px !important;
+    min-width: 64px !important;
+    flex-basis: 64px !important;
+  }
+
+  .mm-bottom-nav{
+    left: 10px !important;
+    right: 10px !important;
+  }
+}
