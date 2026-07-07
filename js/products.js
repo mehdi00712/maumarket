@@ -1,4 +1,8 @@
-import { db } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
   collection,
@@ -7,7 +11,9 @@ import {
   where,
   doc,
   getDoc,
+  setDoc,
   updateDoc,
+  serverTimestamp,
   increment
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -25,7 +31,20 @@ import {
 */
 
 const COMMISSION_RATE = 0.10;
-const CART_STORAGE_KEY = "cart";
+
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+
+  /*
+    Old versions of the marketplace used localStorage for cart animation.
+    MauMarket now uses Firestore only, so this clears the old fake cart count.
+  */
+  localStorage.removeItem("cart");
+
+  window.dispatchEvent(new CustomEvent("cart-updated"));
+});
 
 const productsGrid = document.getElementById("productsGrid");
 const productsGridTrending = document.getElementById("productsGridTrending");
@@ -744,7 +763,17 @@ function getStockBadge(item) {
    CART UX
    ========================================================= */
 
-function addProductToCart(item, card, button) {
+async function addProductToCart(item, card, button) {
+  if (!currentUser) {
+    showCartToast("Please login before adding products to your cart.", "error");
+
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 900);
+
+    return;
+  }
+
   const buyerPrice = getBuyerPrice(item);
 
   if (item.type !== "service" && Number(item.stock || 0) <= 0) {
@@ -752,66 +781,60 @@ function addProductToCart(item, card, button) {
     return;
   }
 
-  const cartItem = {
-    productId: item.id,
-    id: item.id,
-    sellerId: item.sellerId || "",
-    title: item.title || "Untitled",
-    type: item.type || "product",
-    category: item.category || "",
-    imageUrl: item.imageUrl || "",
-    shopName: item.shop?.shopName || item.shopName || "MauMarket Seller",
-    price: buyerPrice,
-    buyerPrice,
-    sellerPrice: getSellerPrice(item),
-    commissionAmount: getCommissionAmount(item),
-    commissionRate: COMMISSION_RATE,
-    quantity: 1
-  };
-
-  const cart = getLocalCart();
-  const existingIndex = cart.findIndex((existing) => {
-    return String(existing.productId || existing.id) === String(item.id);
-  });
-
-  if (existingIndex >= 0) {
-    cart[existingIndex].quantity = Number(cart[existingIndex].quantity || 1) + 1;
-  } else {
-    cart.push(cartItem);
-  }
-
-  saveLocalCart(cart);
-  animateProductToCart(card);
-  shakeCartIcon();
-  updateAddButton(button);
-  showCartToast(`${item.title || "Product"} added to cart.`, "success");
-
-  window.dispatchEvent(new CustomEvent("cart-updated", {
-    detail: {
-      count: getCartCount(cart),
-      item: cartItem
-    }
-  }));
-}
-
-function getLocalCart() {
   try {
-    const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
-    return Array.isArray(cart) ? cart : [];
+    button.disabled = true;
+    button.textContent = "Adding...";
+
+    const cartRef = doc(db, "carts", currentUser.uid, "items", item.id);
+    const existingSnap = await getDoc(cartRef);
+
+    const previousQty = existingSnap.exists()
+      ? Number(existingSnap.data().quantity || 0)
+      : 0;
+
+    const cartItem = {
+      productId: item.id,
+      sellerId: item.sellerId || "",
+      title: item.title || "Untitled",
+      type: item.type || "product",
+      category: item.category || "",
+      imageUrl: item.imageUrl || "",
+      shopName: item.shop?.shopName || item.shopName || "MauMarket Seller",
+
+      price: buyerPrice,
+      buyerPrice,
+      sellerPrice: getSellerPrice(item),
+      commissionAmount: getCommissionAmount(item),
+      commissionRate: COMMISSION_RATE,
+
+      quantity: previousQty + 1,
+      updatedAt: serverTimestamp()
+    };
+
+    if (!existingSnap.exists()) {
+      cartItem.addedAt = serverTimestamp();
+    }
+
+    await setDoc(cartRef, cartItem, { merge: true });
+
+    animateProductToCart(card);
+    shakeCartIcon();
+    updateAddButton(button);
+    showCartToast(`${item.title || "Product"} added to cart.`, "success");
+
+    window.dispatchEvent(new CustomEvent("cart-updated", {
+      detail: {
+        productId: item.id,
+        quantity: cartItem.quantity
+      }
+    }));
   } catch (error) {
-    console.warn("Could not read cart:", error.message);
-    return [];
+    console.error("Add to cart failed:", error);
+    showCartToast(error.message || "Could not add product to cart.", "error");
+
+    button.disabled = false;
+    button.textContent = "Add to Cart";
   }
-}
-
-function saveLocalCart(cart) {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-}
-
-function getCartCount(cart = getLocalCart()) {
-  return cart.reduce((total, item) => {
-    return total + Number(item.quantity || 1);
-  }, 0);
 }
 
 function updateAddButton(button) {
