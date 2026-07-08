@@ -10,6 +10,7 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  getDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -42,6 +43,7 @@ const COMMISSION_RATE = 0.10;
 
 let currentUser = null;
 let cartItems = [];
+let shopPickupCache = {};
 
 let checkoutMap = null;
 let checkoutMarker = null;
@@ -190,12 +192,13 @@ async function loadCheckout() {
   let itemsTotal = 0;
   checkoutItems.innerHTML = "";
 
-  snapshot.forEach((docSnap) => {
+  for (const docSnap of snapshot.docs) {
     const rawItem = {
       cartItemId: docSnap.id,
       ...docSnap.data()
     };
 
+    const pickupInfo = await getShopPickupInfo(rawItem.sellerId, rawItem.shopName);
     const buyerPrice = getBuyerPrice(rawItem);
     const sellerPrice = getSellerPrice(rawItem);
     const commissionAmount = getCommissionAmount(rawItem);
@@ -207,6 +210,15 @@ async function loadCheckout() {
 
     const item = {
       ...rawItem,
+
+      shopName: pickupInfo.shopName || rawItem.shopName || "MauMarket Seller",
+      shopLocation: pickupInfo.shopLocation || rawItem.shopLocation || "",
+      shopAddress: pickupInfo.shopAddress || rawItem.shopAddress || "",
+      pickupAddress: pickupInfo.pickupAddress || rawItem.pickupAddress || "",
+      pickupLatitude: pickupInfo.pickupLatitude ?? rawItem.pickupLatitude ?? null,
+      pickupLongitude: pickupInfo.pickupLongitude ?? rawItem.pickupLongitude ?? null,
+      pickupLocation: pickupInfo.pickupLocation || rawItem.pickupLocation || null,
+
       price: buyerPrice,
       buyerPrice,
       sellerPrice,
@@ -235,6 +247,9 @@ async function loadCheckout() {
         <div>
           <strong>${escapeHtml(item.title || "Untitled")}</strong>
           <p>${escapeHtml(item.shopName || "MauMarket Seller")}</p>
+          <small class="checkout-pickup-note">
+            Pickup: ${escapeHtml(item.pickupAddress || item.shopLocation || item.shopAddress || "Shop pickup location not set")}
+          </small>
         </div>
       </div>
 
@@ -245,7 +260,7 @@ async function loadCheckout() {
     `;
 
     checkoutItems.appendChild(div);
-  });
+  }
 
   updateTotals(itemsTotal);
 }
@@ -323,6 +338,7 @@ placeOrderBtn.addEventListener("click", async () => {
     ];
 
     const sellerBreakdown = buildSellerBreakdown(cartItems);
+    const pickupStops = buildPickupStops(cartItems);
 
     const file = paymentProof.files[0];
     const safeName = file.name.replaceAll(" ", "-");
@@ -342,6 +358,12 @@ placeOrderBtn.addEventListener("click", async () => {
       category: item.category || "",
       imageUrl: item.imageUrl || "",
       shopName: item.shopName || "",
+      shopLocation: item.shopLocation || "",
+      shopAddress: item.shopAddress || "",
+      pickupAddress: item.pickupAddress || item.shopAddress || item.shopLocation || "",
+      pickupLatitude: item.pickupLatitude ?? null,
+      pickupLongitude: item.pickupLongitude ?? null,
+      pickupLocation: item.pickupLocation || null,
       quantity: Number(item.quantity || 1),
 
       price: Number(item.buyerPrice || item.price || 0),
@@ -375,6 +397,9 @@ placeOrderBtn.addEventListener("click", async () => {
       items: orderItems,
       sellerIds,
       sellerBreakdown,
+      pickupStops,
+      pickupCount: pickupStops.length,
+      hasMultiplePickupLocations: pickupStops.length > 1,
 
       itemsTotal,
       deliveryFee,
@@ -480,10 +505,17 @@ function buildSellerBreakdown(items) {
       breakdown[sellerId] = {
         sellerId,
         shopName: item.shopName || "Unknown Shop",
+        shopLocation: item.shopLocation || "",
+        shopAddress: item.shopAddress || "",
+        pickupAddress: item.pickupAddress || item.shopAddress || item.shopLocation || "",
+        pickupLatitude: item.pickupLatitude ?? null,
+        pickupLongitude: item.pickupLongitude ?? null,
+        pickupLocation: item.pickupLocation || null,
         itemCount: 0,
         itemsTotal: 0,
         sellerAmount: 0,
-        commissionAmount: 0
+        commissionAmount: 0,
+        items: []
       };
     }
 
@@ -500,9 +532,141 @@ function buildSellerBreakdown(items) {
     breakdown[sellerId].commissionAmount = roundMoney(
       breakdown[sellerId].commissionAmount + Number(item.commissionSubtotal || 0)
     );
+
+    breakdown[sellerId].items.push({
+      productId: item.productId || item.cartItemId || "",
+      title: item.title || "",
+      quantity: Number(item.quantity || 1),
+      price: Number(item.buyerPrice || item.price || 0),
+      subtotal: Number(item.subtotal || 0)
+    });
   });
 
   return Object.values(breakdown);
+}
+
+function buildPickupStops(items) {
+  const stops = {};
+
+  items.forEach((item) => {
+    const sellerId = item.sellerId || "unknown";
+
+    if (!stops[sellerId]) {
+      stops[sellerId] = {
+        sellerId,
+        shopName: item.shopName || "Unknown Shop",
+        shopLocation: item.shopLocation || "",
+        shopAddress: item.shopAddress || "",
+        pickupAddress: item.pickupAddress || item.shopAddress || item.shopLocation || "",
+        pickupLatitude: item.pickupLatitude ?? null,
+        pickupLongitude: item.pickupLongitude ?? null,
+        pickupLocation: item.pickupLocation || null,
+        itemCount: 0,
+        itemsTotal: 0,
+        items: []
+      };
+    }
+
+    stops[sellerId].itemCount += Number(item.quantity || 1);
+
+    stops[sellerId].itemsTotal = roundMoney(
+      stops[sellerId].itemsTotal + Number(item.subtotal || 0)
+    );
+
+    stops[sellerId].items.push({
+      productId: item.productId || item.cartItemId || "",
+      title: item.title || "",
+      quantity: Number(item.quantity || 1),
+      price: Number(item.buyerPrice || item.price || 0),
+      subtotal: Number(item.subtotal || 0)
+    });
+  });
+
+  return Object.values(stops);
+}
+
+async function getShopPickupInfo(sellerId, fallbackShopName = "") {
+  if (!sellerId) {
+    return {
+      shopName: fallbackShopName || "MauMarket Seller",
+      shopLocation: "",
+      shopAddress: "",
+      pickupAddress: "",
+      pickupLatitude: null,
+      pickupLongitude: null,
+      pickupLocation: null
+    };
+  }
+
+  if (shopPickupCache[sellerId]) {
+    return shopPickupCache[sellerId];
+  }
+
+  const fallback = {
+    shopName: fallbackShopName || "MauMarket Seller",
+    shopLocation: "",
+    shopAddress: "",
+    pickupAddress: "",
+    pickupLatitude: null,
+    pickupLongitude: null,
+    pickupLocation: null
+  };
+
+  try {
+    const shopSnap = await getDoc(doc(db, "shops", sellerId));
+
+    if (!shopSnap.exists()) {
+      shopPickupCache[sellerId] = fallback;
+      return fallback;
+    }
+
+    const shop = shopSnap.data();
+
+    const pickupLat = Number(
+      shop.pickupLatitude ??
+      shop.latitude ??
+      shop.locationLat ??
+      shop.shopLatitude ??
+      0
+    );
+
+    const pickupLng = Number(
+      shop.pickupLongitude ??
+      shop.longitude ??
+      shop.locationLng ??
+      shop.shopLongitude ??
+      0
+    );
+
+    const pickupAddress =
+      shop.pickupAddress ||
+      shop.shopAddress ||
+      shop.address ||
+      shop.location ||
+      "";
+
+    const info = {
+      shopName: shop.shopName || shop.name || fallbackShopName || "MauMarket Seller",
+      shopLocation: shop.location || "",
+      shopAddress: shop.shopAddress || shop.address || "",
+      pickupAddress,
+      pickupLatitude: pickupLat || null,
+      pickupLongitude: pickupLng || null,
+      pickupLocation: pickupLat && pickupLng
+        ? {
+            lat: pickupLat,
+            lng: pickupLng
+          }
+        : null
+    };
+
+    shopPickupCache[sellerId] = info;
+    return info;
+  } catch (error) {
+    console.warn("Could not load shop pickup location:", error.message);
+    shopPickupCache[sellerId] = fallback;
+    return fallback;
+  }
 }
 
 function getBuyerPrice(item) {
