@@ -297,6 +297,13 @@ function applyFilters() {
       ${order.orderStatus || ""}
       ${order.deliveryStatus || ""}
       ${(order.items || []).map((item) => item.title || "").join(" ")}
+      ${(order.pickupStops || []).map((stop) => `
+        ${stop.shopName || ""}
+        ${stop.pickupAddress || ""}
+        ${stop.shopLocation || ""}
+        ${stop.shopAddress || ""}
+        ${(stop.items || []).map((item) => item.title || "").join(" ")}
+      `).join(" ")}
     `);
 
     const matchesSearch = !search || searchableText.includes(search);
@@ -426,6 +433,13 @@ function orderCardHtml(order) {
   const priorityClass = getPriorityClass(priority);
   const mapUrl = getMapUrl(order);
   const hasPin = hasCoordinates(order);
+  const pickupStops = normalizePickupStops(order);
+  const pickupStopsHtml = renderPickupStopsHtml(pickupStops);
+  const pickupCountText = pickupStops.length > 1
+    ? `${pickupStops.length} pickup locations`
+    : pickupStops.length === 1
+      ? "1 pickup location"
+      : "No pickup location";
 
   return `
     <article class="delivery-order-card" data-order-id="${escapeHtml(order.id)}">
@@ -464,6 +478,12 @@ function orderCardHtml(order) {
           <span>${escapeHtml(order.customerPhone || "No phone")}</span>
         </div>
 
+        <div class="delivery-info-box pickup-location-summary">
+          <small>Pickup Route</small>
+          <strong>${escapeHtml(pickupCountText)}</strong>
+          <span>${escapeHtml(pickupStops.map((stop) => stop.shopName).filter(Boolean).slice(0, 2).join(" → ") || "Pickup details not set")}</span>
+        </div>
+
         <div class="delivery-info-box pinned-location-box">
           <small>Pinned Location</small>
           <strong>${hasPin ? "Exact pin available" : "Address only"}</strong>
@@ -500,6 +520,9 @@ function orderCardHtml(order) {
 
         <div class="delivery-detail-body">
           <div>
+            <h4>Pickup Locations</h4>
+            ${pickupStopsHtml}
+
             <h4>Items</h4>
             <ul>
               ${
@@ -737,6 +760,9 @@ async function saveDeliverySchedule() {
       grandTotal: Number(order.grandTotal || 0),
       deliveryFee: Number(order.deliveryFee || 0),
       items: order.items || [],
+      pickupStops: normalizePickupStops(order),
+      pickupCount: normalizePickupStops(order).length,
+      hasMultiplePickupLocations: normalizePickupStops(order).length > 1,
       active: true,
       assignedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -870,6 +896,8 @@ function exportDeliveriesCSV(orders) {
       "Customer",
       "Phone",
       "Address",
+      "Pickup Locations",
+      "Pickup Addresses",
       "Latitude",
       "Longitude",
       "Driver",
@@ -888,6 +916,8 @@ function exportDeliveriesCSV(orders) {
       order.customerName || "",
       order.customerPhone || "",
       order.deliveryAddress || "",
+      normalizePickupStops(order).map((stop) => stop.shopName || "").join(" | "),
+      normalizePickupStops(order).map((stop) => stop.pickupAddress || stop.shopAddress || stop.shopLocation || "").join(" | "),
       getLatitude(order) || "",
       getLongitude(order) || "",
       order.deliveryGuyName || "",
@@ -967,6 +997,16 @@ function printDeliveryReport(orders) {
 
 function printSingleDelivery(order) {
   const mapUrl = getMapUrl(order);
+  const pickupStops = normalizePickupStops(order);
+
+  const pickupRows = pickupStops.map((stop, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${escapeHtml(stop.shopName || "Shop")}</td>
+      <td>${escapeHtml(stop.pickupAddress || stop.shopAddress || stop.shopLocation || "Pickup location not set")}</td>
+      <td>${escapeHtml((stop.items || []).map((item) => `${item.title || "Item"} x ${Number(item.quantity || 1)}`).join(", "))}</td>
+    </tr>
+  `).join("");
 
   const items = (order.items || []).map((item) => `
     <tr>
@@ -1011,6 +1051,27 @@ function printSingleDelivery(order) {
           <p><strong>Priority:</strong> ${escapeHtml(order.deliveryPriority || "Normal")}</p>
         </div>
       </section>
+
+      <h3>Pickup Locations</h3>
+
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Shop</th>
+            <th>Pickup Address</th>
+            <th>Items to Collect</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${pickupRows || `
+            <tr>
+              <td colspan="4">No pickup locations found.</td>
+            </tr>
+          `}
+        </tbody>
+      </table>
 
       <h3>Items</h3>
 
@@ -1126,6 +1187,10 @@ function printStyles() {
         text-align: right;
       }
 
+      h3 {
+        margin-top: 26px;
+      }
+
       .print-signature {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -1144,6 +1209,141 @@ function printStyles() {
 /* =========================
    HELPERS
 ========================= */
+
+
+/* =========================
+   PICKUP HELPERS
+========================= */
+
+function normalizePickupStops(order) {
+  if (Array.isArray(order.pickupStops) && order.pickupStops.length > 0) {
+    return order.pickupStops.map((stop) => normalizePickupStop(stop));
+  }
+
+  if (Array.isArray(order.sellerBreakdown) && order.sellerBreakdown.length > 0) {
+    return order.sellerBreakdown.map((seller) => normalizePickupStop(seller));
+  }
+
+  const grouped = {};
+
+  (order.items || []).forEach((item) => {
+    const sellerId = item.sellerId || "unknown";
+
+    if (!grouped[sellerId]) {
+      grouped[sellerId] = {
+        sellerId,
+        shopName: item.shopName || "Unknown Shop",
+        shopLocation: item.shopLocation || "",
+        shopAddress: item.shopAddress || "",
+        pickupAddress: item.pickupAddress || item.shopAddress || item.shopLocation || "",
+        pickupLatitude: item.pickupLatitude ?? null,
+        pickupLongitude: item.pickupLongitude ?? null,
+        pickupLocation: item.pickupLocation || null,
+        itemCount: 0,
+        itemsTotal: 0,
+        items: []
+      };
+    }
+
+    grouped[sellerId].itemCount += Number(item.quantity || 1);
+    grouped[sellerId].itemsTotal += Number(item.subtotal || 0);
+
+    grouped[sellerId].items.push({
+      productId: item.productId || "",
+      title: item.title || "Item",
+      quantity: Number(item.quantity || 1),
+      price: Number(item.price || item.buyerPrice || 0),
+      subtotal: Number(item.subtotal || 0)
+    });
+  });
+
+  return Object.values(grouped).map((stop) => normalizePickupStop(stop));
+}
+
+function normalizePickupStop(stop) {
+  const lat = Number(stop.pickupLatitude || stop.pickupLocation?.lat || stop.latitude || 0);
+  const lng = Number(stop.pickupLongitude || stop.pickupLocation?.lng || stop.longitude || 0);
+
+  return {
+    sellerId: stop.sellerId || "unknown",
+    shopName: stop.shopName || stop.name || "Unknown Shop",
+    shopLocation: stop.shopLocation || stop.location || "",
+    shopAddress: stop.shopAddress || stop.address || "",
+    pickupAddress: stop.pickupAddress || stop.shopAddress || stop.shopLocation || stop.address || stop.location || "",
+    pickupLatitude: lat || null,
+    pickupLongitude: lng || null,
+    pickupLocation: lat && lng ? { lat, lng } : null,
+    itemCount: Number(stop.itemCount || 0),
+    itemsTotal: Number(stop.itemsTotal || 0),
+    items: Array.isArray(stop.items) ? stop.items : []
+  };
+}
+
+function renderPickupStopsHtml(pickupStops) {
+  if (!pickupStops.length) {
+    return `
+      <div class="pickup-stops-box">
+        <p class="muted">No pickup location saved for this order.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="pickup-stops-box">
+      ${pickupStops.map((stop, index) => {
+        const mapUrl = getPickupMapUrl(stop);
+        const itemList = (stop.items || []).map((item) => `
+          <li>
+            ${escapeHtml(item.title || "Item")}
+            × ${Number(item.quantity || 1)}
+          </li>
+        `).join("");
+
+        return `
+          <div class="pickup-stop-card">
+            <div class="pickup-stop-head">
+              <span>Pickup ${index + 1}</span>
+              <strong>${escapeHtml(stop.shopName || "Shop")}</strong>
+            </div>
+
+            <p>
+              <strong>Address:</strong>
+              ${escapeHtml(stop.pickupAddress || stop.shopAddress || stop.shopLocation || "Pickup location not set")}
+            </p>
+
+            ${
+              stop.pickupLatitude && stop.pickupLongitude
+                ? `<p><strong>Pin:</strong> ${Number(stop.pickupLatitude).toFixed(6)}, ${Number(stop.pickupLongitude).toFixed(6)}</p>`
+                : ""
+            }
+
+            <ul>${itemList || "<li>No items listed for this pickup.</li>"}</ul>
+
+            ${
+              mapUrl
+                ? `<a class="secondary-btn map-btn" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">Open Pickup Map</a>`
+                : ""
+            }
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function getPickupMapUrl(stop) {
+  if (stop.pickupLatitude && stop.pickupLongitude) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${stop.pickupLatitude},${stop.pickupLongitude}`)}`;
+  }
+
+  const address = stop.pickupAddress || stop.shopAddress || stop.shopLocation || "";
+
+  if (address) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  }
+
+  return "";
+}
 
 function setLoading() {
   if (deliveryOrdersList) {
