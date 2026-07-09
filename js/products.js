@@ -225,8 +225,17 @@ function renderCategoryIcons() {
    LOAD BANNER
    ========================================================= */
 
+let adBanners = [];
+let activeAdIndex = 0;
+let adSlideTimer = null;
+
 async function loadTopBanner() {
   if (!topAdBanner) return;
+
+  const adSlidesTrack = document.getElementById("adSlidesTrack");
+  const adDots = document.getElementById("adDots");
+  const adPrevBtn = document.getElementById("adPrevBtn");
+  const adNextBtn = document.getElementById("adNextBtn");
 
   try {
     const bannerQuery = query(
@@ -237,65 +246,285 @@ async function loadTopBanner() {
     const snapshot = await getDocs(bannerQuery);
 
     if (snapshot.empty) {
-      topAdBanner.style.display = "none";
+      hideAdCarousel();
       return;
     }
 
-    const banners = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
+    adBanners = snapshot.docs
+      .map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data()
+      }))
+      .filter((banner) => banner.imageUrl);
 
-    banners.sort((a, b) => {
+    if (!adBanners.length) {
+      hideAdCarousel();
+      return;
+    }
+
+    adBanners.sort((a, b) => {
+      const aPriority = Number(a.priority || a.sortOrder || 0);
+      const bPriority = Number(b.priority || b.sortOrder || 0);
+
+      if (aPriority !== bPriority) return bPriority - aPriority;
+
       const aTime = a.createdAt?.seconds || 0;
       const bTime = b.createdAt?.seconds || 0;
+
       return bTime - aTime;
     });
 
-    const banner = banners[0];
-
-    if (!banner.imageUrl) {
-      topAdBanner.style.display = "none";
-      return;
-    }
-
-    const targetShopId = banner.shopId || banner.sellerId || "";
-
+    activeAdIndex = 0;
     topAdBanner.style.display = "block";
 
-    topAdBanner.innerHTML = `
-      <div class="top-ad-inner premium-ad-inner">
-        <img src="${escapeHtml(banner.imageUrl)}" alt="${escapeHtml(banner.title || "Featured shop")}">
+    if (adSlidesTrack) {
+      adSlidesTrack.innerHTML = adBanners.map((banner, index) => {
+        const title = banner.title || banner.shopName || "Featured Seller";
+        const subtitle = banner.subtitle || "Discover this MauMarket seller.";
+        const badge = banner.badge || "Featured Shop";
 
-        <div class="top-ad-content premium-ad-content">
-          <span>Featured Shop</span>
-          <h2>${escapeHtml(banner.title || banner.shopName || "Featured Seller")}</h2>
-          <p>${escapeHtml(banner.subtitle || "Discover this MauMarket seller.")}</p>
-          <button type="button">Visit Shop</button>
+        return `
+          <article
+            class="market-ad-slide ${index === activeAdIndex ? "active" : ""}"
+            data-index="${index}"
+            role="button"
+            tabindex="0"
+            aria-label="Open ${escapeHtml(title)}">
+
+            <img
+              src="${escapeHtml(banner.imageUrl)}"
+              alt="${escapeHtml(title)}">
+
+            <div class="market-ad-overlay"></div>
+
+            <div class="market-ad-content">
+              <span>${escapeHtml(badge)}</span>
+              <h2>${escapeHtml(title)}</h2>
+              <p>${escapeHtml(subtitle)}</p>
+              <button type="button">Visit Shop</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+    } else {
+      topAdBanner.innerHTML = `
+        <div class="market-ad-carousel-head">
+          <div>
+            <span>Featured</span>
+            <h2>Marketplace Highlights</h2>
+          </div>
+
+          <div class="market-ad-controls">
+            <button id="adPrevBtn" type="button" aria-label="Previous ad">‹</button>
+            <button id="adNextBtn" type="button" aria-label="Next ad">›</button>
+          </div>
         </div>
-      </div>
-    `;
 
-    topAdBanner.addEventListener("click", async () => {
-      try {
-        await updateDoc(doc(db, "banners", banner.id), {
-          clicks: increment(1)
-        });
-      } catch (error) {
-        console.warn("Could not update banner clicks:", error.message);
-      }
+        <div id="adSlidesTrack" class="market-ad-slides">
+          ${adBanners.map((banner, index) => {
+            const title = banner.title || banner.shopName || "Featured Seller";
+            const subtitle = banner.subtitle || "Discover this MauMarket seller.";
+            const badge = banner.badge || "Featured Shop";
 
-      if (targetShopId) {
-        window.location.href = `shop.html?id=${encodeURIComponent(targetShopId)}`;
-      } else {
-        window.location.href = "products.html";
-      }
+            return `
+              <article
+                class="market-ad-slide ${index === activeAdIndex ? "active" : ""}"
+                data-index="${index}"
+                role="button"
+                tabindex="0"
+                aria-label="Open ${escapeHtml(title)}">
+
+                <img
+                  src="${escapeHtml(banner.imageUrl)}"
+                  alt="${escapeHtml(title)}">
+
+                <div class="market-ad-overlay"></div>
+
+                <div class="market-ad-content">
+                  <span>${escapeHtml(badge)}</span>
+                  <h2>${escapeHtml(title)}</h2>
+                  <p>${escapeHtml(subtitle)}</p>
+                  <button type="button">Visit Shop</button>
+                </div>
+              </article>
+            `;
+          }).join("")}
+        </div>
+
+        <div id="adDots" class="market-ad-dots"></div>
+      `;
+    }
+
+    renderAdDots();
+    updateAdSlides();
+    connectAdCarouselEvents();
+
+    adPrevBtn?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      showPreviousAd();
     });
+
+    adNextBtn?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      showNextAd();
+    });
+
+    restartAdSlideshow();
   } catch (error) {
-    console.warn("Banner could not load:", error.message);
-    topAdBanner.style.display = "none";
+    console.warn("Banner carousel could not load:", error.message);
+    hideAdCarousel();
   }
 }
+
+function hideAdCarousel() {
+  if (!topAdBanner) return;
+
+  topAdBanner.style.display = "none";
+  topAdBanner.innerHTML = "";
+  adBanners = [];
+  activeAdIndex = 0;
+  stopAdSlideshow();
+}
+
+function connectAdCarouselEvents() {
+  const slides = topAdBanner?.querySelectorAll(".market-ad-slide") || [];
+
+  slides.forEach((slide) => {
+    slide.addEventListener("click", async () => {
+      const index = Number(slide.dataset.index || 0);
+      await openAdBanner(index);
+    });
+
+    slide.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+
+      event.preventDefault();
+
+      const index = Number(slide.dataset.index || 0);
+      await openAdBanner(index);
+    });
+  });
+}
+
+function renderAdDots() {
+  const dotsBox = document.getElementById("adDots");
+
+  if (!dotsBox) return;
+
+  if (adBanners.length <= 1) {
+    dotsBox.innerHTML = "";
+    return;
+  }
+
+  dotsBox.innerHTML = adBanners.map((_, index) => `
+    <button
+      type="button"
+      class="market-ad-dot ${index === activeAdIndex ? "active" : ""}"
+      data-index="${index}"
+      aria-label="Show ad ${index + 1}">
+    </button>
+  `).join("");
+
+  dotsBox.querySelectorAll(".market-ad-dot").forEach((dot) => {
+    dot.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      activeAdIndex = Number(dot.dataset.index || 0);
+      updateAdSlides();
+      restartAdSlideshow();
+    });
+  });
+}
+
+function updateAdSlides() {
+  const slides = topAdBanner?.querySelectorAll(".market-ad-slide") || [];
+  const dots = topAdBanner?.querySelectorAll(".market-ad-dot") || [];
+
+  slides.forEach((slide, index) => {
+    slide.classList.toggle("active", index === activeAdIndex);
+  });
+
+  dots.forEach((dot, index) => {
+    dot.classList.toggle("active", index === activeAdIndex);
+  });
+}
+
+function showNextAd() {
+  if (!adBanners.length) return;
+
+  activeAdIndex = (activeAdIndex + 1) % adBanners.length;
+  updateAdSlides();
+  restartAdSlideshow();
+}
+
+function showPreviousAd() {
+  if (!adBanners.length) return;
+
+  activeAdIndex = activeAdIndex === 0
+    ? adBanners.length - 1
+    : activeAdIndex - 1;
+
+  updateAdSlides();
+  restartAdSlideshow();
+}
+
+function restartAdSlideshow() {
+  stopAdSlideshow();
+
+  if (adBanners.length <= 1) return;
+
+  adSlideTimer = setInterval(() => {
+    activeAdIndex = (activeAdIndex + 1) % adBanners.length;
+    updateAdSlides();
+  }, 4500);
+}
+
+function stopAdSlideshow() {
+  if (adSlideTimer) {
+    clearInterval(adSlideTimer);
+    adSlideTimer = null;
+  }
+}
+
+async function openAdBanner(index) {
+  const banner = adBanners[index];
+
+  if (!banner) return;
+
+  try {
+    await updateDoc(doc(db, "banners", banner.id), {
+      clicks: increment(1)
+    });
+  } catch (error) {
+    console.warn("Could not update banner clicks:", error.message);
+  }
+
+  const targetShopId = banner.shopId || banner.sellerId || "";
+  const targetProductId = banner.productId || "";
+  const customUrl = banner.linkUrl || banner.url || "";
+
+  if (customUrl) {
+    window.location.href = customUrl;
+    return;
+  }
+
+  if (targetProductId) {
+    window.location.href = `product-details.html?id=${encodeURIComponent(targetProductId)}`;
+    return;
+  }
+
+  if (targetShopId) {
+    window.location.href = `shop.html?id=${encodeURIComponent(targetShopId)}`;
+    return;
+  }
+
+  window.location.href = "products.html";
+}
+
+
 
 /* =========================================================
    LOAD PRODUCTS
