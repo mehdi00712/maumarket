@@ -32,6 +32,11 @@ import {
 
 const COMMISSION_RATE = 0.10;
 
+/* Ad carousel state must be declared before loadTopBanner() is called. */
+var adBanners = [];
+var activeAdIndex = 0;
+var adSlideTimer = null;
+
 let currentUser = null;
 
 onAuthStateChanged(auth, (user) => {
@@ -59,7 +64,6 @@ const featuredShops = document.getElementById("featuredShops");
 const featuredShopsSection = document.getElementById("featuredShopsSection");
 
 const topAdBanner = document.getElementById("topAdBanner");
-
 const searchInput = document.getElementById("searchInput");
 const searchInput2 = document.getElementById("searchInput2");
 const searchBtn = document.getElementById("searchBtn");
@@ -224,10 +228,6 @@ function renderCategoryIcons() {
 /* =========================================================
    LOAD BANNER
    ========================================================= */
-
-let adBanners = [];
-let activeAdIndex = 0;
-let adSlideTimer = null;
 
 async function loadTopBanner() {
   if (!topAdBanner) return;
