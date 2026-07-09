@@ -6758,3 +6758,397 @@ body .mm-side-menu .mm-side-logo img{
     min-height: 64px !important;
   }
 }
+
+/* ===========================================================
+   PREMIUM MAUMARKET DASHBOARD
+=========================================================== */
+
+.premium-account-dashboard{
+    background:#f5f7fc;
+}
+
+/* Hero */
+
+.premium-dashboard-hero{
+    background:
+        radial-gradient(circle at top right,#7c4dff33,transparent 35%),
+        linear-gradient(135deg,#1f2246,#272b60);
+
+    color:#fff;
+
+    border-radius:32px;
+
+    padding:45px;
+
+    margin-bottom:35px;
+
+    box-shadow:0 25px 70px rgba(31,34,70,.18);
+}
+
+.premium-profile-card{
+
+    background:#fff;
+
+    color:#20243d;
+
+    border:2px solid #ece8ff;
+
+    transition:.35s;
+
+}
+
+.premium-profile-card:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:0 28px 60px rgba(124,77,255,.20);
+
+}
+
+/* Sections */
+
+.premium-dashboard-panel{
+
+    background:#fff;
+
+    border-radius:28px;
+
+    padding:30px;
+
+    margin-bottom:30px;
+
+    box-shadow:0 12px 35px rgba(0,0,0,.05);
+
+}
+
+/* ===========================================================
+   ACTION CARDS
+=========================================================== */
+
+.premium-dashboard-card{
+
+    position:relative;
+
+    overflow:hidden;
+
+    background:#fff;
+
+    border:1px solid #ececf5;
+
+    border-radius:24px;
+
+    padding:26px;
+
+    transition:.35s;
+
+    text-decoration:none;
+
+    color:#222;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.05);
+
+}
+
+.dashboard-card-top{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+}
+
+.dashboard-card-icon{
+
+    width:58px;
+
+    height:58px;
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:26px;
+
+    background:#f4efff;
+
+    color:#6b38ff;
+
+    transition:.35s;
+
+}
+
+.action-label{
+
+    background:#f2f2ff;
+
+    color:#6b38ff;
+
+    padding:6px 14px;
+
+    border-radius:999px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:.5px;
+
+}
+
+.premium-dashboard-card h3{
+
+    margin:0 0 12px;
+
+    font-size:22px;
+
+}
+
+.premium-dashboard-card p{
+
+    color:#666;
+
+    line-height:1.6;
+
+    margin-bottom:28px;
+
+}
+
+.action-link{
+
+    color:#6b38ff;
+
+    font-weight:700;
+
+    transition:.35s;
+
+}
+
+/* Hover */
+
+.premium-dashboard-card:hover{
+
+    transform:translateY(-10px);
+
+    background:linear-gradient(135deg,#5d36ff,#7d53ff);
+
+    box-shadow:0 30px 70px rgba(93,54,255,.35);
+
+}
+
+.premium-dashboard-card:hover h3,
+
+.premium-dashboard-card:hover p,
+
+.premium-dashboard-card:hover .action-link{
+
+    color:#fff;
+
+}
+
+.premium-dashboard-card:hover .dashboard-card-icon{
+
+    background:#fff;
+
+    color:#5d36ff;
+
+    transform:rotate(8deg) scale(1.08);
+
+}
+
+.premium-dashboard-card:hover .action-label{
+
+    background:rgba(255,255,255,.18);
+
+    color:#fff;
+
+}
+
+/* ===========================================================
+   STAT CARDS
+=========================================================== */
+
+.premium-stat-card{
+
+    position:relative;
+
+    background:#fff;
+
+    border-radius:24px;
+
+    padding:24px;
+
+    text-align:center;
+
+    transition:.35s;
+
+    border:1px solid #ececf5;
+
+    box-shadow:0 10px 22px rgba(0,0,0,.04);
+
+}
+
+.stat-card-icon{
+
+    margin:0 auto 18px;
+
+}
+
+.premium-stat-card span{
+
+    display:block;
+
+    color:#777;
+
+    margin-bottom:8px;
+
+}
+
+.premium-stat-card strong{
+
+    display:block;
+
+    font-size:34px;
+
+    color:#2d2d2d;
+
+    margin-bottom:10px;
+
+}
+
+.premium-stat-card small{
+
+    color:#888;
+
+}
+
+.premium-stat-card:hover{
+
+    transform:translateY(-8px);
+
+    background:linear-gradient(135deg,#5d36ff,#7d53ff);
+
+    box-shadow:0 25px 60px rgba(93,54,255,.30);
+
+}
+
+.premium-stat-card:hover span,
+
+.premium-stat-card:hover strong,
+
+.premium-stat-card:hover small{
+
+    color:#fff;
+
+}
+
+.premium-stat-card:hover .dashboard-card-icon{
+
+    background:#fff;
+
+    color:#5d36ff;
+
+}
+
+/* ===========================================================
+   SIDE CARDS
+=========================================================== */
+
+.premium-hover-card,
+
+.premium-support-card{
+
+    transition:.35s;
+
+}
+
+.premium-hover-card:hover,
+
+.premium-support-card:hover{
+
+    transform:translateY(-8px);
+
+    background:linear-gradient(135deg,#5d36ff,#7d53ff);
+
+    color:#fff;
+
+    box-shadow:0 30px 60px rgba(93,54,255,.30);
+
+}
+
+.premium-hover-card:hover h3,
+
+.premium-hover-card:hover p,
+
+.premium-hover-card:hover li,
+
+.premium-support-card:hover h3,
+
+.premium-support-card:hover p{
+
+    color:#fff;
+
+}
+
+.whatsapp-support-btn{
+
+    transition:.35s;
+
+}
+
+.premium-support-card:hover .whatsapp-support-btn{
+
+    background:#fff;
+
+    color:#5d36ff;
+
+}
+
+/* ===========================================================
+   MOBILE
+=========================================================== */
+
+@media(max-width:768px){
+
+    .premium-dashboard-hero{
+
+        padding:30px 22px;
+
+    }
+
+    .premium-dashboard-panel{
+
+        padding:20px;
+
+    }
+
+    .premium-dashboard-card{
+
+        padding:20px;
+
+    }
+
+    .dashboard-card-icon{
+
+        width:50px;
+
+        height:50px;
+
+        font-size:22px;
+
+    }
+
+    .premium-stat-card strong{
+
+        font-size:28px;
+
+    }
+
+}
