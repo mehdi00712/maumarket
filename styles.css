@@ -264,18 +264,31 @@ hr {
   box-shadow: 0 22px 60px rgba(7, 11, 40, 0.28);
 }
 
-.mm-logo {
-  height: 66px;
-  display: flex;
-  align-items: center;
-  overflow: visible;
+.mm-logo{
+    width:240px !important;
+    min-width:240px !important;
+    height:72px !important;
+
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+
+    overflow:visible;
 }
 
-.mm-logo img {
-  height: 120px;
-  width: auto;
-  max-width: none;
-  object-fit: contain;
+.mm-logo img{
+
+    width:230px !important;
+    height:64px !important;
+
+    max-width:none;
+    max-height:none;
+
+    object-fit:contain;
+    object-position:left center;
+
+    display:block;
+
 }
 
 .mm-icon-btn,
