@@ -618,15 +618,65 @@ function renderPendingDelivery() {
   `;
 }
 
+
+const DASHBOARD_ICONS = {
+  "Marketplace": "🛍️",
+  "Wishlist": "♡",
+  "Shopping Cart": "🛒",
+  "My Orders": "📦",
+  "Seller Dashboard": "🏪",
+  "Seller Orders": "📋",
+  "Seller Earnings": "₨",
+  "Seller Analytics": "📊",
+  "Delivery Dashboard": "🚚",
+  "Assigned Deliveries": "📍",
+  "Admin Panel": "⚙️",
+  "Users": "👥",
+  "Products": "🧺",
+  "Payments": "💳",
+  "Delivery": "🚚",
+  "Commission Dashboard": "₨",
+  "Payouts": "🏦",
+  "Reviews": "⭐",
+  "Categories": "🗂️",
+  "Ad Banners": "📢",
+  "Slot Requests": "🧾",
+  "Admin Analytics": "📊",
+  "Waiting for Approval": "⏳",
+  "Account Blocked": "⛔",
+  "Error": "⚠️",
+  "Cart Items": "🛒",
+  "Wishlist Items": "♡",
+  "Active Orders": "📦",
+  "Delivered Orders": "✅",
+  "Product Slots": "🧺",
+  "Active Listings": "🟢",
+  "Shop Orders": "📋",
+  "Assigned Jobs": "🚚",
+  "Active Jobs": "📍",
+  "Picked Up": "📦",
+  "Out For Delivery": "🚚",
+  "Submitted": "🧾",
+  "Users": "👥",
+  "Orders": "📦",
+  "Pending Sellers": "⏳"
+};
+
 /* ==========================================================
    COMPONENTS
 ========================================================== */
 
 function statCard(value, label, note = "") {
+  const icon = getDashboardIcon(label);
+
   return `
-    <div class="dash-stat real-stat-card">
+    <div class="dash-stat real-stat-card premium-stat-card">
+      <div class="dashboard-card-icon stat-card-icon">${icon}</div>
+
       <span>${escapeHtml(label)}</span>
+
       <strong>${escapeHtml(value)}</strong>
+
       <small>${escapeHtml(note)}</small>
     </div>
   `;
@@ -639,8 +689,15 @@ function dashboardCard({
   link,
   actionText = "Open"
 }) {
+  const icon = getDashboardIcon(title);
+
   return `
-    <a class="dashboard-card real-action-card" href="${escapeHtml(link)}">
+    <a class="dashboard-card real-action-card premium-dashboard-card" href="${escapeHtml(link)}">
+      <div class="dashboard-card-top">
+        <span class="action-label">${escapeHtml(label)}</span>
+        <div class="dashboard-card-icon">${icon}</div>
+      </div>
+
       <h3>${escapeHtml(title)}</h3>
 
       <p>${escapeHtml(description)}</p>
@@ -654,10 +711,16 @@ function dashboardCard({
 
 function skeletonCard() {
   return `
-    <div class="dashboard-card real-action-card dashboard-skeleton">
-      <span class="action-label">Loading</span>
+    <div class="dashboard-card real-action-card premium-dashboard-card dashboard-skeleton">
+      <div class="dashboard-card-top">
+        <span class="action-label">Loading</span>
+        <div class="dashboard-card-icon">…</div>
+      </div>
+
       <h3>Loading...</h3>
+
       <p>Please wait while the dashboard is prepared.</p>
+
       <strong class="action-link">Loading</strong>
     </div>
   `;
@@ -666,6 +729,11 @@ function skeletonCard() {
 /* ==========================================================
    HELPERS
 ========================================================== */
+
+
+function getDashboardIcon(title) {
+  return DASHBOARD_ICONS[title] || "◇";
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
