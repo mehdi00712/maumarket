@@ -117,7 +117,7 @@ function applyFilters() {
       ${job.orderNotes || ""}
       ${job.orderStatus || ""}
       ${job.deliveryStatus || ""}
-      ${(job.items || []).map((item) => item.title || "").join(" ")}
+      ${(job.items || []).map((item) => item.title || "").join(" ")} ${(normalizePickupStops(job)).map(s=>`${s.shopName} ${s.pickupAddress}`).join(" ")}
     `);
 
     const jobDate = getJobDate(job);
@@ -217,6 +217,8 @@ function deliveryCardHtml(order) {
       deliveryStatus === "rejected"
     );
 
+  const pickupHtml = renderPickupStops(normalizePickupStops(order));
+
   const itemsHtml = (order.items || []).map((item) => `
     <li>
       <strong>${escapeHtml(item.title || "Item")}</strong>
@@ -281,7 +283,7 @@ function deliveryCardHtml(order) {
 
         <div class="driver-detail-grid">
           <div>
-            <h4>Items</h4>
+            <h4>Pickup Locations</h4>${pickupHtml}<h4>Items</h4>
             <ul class="driver-items-list">
               ${itemsHtml || "<li>No items found.</li>"}
             </ul>
@@ -566,6 +568,8 @@ function printDeliveryNote(job) {
   const orderId = job.orderId || job.id;
   const mapUrl = getMapUrl(job);
 
+  const pickupRows = renderPickupStops(normalizePickupStops(job));
+
   const itemsRows = (job.items || []).map((item) => `
     <tr>
       <td>${escapeHtml(item.title || "Item")}</td>
@@ -689,7 +693,7 @@ function printDeliveryNote(job) {
             </div>
           </section>
 
-          <h3>Items</h3>
+          <h3>Pickup Locations</h3>${pickupRows}<h3>Items</h3>
 
           <table>
             <thead>
@@ -738,6 +742,28 @@ function printDeliveryNote(job) {
     win.print();
   };
 }
+
+
+
+/* =========================
+   PICKUP HELPERS
+========================= */
+function normalizePickupStops(order){
+ if(Array.isArray(order.pickupStops)&&order.pickupStops.length)return order.pickupStops;
+ if(Array.isArray(order.sellerBreakdown)&&order.sellerBreakdown.length)return order.sellerBreakdown;
+ const g={};
+ (order.items||[]).forEach(item=>{
+   const id=item.sellerId||"unknown";
+   if(!g[id]) g[id]={shopName:item.shopName||"Shop",pickupAddress:item.pickupAddress||item.shopAddress||item.shopLocation||"",items:[]};
+   g[id].items.push(item);
+ });
+ return Object.values(g);
+}
+function renderPickupStops(stops){
+ if(!stops.length)return "<p>No pickup locations.</p>";
+ return stops.map((s,i)=>`<div class="pickup-stop-card"><h4>Pickup ${i+1}: ${escapeHtml(s.shopName||"Shop")}</h4><p>${escapeHtml(s.pickupAddress||"Pickup location not set")}</p><ul>${(s.items||[]).map(it=>`<li>${escapeHtml(it.title||"Item")} × ${Number(it.quantity||1)}</li>`).join("")}</ul></div>`).join("");
+}
+
 
 function setLoading() {
   if (deliveryOrdersList) {
