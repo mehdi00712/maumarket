@@ -7152,3 +7152,428 @@ body .mm-side-menu .mm-side-logo img{
     }
 
 }
+
+/* ==========================================================
+   MAUMARKET AD SLIDESHOW
+========================================================== */
+
+.market-ad-carousel{
+
+    position:relative;
+
+    width:100%;
+
+    margin:35px 0;
+
+    background:#fff;
+
+    border-radius:28px;
+
+    overflow:hidden;
+
+    box-shadow:0 20px 55px rgba(20,20,40,.08);
+
+    border:1px solid #ececf6;
+
+}
+
+/* Header */
+
+.market-ad-carousel-head{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px 24px;
+
+    border-bottom:1px solid #ececf6;
+
+    background:#fff;
+
+}
+
+.market-ad-carousel-head span{
+
+    display:inline-block;
+
+    padding:6px 14px;
+
+    background:#f4efff;
+
+    color:#613dff;
+
+    border-radius:999px;
+
+    font-weight:700;
+
+    font-size:12px;
+
+    letter-spacing:.4px;
+
+}
+
+.market-ad-carousel-head h2{
+
+    margin-top:8px;
+
+    font-size:22px;
+
+    color:#20243d;
+
+}
+
+/* ==========================================================
+   Controls
+========================================================== */
+
+.market-ad-controls{
+
+    display:flex;
+
+    gap:10px;
+
+}
+
+.market-ad-controls button{
+
+    width:44px;
+
+    height:44px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:#5d36ff;
+
+    color:#fff;
+
+    font-size:24px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.market-ad-controls button:hover{
+
+    transform:translateY(-2px);
+
+    background:#4322db;
+
+}
+
+/* ==========================================================
+   Slides
+========================================================== */
+
+.market-ad-slides{
+
+    position:relative;
+
+    width:100%;
+
+    height:320px;
+
+}
+
+.market-ad-slide{
+
+    position:absolute;
+
+    inset:0;
+
+    opacity:0;
+
+    pointer-events:none;
+
+    transition:opacity .6s ease;
+
+    overflow:hidden;
+
+    cursor:pointer;
+
+}
+
+.market-ad-slide.active{
+
+    opacity:1;
+
+    pointer-events:auto;
+
+}
+
+.market-ad-slide img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+    display:block;
+
+}
+
+/* Dark overlay */
+
+.market-ad-overlay{
+
+    position:absolute;
+
+    inset:0;
+
+    background:linear-gradient(
+        90deg,
+        rgba(15,18,43,.88) 0%,
+        rgba(25,27,59,.62) 35%,
+        rgba(15,18,43,.15) 100%
+    );
+
+}
+
+/* ==========================================================
+   Text
+========================================================== */
+
+.market-ad-content{
+
+    position:absolute;
+
+    left:45px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    color:#fff;
+
+    max-width:420px;
+
+    z-index:10;
+
+}
+
+.market-ad-content span{
+
+    display:inline-block;
+
+    padding:7px 15px;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.18);
+
+    backdrop-filter:blur(12px);
+
+    margin-bottom:18px;
+
+    font-weight:700;
+
+}
+
+.market-ad-content h2{
+
+    font-size:48px;
+
+    line-height:1.05;
+
+    margin-bottom:14px;
+
+    color:#fff;
+
+}
+
+.market-ad-content p{
+
+    color:rgba(255,255,255,.88);
+
+    font-size:17px;
+
+    line-height:1.6;
+
+    margin-bottom:26px;
+
+}
+
+.market-ad-content button{
+
+    border:none;
+
+    background:linear-gradient(135deg,#5d36ff,#7f56ff);
+
+    color:#fff;
+
+    padding:14px 34px;
+
+    border-radius:14px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.market-ad-content button:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:0 20px 40px rgba(93,54,255,.35);
+
+}
+
+/* ==========================================================
+   Dots
+========================================================== */
+
+.market-ad-dots{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:10px;
+
+    padding:18px;
+
+    background:#fff;
+
+}
+
+.market-ad-dot{
+
+    width:11px;
+
+    height:11px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:#d6d6e5;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.market-ad-dot.active{
+
+    width:34px;
+
+    border-radius:999px;
+
+    background:#5d36ff;
+
+}
+
+/* ==========================================================
+   Hover
+========================================================== */
+
+.market-ad-slide:hover img{
+
+    transform:scale(1.04);
+
+    transition:transform .7s;
+
+}
+
+.market-ad-slide img{
+
+    transition:transform .7s;
+
+}
+
+/* ==========================================================
+   Mobile
+========================================================== */
+
+@media(max-width:900px){
+
+.market-ad-slides{
+
+    height:220px;
+
+}
+
+.market-ad-content{
+
+    left:22px;
+
+    right:22px;
+
+    max-width:none;
+
+}
+
+.market-ad-content h2{
+
+    font-size:30px;
+
+}
+
+.market-ad-content p{
+
+    display:none;
+
+}
+
+.market-ad-carousel-head{
+
+    padding:15px 18px;
+
+}
+
+.market-ad-carousel-head h2{
+
+    font-size:18px;
+
+}
+
+.market-ad-controls button{
+
+    width:38px;
+
+    height:38px;
+
+}
+
+}
+
+@media(max-width:600px){
+
+.market-ad-slides{
+
+    height:180px;
+
+}
+
+.market-ad-content h2{
+
+    font-size:24px;
+
+}
+
+.market-ad-content button{
+
+    padding:10px 20px;
+
+    font-size:14px;
+
+}
+
+.market-ad-content{
+
+    left:18px;
+
+}
+
+}
