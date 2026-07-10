@@ -64,6 +64,8 @@ let currentProductCount = 0;
 let editingItemId = null;
 let existingImageUrl = "";
 
+let sellerCategories = [];
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "login.html";
@@ -92,10 +94,86 @@ onAuthStateChanged(auth, async (user) => {
 
   updatePricePreview();
   await loadShop();
+  await loadSellerCategories();
   await loadMyItems();
 });
 
 itemPrice?.addEventListener("input", updatePricePreview);
+
+
+async function loadSellerCategories() {
+  if (!itemCategory) return;
+
+  itemCategory.disabled = true;
+  itemCategory.innerHTML = `<option value="">Loading categories...</option>`;
+
+  try {
+    const snapshot = await getDocs(collection(db, "categories"));
+
+    sellerCategories = [];
+
+    snapshot.forEach((docSnap) => {
+      const category = {
+        id: docSnap.id,
+        ...docSnap.data()
+      };
+
+      if (category.active !== false && category.name) {
+        sellerCategories.push(category);
+      }
+    });
+
+    sellerCategories.sort((a, b) => {
+      const aOrder = Number(a.sortOrder || 0);
+      const bOrder = Number(b.sortOrder || 0);
+
+      if (aOrder !== bOrder) return aOrder - bOrder;
+
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+
+    renderSellerCategoryOptions();
+  } catch (error) {
+    console.warn("Could not load seller categories:", error.message);
+    sellerCategories = [{ name: "Other", sortOrder: 999 }];
+    renderSellerCategoryOptions();
+  }
+
+  itemCategory.disabled = false;
+}
+
+function renderSellerCategoryOptions(selectedValue = "") {
+  if (!itemCategory) return;
+
+  itemCategory.innerHTML = `<option value="">Select a category</option>`;
+
+  sellerCategories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.name;
+    option.textContent = category.name;
+    itemCategory.appendChild(option);
+  });
+
+  if (selectedValue) {
+    ensureSellerCategoryOption(selectedValue);
+    itemCategory.value = selectedValue;
+  }
+}
+
+function ensureSellerCategoryOption(categoryName) {
+  if (!itemCategory || !categoryName) return;
+
+  const exists = Array.from(itemCategory.options).some(
+    (option) => option.value === categoryName
+  );
+
+  if (!exists) {
+    const option = document.createElement("option");
+    option.value = categoryName;
+    option.textContent = `${categoryName} (Existing category)`;
+    itemCategory.appendChild(option);
+  }
+}
 
 async function uploadImage(file, folder) {
   const safeName = file.name.replaceAll(" ", "-");
@@ -202,6 +280,11 @@ saveItemBtn.addEventListener("click", async () => {
     return;
   }
 
+  if (!itemCategory.value) {
+    itemMessage.textContent = "Please select a category.";
+    return;
+  }
+
   const productLimit = Number(currentUserData.productLimit || 50);
 
   if (!editingItemId && currentProductCount >= productLimit) {
@@ -281,7 +364,7 @@ function resetItemForm() {
   itemDescription.value = "";
   itemPrice.value = "";
   itemStock.value = "";
-  itemCategory.value = "Beauty";
+  itemCategory.value = "";
   serviceArea.value = "";
   itemImage.value = "";
 
@@ -358,7 +441,9 @@ async function loadMyItems() {
       itemDescription.value = item.description || "";
       itemPrice.value = getSellerPrice(item);
       itemStock.value = item.stock || "";
-      itemCategory.value = item.category || "Other";
+      const existingCategory = item.category || "";
+      ensureSellerCategoryOption(existingCategory);
+      itemCategory.value = existingCategory;
       serviceArea.value = item.serviceArea || "";
 
       updatePricePreview();
