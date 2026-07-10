@@ -38,8 +38,11 @@ let currentUser = null;
 let currentRole = "guest";
 let userData = null;
 
-document.addEventListener("DOMContentLoaded", () => {
+let navCategories = [];
+
+document.addEventListener("DOMContentLoaded", async () => {
   buildResponsiveNav();
+  await loadNavCategories();
 
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
@@ -88,15 +91,7 @@ function buildResponsiveNav() {
 
       <form id="mmSearchForm" class="mm-search premium-search">
         <select id="mmSearchCategory" aria-label="Category">
-          <option value="">All Categories</option>
-          <option value="Beauty">Beauty</option>
-          <option value="Electronics">Electronics</option>
-          <option value="Fashion">Fashion</option>
-          <option value="Food">Food</option>
-          <option value="Hardware">Hardware</option>
-          <option value="Home">Home</option>
-          <option value="Services">Services</option>
-          <option value="Other">Other</option>
+          <option value="">Loading Categories...</option>
         </select>
 
         <input id="mmSearchInput" type="search" placeholder="Search products, services, shops..." autocomplete="off">
@@ -199,6 +194,101 @@ function buildResponsiveNav() {
   });
 }
 
+
+
+async function loadNavCategories() {
+  const categorySelect = document.getElementById("mmSearchCategory");
+
+  if (!categorySelect) return;
+
+  categorySelect.disabled = true;
+  categorySelect.innerHTML = `<option value="">Loading Categories...</option>`;
+
+  try {
+    const snapshot = await getDocs(collection(db, "categories"));
+
+    navCategories = [];
+
+    snapshot.forEach((docSnap) => {
+      const category = {
+        id: docSnap.id,
+        ...docSnap.data()
+      };
+
+      if (category.active !== false && category.name) {
+        navCategories.push(category);
+      }
+    });
+
+    navCategories.sort((a, b) => {
+      const aOrder = Number(a.sortOrder || 0);
+      const bOrder = Number(b.sortOrder || 0);
+
+      if (aOrder !== bOrder) return aOrder - bOrder;
+
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+
+    renderNavCategoryOptions();
+  } catch (error) {
+    console.warn("Could not load navigation categories:", error.message);
+    renderNavCategoryFallback();
+  }
+
+  categorySelect.disabled = false;
+}
+
+function renderNavCategoryOptions() {
+  const categorySelect = document.getElementById("mmSearchCategory");
+
+  if (!categorySelect) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const selectedCategory = params.get("category") || "";
+
+  categorySelect.innerHTML = `<option value="">All Categories</option>`;
+
+  navCategories.forEach((category) => {
+    const option = document.createElement("option");
+
+    option.value = category.name;
+    option.textContent = category.name;
+
+    categorySelect.appendChild(option);
+  });
+
+  if (selectedCategory) {
+    ensureNavCategoryOption(selectedCategory);
+    categorySelect.value = selectedCategory;
+  }
+}
+
+function renderNavCategoryFallback() {
+  navCategories = [
+    { name: "Other", sortOrder: 999 }
+  ];
+
+  renderNavCategoryOptions();
+}
+
+function ensureNavCategoryOption(categoryName) {
+  const categorySelect = document.getElementById("mmSearchCategory");
+
+  if (!categorySelect || !categoryName) return;
+
+  const exists = Array.from(categorySelect.options).some(
+    (option) => option.value === categoryName
+  );
+
+  if (!exists) {
+    const option = document.createElement("option");
+
+    option.value = categoryName;
+    option.textContent = `${categoryName} (Existing category)`;
+
+    categorySelect.appendChild(option);
+  }
+}
 
 function injectNavLogoStyles() {
   if (document.getElementById("maumarket-nav-logo-size-fix")) return;
@@ -706,6 +796,20 @@ function setCartBadgeCount(count) {
     badge.classList.add("cart-bounce");
   }
 }
+
+
+window.addEventListener("maumarket:search", (event) => {
+  const categorySelect = document.getElementById("mmSearchCategory");
+  const category = event.detail?.category || "";
+
+  if (!categorySelect) return;
+
+  if (category) {
+    ensureNavCategoryOption(category);
+  }
+
+  categorySelect.value = category;
+});
 
 window.addEventListener("cart-updated", updateCartBadge);
 document.addEventListener("visibilitychange", () => {
