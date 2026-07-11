@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>All Shops | MauMarket</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Browse verified MauMarket shops and discover trusted Mauritian sellers."
+    >
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<main class="shops-directory-page">
+
+    <!-- Navigation is injected automatically by nav.js -->
+
+    <!-- =====================================================
+         SHOPS HERO
+    ====================================================== -->
+
+    <section class="shops-directory-hero">
+
+        <div class="shops-directory-hero-content">
+
+            <span class="section-kicker shops-hero-kicker">
+                Verified MauMarket Sellers
+            </span>
+
+            <h1>
+                Browse All Shops
+            </h1>
+
+            <p>
+                Discover trusted Mauritian sellers, compare shops and explore
+                products and services from across the island.
+            </p>
+
+            <div class="shops-hero-stats">
+
+                <div>
+                    <strong id="shopsTotalCount">0</strong>
+                    <span>Verified Shops</span>
+                </div>
+
+                <div>
+                    <strong id="shopsListingsCount">0</strong>
+                    <span>Active Listings</span>
+                </div>
+
+                <div>
+                    <strong>100%</strong>
+                    <span>Local Marketplace</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <aside class="shops-directory-hero-card">
+
+            <div class="shops-hero-card-icon">
+                M
+            </div>
+
+            <h2>
+                Shop with confidence
+            </h2>
+
+            <p>
+                Every active seller is reviewed before appearing on MauMarket.
+            </p>
+
+            <ul>
+                <li>Verified seller accounts</li>
+                <li>Secure MauMarket checkout</li>
+                <li>Island-wide delivery support</li>
+                <li>Customer assistance</li>
+            </ul>
+
+        </aside>
+
+    </section>
+
+    <!-- =====================================================
+         SEARCH AND FILTERS
+    ====================================================== -->
+
+    <section class="shops-directory-toolbar">
+
+        <div class="shops-search-box">
+
+            <label for="shopsSearchInput">
+                Search Shops
+            </label>
+
+            <div class="shops-search-input-wrap">
+
+                <input
+                    id="shopsSearchInput"
+                    type="search"
+                    placeholder="Search shop name, category or location"
+                    autocomplete="off"
+                >
+
+                <button
+                    id="shopsSearchBtn"
+                    type="button"
+                    aria-label="Search shops"
+                >
+                    Search
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="shops-filter-group">
+
+            <label for="shopsCategoryFilter">
+                Category
+            </label>
+
+            <select id="shopsCategoryFilter">
+                <option value="">
+                    All Categories
+                </option>
+            </select>
+
+        </div>
+
+        <div class="shops-filter-group">
+
+            <label for="shopsSortFilter">
+                Sort
+            </label>
+
+            <select id="shopsSortFilter">
+                <option value="featured">
+                    Featured
+                </option>
+
+                <option value="rating">
+                    Highest Rated
+                </option>
+
+                <option value="listings">
+                    Most Listings
+                </option>
+
+                <option value="newest">
+                    Newest
+                </option>
+
+                <option value="alphabetical">
+                    A to Z
+                </option>
+            </select>
+
+        </div>
+
+        <button
+            id="clearShopFiltersBtn"
+            class="secondary-btn shops-clear-btn"
+            type="button"
+        >
+            Clear Filters
+        </button>
+
+    </section>
+
+    <!-- =====================================================
+         DIRECTORY CONTENT
+    ====================================================== -->
+
+    <section class="shops-directory-layout">
+
+        <aside class="shops-directory-sidebar">
+
+            <div class="filter-card">
+
+                <div class="filter-card-heading">
+
+                    <span class="section-kicker">
+                        Browse
+                    </span>
+
+                    <h3>
+                        Shop Categories
+                    </h3>
+
+                </div>
+
+                <div
+                    id="shopsCategoryList"
+                    class="shops-category-list"
+                >
+                    Loading categories...
+                </div>
+
+            </div>
+
+            <div class="filter-card shops-directory-trust-card">
+
+                <div class="filter-card-heading">
+
+                    <span class="section-kicker">
+                        MauMarket Safety
+                    </span>
+
+                    <h3>
+                        Verified Sellers
+                    </h3>
+
+                </div>
+
+                <div class="sidebar-benefit">
+
+                    <span>✓</span>
+
+                    <div>
+                        <strong>Approved Shops</strong>
+                        <small>Only approved sellers appear here.</small>
+                    </div>
+
+                </div>
+
+                <div class="sidebar-benefit">
+
+                    <span>✓</span>
+
+                    <div>
+                        <strong>Secure Checkout</strong>
+                        <small>Payments are handled through MauMarket.</small>
+                    </div>
+
+                </div>
+
+                <div class="sidebar-benefit">
+
+                    <span>✓</span>
+
+                    <div>
+                        <strong>Delivery Support</strong>
+                        <small>MauMarket manages delivery support.</small>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+        <section class="shops-directory-main">
+
+            <div class="shops-directory-heading">
+
+                <div>
+
+                    <span class="section-kicker">
+                        Seller Directory
+                    </span>
+
+                    <h2 id="shopsDirectoryTitle">
+                        All Shops
+                    </h2>
+
+                    <p id="shopsResultCount">
+                        Loading shops...
+                    </p>
+
+                </div>
+
+                <a
+                    href="products.html"
+                    class="secondary-btn"
+                >
+                    Browse Products
+                </a>
+
+            </div>
+
+            <div
+                id="shopsGrid"
+                class="shops-directory-grid"
+                aria-live="polite"
+            >
+                Loading shops...
+            </div>
+
+            <div
+                id="shopsEmptyState"
+                class="shops-empty-state"
+                style="display:none;"
+            >
+
+                <h3>
+                    No shops found
+                </h3>
+
+                <p>
+                    Try another shop name, category or location.
+                </p>
+
+                <button
+                    id="shopsEmptyClearBtn"
+                    class="btn"
+                    type="button"
+                >
+                    Show All Shops
+                </button>
+
+            </div>
+
+        </section>
+
+    </section>
+
+    <!-- =====================================================
+         SELLER CTA
+    ====================================================== -->
+
+    <section class="shops-directory-cta">
+
+        <div>
+
+            <span class="section-kicker">
+                Grow with MauMarket
+            </span>
+
+            <h2>
+                Want to open your own MauMarket shop?
+            </h2>
+
+            <p>
+                Register as a seller, submit your shop for approval and start
+                selling products or services across Mauritius.
+            </p>
+
+        </div>
+
+        <a
+            href="register.html"
+            class="btn"
+        >
+            Start Selling
+        </a>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="js/nav.js?v=5.1"
+></script>
+
+<script
+    type="module"
+    src="js/shops.js?v=1.0"
+></script>
+
+</body>
+</html>
