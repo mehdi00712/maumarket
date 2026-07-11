@@ -7577,3 +7577,519 @@ body .mm-side-menu .mm-side-logo img{
 }
 
 }
+
+/* ==========================================================
+   PREMIUM FEATURED SHOPS
+========================================================== */
+
+.premium-featured-shops-section{
+    margin-top:50px;
+}
+
+.featured-shops-section-head{
+    margin-bottom:28px;
+}
+
+.premium-featured-shops-row{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+
+    gap:28px;
+
+}
+
+/* ==========================================================
+   CARD
+========================================================== */
+
+.premium-featured-shop-card{
+
+    position:relative;
+
+    overflow:hidden;
+
+    border-radius:28px;
+
+    background:#fff;
+
+    border:1px solid #ececf6;
+
+    box-shadow:0 18px 45px rgba(25,30,60,.08);
+
+    transition:.35s;
+
+}
+
+.featured-shop-card-link{
+
+    display:block;
+
+    color:inherit;
+
+    text-decoration:none;
+
+}
+
+.premium-featured-shop-card:hover{
+
+    transform:translateY(-12px);
+
+    background:linear-gradient(135deg,#5c34ff,#7e5bff);
+
+    box-shadow:0 35px 75px rgba(92,52,255,.35);
+
+}
+
+/* ==========================================================
+   BANNER
+========================================================== */
+
+.featured-shop-banner{
+
+    position:relative;
+
+    height:170px;
+
+    overflow:hidden;
+
+}
+
+.featured-shop-banner-img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+    transition:.6s;
+
+}
+
+.featured-shop-banner-fallback{
+
+    width:100%;
+
+    height:100%;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:60px;
+
+    font-weight:800;
+
+    color:#fff;
+
+    background:
+        linear-gradient(135deg,#5d36ff,#8c6cff);
+
+}
+
+.featured-shop-banner-overlay{
+
+    position:absolute;
+
+    inset:0;
+
+    background:linear-gradient(
+        rgba(18,18,45,.05),
+        rgba(18,18,45,.58)
+    );
+
+}
+
+.premium-featured-shop-card:hover .featured-shop-banner-img{
+
+    transform:scale(1.08);
+
+}
+
+/* ==========================================================
+   BADGE
+========================================================== */
+
+.featured-shop-badge{
+
+    position:absolute;
+
+    top:18px;
+
+    left:18px;
+
+    background:#fff;
+
+    color:#5d36ff;
+
+    padding:8px 16px;
+
+    border-radius:999px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    z-index:3;
+
+}
+
+/* ==========================================================
+   BODY
+========================================================== */
+
+.featured-shop-body{
+
+    position:relative;
+
+    padding:72px 26px 24px;
+
+}
+
+/* ==========================================================
+   LOGO
+========================================================== */
+
+.featured-shop-logo-wrap{
+
+    position:absolute;
+
+    top:-42px;
+
+    left:24px;
+
+    width:86px;
+
+    height:86px;
+
+    border-radius:50%;
+
+    overflow:hidden;
+
+    border:5px solid #fff;
+
+    background:#fff;
+
+    box-shadow:0 10px 28px rgba(0,0,0,.18);
+
+}
+
+.featured-shop-logo-img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+}
+
+.featured-shop-logo-fallback{
+
+    width:100%;
+
+    height:100%;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:linear-gradient(135deg,#5d36ff,#7d56ff);
+
+    color:#fff;
+
+    font-size:32px;
+
+    font-weight:700;
+
+}
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.featured-shop-heading{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    gap:12px;
+
+}
+
+.featured-shop-heading h3{
+
+    margin:0;
+
+    font-size:24px;
+
+    color:#222;
+
+}
+
+.featured-shop-location{
+
+    margin-top:6px;
+
+    color:#777;
+
+}
+
+.featured-shop-check{
+
+    width:36px;
+
+    height:36px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:#5d36ff;
+
+    color:#fff;
+
+    font-weight:700;
+
+}
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.featured-shop-description{
+
+    margin:22px 0;
+
+    color:#666;
+
+    line-height:1.65;
+
+    min-height:70px;
+
+}
+
+/* ==========================================================
+   STATS
+========================================================== */
+
+.featured-shop-meta{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:12px;
+
+    margin-bottom:24px;
+
+}
+
+.featured-shop-meta div{
+
+    text-align:center;
+
+    padding:16px;
+
+    border-radius:16px;
+
+    background:#f7f7fb;
+
+    transition:.3s;
+
+}
+
+.featured-shop-meta strong{
+
+    display:block;
+
+    font-size:22px;
+
+    color:#222;
+
+    margin-bottom:6px;
+
+}
+
+.featured-shop-meta span{
+
+    font-size:13px;
+
+    color:#777;
+
+}
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+.featured-shop-footer{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.featured-shop-trust{
+
+    background:#eef4ff;
+
+    color:#3164ff;
+
+    padding:8px 15px;
+
+    border-radius:999px;
+
+    font-size:13px;
+
+    font-weight:700;
+
+}
+
+.featured-shop-visit{
+
+    background:#5d36ff;
+
+    color:#fff;
+
+    padding:12px 22px;
+
+    border-radius:14px;
+
+    font-weight:700;
+
+    transition:.3s;
+
+}
+
+/* ==========================================================
+   HOVER
+========================================================== */
+
+.premium-featured-shop-card:hover h3,
+
+.premium-featured-shop-card:hover p,
+
+.premium-featured-shop-card:hover strong,
+
+.premium-featured-shop-card:hover span{
+
+    color:#fff;
+
+}
+
+.premium-featured-shop-card:hover .featured-shop-meta div{
+
+    background:rgba(255,255,255,.14);
+
+}
+
+.premium-featured-shop-card:hover .featured-shop-trust{
+
+    background:#fff;
+
+    color:#5d36ff;
+
+}
+
+.premium-featured-shop-card:hover .featured-shop-visit{
+
+    background:#fff;
+
+    color:#5d36ff;
+
+}
+
+.premium-featured-shop-card:hover .featured-shop-check{
+
+    background:#fff;
+
+    color:#5d36ff;
+
+}
+
+.premium-featured-shop-card:hover .featured-shop-logo-wrap{
+
+    border-color:#fff;
+
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width:992px){
+
+    .premium-featured-shops-row{
+
+        grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .premium-featured-shops-row{
+
+        display:flex;
+
+        overflow-x:auto;
+
+        gap:18px;
+
+        scroll-snap-type:x mandatory;
+
+        padding-bottom:10px;
+
+    }
+
+    .premium-featured-shop-card{
+
+        flex:0 0 310px;
+
+        scroll-snap-align:start;
+
+    }
+
+}
+
+@media (max-width:500px){
+
+    .featured-shop-banner{
+
+        height:150px;
+
+    }
+
+    .featured-shop-heading h3{
+
+        font-size:20px;
+
+    }
+
+    .featured-shop-meta{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
