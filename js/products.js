@@ -703,22 +703,53 @@ function renderFeaturedShops() {
   const uniqueShops = {};
 
   allItems.forEach((item) => {
-    if (item.sellerId && item.shop) {
+    if (!item.sellerId || !item.shop) return;
+
+    if (!uniqueShops[item.sellerId]) {
       uniqueShops[item.sellerId] = {
         id: item.sellerId,
-        ...item.shop
+        ...item.shop,
+        productCount: 0,
+        activeProductCount: 0,
+        serviceCount: 0,
+        productImages: []
       };
+    }
+
+    const shop = uniqueShops[item.sellerId];
+
+    shop.productCount += 1;
+
+    if (item.active !== false) {
+      shop.activeProductCount += 1;
+    }
+
+    if (item.type === "service") {
+      shop.serviceCount += 1;
+    }
+
+    if (item.imageUrl && shop.productImages.length < 3) {
+      shop.productImages.push(item.imageUrl);
     }
   });
 
   const shops = Object.values(uniqueShops)
     .sort((a, b) => {
-      const aScore = Number(a.averageRating || 0) + Number(a.totalReviews || 0) * 0.05;
-      const bScore = Number(b.averageRating || 0) + Number(b.totalReviews || 0) * 0.05;
+      const aScore =
+        Number(a.featured === true) * 1000 +
+        Number(a.averageRating || 0) * 100 +
+        Number(a.totalReviews || 0) * 3 +
+        Number(a.activeProductCount || 0);
+
+      const bScore =
+        Number(b.featured === true) * 1000 +
+        Number(b.averageRating || 0) * 100 +
+        Number(b.totalReviews || 0) * 3 +
+        Number(b.activeProductCount || 0);
 
       return bScore - aScore;
     })
-    .slice(0, 10);
+    .slice(0, 12);
 
   if (shops.length === 0) {
     featuredShopsSection.style.display = "none";
@@ -731,27 +762,142 @@ function renderFeaturedShops() {
   shops.forEach((shop) => {
     const rating = Number(shop.averageRating || 0);
     const totalReviews = Number(shop.totalReviews || 0);
+    const location = safeArea(shop.location || "Mauritius");
+    const productCount = Number(shop.activeProductCount || shop.productCount || 0);
+    const serviceCount = Number(shop.serviceCount || 0);
 
-    const card = document.createElement("a");
+    const ratingText = rating > 0
+      ? `${rating.toFixed(1)} (${totalReviews})`
+      : "New shop";
 
-    card.className = "featured-shop-card";
-    card.href = `shop.html?id=${encodeURIComponent(shop.id)}`;
+    const bannerImage =
+      shop.bannerUrl ||
+      shop.coverUrl ||
+      shop.productImages?.[0] ||
+      "";
+
+    const logoMarkup = shop.logoUrl
+      ? `
+          <img
+            class="featured-shop-logo-img"
+            src="${escapeHtml(shop.logoUrl)}"
+            alt="${escapeHtml(shop.shopName || "Shop")}">
+        `
+      : `
+          <div class="featured-shop-logo-fallback">
+            ${escapeHtml(getShopInitials(shop.shopName || "MauMarket"))}
+          </div>
+        `;
+
+    const bannerMarkup = bannerImage
+      ? `
+          <img
+            class="featured-shop-banner-img"
+            src="${escapeHtml(bannerImage)}"
+            alt="${escapeHtml(shop.shopName || "Shop")} banner">
+        `
+      : `
+          <div class="featured-shop-banner-fallback">
+            <span>${escapeHtml(getShopInitials(shop.shopName || "MauMarket"))}</span>
+          </div>
+        `;
+
+    const card = document.createElement("article");
+    card.className = "featured-shop-card premium-featured-shop-card";
 
     card.innerHTML = `
-      ${
-        shop.logoUrl
-          ? `<img src="${escapeHtml(shop.logoUrl)}" alt="${escapeHtml(shop.shopName || "Shop")}">`
-          : `<div class="shop-logo-fallback">M</div>`
-      }
+      <a
+        class="featured-shop-card-link"
+        href="shop.html?id=${encodeURIComponent(shop.id)}"
+        aria-label="Visit ${escapeHtml(shop.shopName || "Shop")}">
 
-      <strong>${escapeHtml(shop.shopName || "Shop")}</strong>
-      <span>Verified Seller</span>
-      <small>${rating > 0 ? `${rating.toFixed(1)} (${totalReviews})` : "New shop"}</small>
+        <div class="featured-shop-banner">
+          ${bannerMarkup}
+
+          <div class="featured-shop-banner-overlay"></div>
+
+          <span class="featured-shop-badge">
+            ${shop.featured === true ? "Featured Shop" : "Verified Seller"}
+          </span>
+        </div>
+
+        <div class="featured-shop-body">
+
+          <div class="featured-shop-logo-wrap">
+            ${logoMarkup}
+          </div>
+
+          <div class="featured-shop-heading">
+            <div>
+              <h3>${escapeHtml(shop.shopName || "MauMarket Shop")}</h3>
+
+              <p class="featured-shop-location">
+                ${escapeHtml(location)}
+              </p>
+            </div>
+
+            <span class="featured-shop-check" aria-label="Verified seller">
+              ✓
+            </span>
+          </div>
+
+          <p class="featured-shop-description">
+            ${escapeHtml(
+              shop.description ||
+              "Discover products and services from this trusted MauMarket seller."
+            )}
+          </p>
+
+          <div class="featured-shop-meta">
+            <div>
+              <strong>${productCount}</strong>
+              <span>${productCount === 1 ? "Listing" : "Listings"}</span>
+            </div>
+
+            <div>
+              <strong>${serviceCount}</strong>
+              <span>${serviceCount === 1 ? "Service" : "Services"}</span>
+            </div>
+
+            <div>
+              <strong>${escapeHtml(ratingText)}</strong>
+              <span>Rating</span>
+            </div>
+          </div>
+
+          <div class="featured-shop-footer">
+            <span class="featured-shop-trust">
+              MauMarket Verified
+            </span>
+
+            <span class="featured-shop-visit">
+              Visit Shop →
+            </span>
+          </div>
+
+        </div>
+      </a>
     `;
 
     featuredShops.appendChild(card);
   });
 }
+
+function getShopInitials(name) {
+  const words = String(name || "M")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  const initials = words
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "M";
+}
+
+
 
 /* =========================================================
    MAIN MARKETPLACE
