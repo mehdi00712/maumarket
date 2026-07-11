@@ -709,8 +709,7 @@ function renderFeaturedShops() {
       uniqueShops[item.sellerId] = {
         id: item.sellerId,
         ...item.shop,
-        productCount: 0,
-        activeProductCount: 0,
+        listingCount: 0,
         serviceCount: 0,
         productImages: []
       };
@@ -718,10 +717,8 @@ function renderFeaturedShops() {
 
     const shop = uniqueShops[item.sellerId];
 
-    shop.productCount += 1;
-
     if (item.active !== false) {
-      shop.activeProductCount += 1;
+      shop.listingCount += 1;
     }
 
     if (item.type === "service") {
@@ -739,19 +736,19 @@ function renderFeaturedShops() {
         Number(a.featured === true) * 1000 +
         Number(a.averageRating || 0) * 100 +
         Number(a.totalReviews || 0) * 3 +
-        Number(a.activeProductCount || 0);
+        Number(a.listingCount || 0);
 
       const bScore =
         Number(b.featured === true) * 1000 +
         Number(b.averageRating || 0) * 100 +
         Number(b.totalReviews || 0) * 3 +
-        Number(b.activeProductCount || 0);
+        Number(b.listingCount || 0);
 
       return bScore - aScore;
     })
-    .slice(0, 12);
+    .slice(0, 8);
 
-  if (shops.length === 0) {
+  if (!shops.length) {
     featuredShopsSection.style.display = "none";
     return;
   }
@@ -763,12 +760,11 @@ function renderFeaturedShops() {
     const rating = Number(shop.averageRating || 0);
     const totalReviews = Number(shop.totalReviews || 0);
     const location = safeArea(shop.location || "Mauritius");
-    const productCount = Number(shop.activeProductCount || shop.productCount || 0);
-    const serviceCount = Number(shop.serviceCount || 0);
+    const listingCount = Number(shop.listingCount || 0);
 
     const ratingText = rating > 0
       ? `${rating.toFixed(1)} (${totalReviews})`
-      : "New shop";
+      : "New";
 
     const bannerImage =
       shop.bannerUrl ||
@@ -779,12 +775,12 @@ function renderFeaturedShops() {
     const logoMarkup = shop.logoUrl
       ? `
           <img
-            class="featured-shop-logo-img"
+            class="compact-shop-logo-img"
             src="${escapeHtml(shop.logoUrl)}"
             alt="${escapeHtml(shop.shopName || "Shop")}">
         `
       : `
-          <div class="featured-shop-logo-fallback">
+          <div class="compact-shop-logo-fallback">
             ${escapeHtml(getShopInitials(shop.shopName || "MauMarket"))}
           </div>
         `;
@@ -792,87 +788,58 @@ function renderFeaturedShops() {
     const bannerMarkup = bannerImage
       ? `
           <img
-            class="featured-shop-banner-img"
+            class="compact-shop-banner-img"
             src="${escapeHtml(bannerImage)}"
             alt="${escapeHtml(shop.shopName || "Shop")} banner">
         `
       : `
-          <div class="featured-shop-banner-fallback">
-            <span>${escapeHtml(getShopInitials(shop.shopName || "MauMarket"))}</span>
+          <div class="compact-shop-banner-fallback">
+            ${escapeHtml(getShopInitials(shop.shopName || "MauMarket"))}
           </div>
         `;
 
     const card = document.createElement("article");
-    card.className = "featured-shop-card premium-featured-shop-card";
+    card.className = "featured-shop-card compact-featured-shop-card";
 
     card.innerHTML = `
       <a
-        class="featured-shop-card-link"
+        class="compact-shop-link"
         href="shop.html?id=${encodeURIComponent(shop.id)}"
         aria-label="Visit ${escapeHtml(shop.shopName || "Shop")}">
 
-        <div class="featured-shop-banner">
+        <div class="compact-shop-banner">
           ${bannerMarkup}
 
-          <div class="featured-shop-banner-overlay"></div>
+          <div class="compact-shop-banner-overlay"></div>
 
-          <span class="featured-shop-badge">
-            ${shop.featured === true ? "Featured Shop" : "Verified Seller"}
+          <span class="compact-shop-badge">
+            ${shop.featured === true ? "Featured" : "Verified"}
           </span>
         </div>
 
-        <div class="featured-shop-body">
+        <div class="compact-shop-body">
 
-          <div class="featured-shop-logo-wrap">
+          <div class="compact-shop-logo-wrap">
             ${logoMarkup}
           </div>
 
-          <div class="featured-shop-heading">
+          <div class="compact-shop-title-row">
             <div>
               <h3>${escapeHtml(shop.shopName || "MauMarket Shop")}</h3>
-
-              <p class="featured-shop-location">
-                ${escapeHtml(location)}
-              </p>
+              <p>${escapeHtml(location)}</p>
             </div>
 
-            <span class="featured-shop-check" aria-label="Verified seller">
-              ✓
-            </span>
+            <span class="compact-shop-check">✓</span>
           </div>
 
-          <p class="featured-shop-description">
-            ${escapeHtml(
-              shop.description ||
-              "Discover products and services from this trusted MauMarket seller."
-            )}
-          </p>
-
-          <div class="featured-shop-meta">
-            <div>
-              <strong>${productCount}</strong>
-              <span>${productCount === 1 ? "Listing" : "Listings"}</span>
-            </div>
-
-            <div>
-              <strong>${serviceCount}</strong>
-              <span>${serviceCount === 1 ? "Service" : "Services"}</span>
-            </div>
-
-            <div>
-              <strong>${escapeHtml(ratingText)}</strong>
-              <span>Rating</span>
-            </div>
+          <div class="compact-shop-meta">
+            <span>${listingCount} ${listingCount === 1 ? "listing" : "listings"}</span>
+            <span>${escapeHtml(ratingText)}</span>
           </div>
 
-          <div class="featured-shop-footer">
-            <span class="featured-shop-trust">
-              MauMarket Verified
-            </span>
-
-            <span class="featured-shop-visit">
-              Visit Shop →
-            </span>
+          <div class="compact-shop-footer">
+            <span>MauMarket Seller</span>
+            <strong>Visit Shop →</strong>
           </div>
 
         </div>
