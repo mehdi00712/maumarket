@@ -2,8 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <title>Delivery Dashboard | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Manage assigned MauMarket deliveries, update delivery progress, navigate to customers and submit completed deliveries."
+  >
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -13,112 +24,471 @@
 
 <main class="container driver-delivery-page">
 
-  <section class="driver-delivery-hero">
-    <div>
-      <span class="hero-badge">Delivery Driver</span>
+  <!-- =====================================================
+       HERO
+  ====================================================== -->
 
-      <h1>Assigned Deliveries</h1>
+  <section class="driver-delivery-hero">
+
+    <div class="driver-delivery-hero-content">
+
+      <span class="hero-badge">
+        MauMarket Delivery
+      </span>
+
+      <h1>
+        Assigned Deliveries
+      </h1>
 
       <p>
-        View assigned deliveries, update order progress, open pinned customer
-        locations, collect signatures, and submit completed deliveries for admin validation.
+        View assigned orders, collect items from sellers, navigate to customers,
+        update delivery progress, collect signatures and submit completed
+        deliveries for administrator validation.
       </p>
+
+      <div class="driver-delivery-hero-points">
+
+        <span>
+          ✓ Assigned delivery tracking
+        </span>
+
+        <span>
+          ✓ Customer map locations
+        </span>
+
+        <span>
+          ✓ Delivery confirmation
+        </span>
+
+      </div>
+
     </div>
 
-    <div class="driver-delivery-actions">
-      <button id="refreshDriverDeliveriesBtn" type="button" class="secondary-btn">
-        Refresh
-      </button>
+    <aside class="driver-delivery-hero-card">
 
-      <a href="dashboard.html" class="btn">
-        Dashboard
-      </a>
-    </div>
+      <div class="driver-delivery-hero-icon">
+        🚚
+      </div>
+
+      <h2>
+        Driver Control Centre
+      </h2>
+
+      <p>
+        Manage every step of your assigned deliveries from collection to
+        final customer confirmation.
+      </p>
+
+      <div class="driver-delivery-hero-status">
+
+        <span>
+          Driver Status
+        </span>
+
+        <strong>
+          Active
+        </strong>
+
+      </div>
+
+      <div class="driver-delivery-actions">
+
+        <button
+          id="refreshDriverDeliveriesBtn"
+          type="button"
+          class="secondary-btn"
+        >
+          Refresh Deliveries
+        </button>
+
+        <a
+          href="dashboard.html"
+          class="btn"
+        >
+          Dashboard
+        </a>
+
+      </div>
+
+    </aside>
+
   </section>
+
+  <!-- =====================================================
+       STATISTICS
+  ====================================================== -->
 
   <section class="driver-delivery-stats">
-    <div class="driver-stat-card">
-      <span>Total Assigned</span>
-      <strong id="driverTotalDeliveries">0</strong>
-      <small>All assigned jobs</small>
-    </div>
 
-    <div class="driver-stat-card">
-      <span>Active</span>
-      <strong id="driverActiveDeliveries">0</strong>
-      <small>Still in progress</small>
-    </div>
+    <article class="driver-stat-card">
 
-    <div class="driver-stat-card">
-      <span>Picked Up</span>
-      <strong id="driverPickedUpDeliveries">0</strong>
-      <small>Collected from seller</small>
-    </div>
+      <div class="driver-stat-icon">
+        📦
+      </div>
 
-    <div class="driver-stat-card">
-      <span>Out for Delivery</span>
-      <strong id="driverOutDeliveries">0</strong>
-      <small>On the way</small>
-    </div>
+      <div>
 
-    <div class="driver-stat-card">
-      <span>Submitted</span>
-      <strong id="driverSubmittedDeliveries">0</strong>
-      <small>Waiting admin validation</small>
-    </div>
+        <span>
+          Total Assigned
+        </span>
 
-    <div class="driver-stat-card">
-      <span>Delivered</span>
-      <strong id="driverDeliveredDeliveries">0</strong>
-      <small>Completed deliveries</small>
-    </div>
+        <strong id="driverTotalDeliveries">
+          0
+        </strong>
+
+        <small>
+          All assigned delivery jobs
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="driver-stat-card">
+
+      <div class="driver-stat-icon">
+        ⚡
+      </div>
+
+      <div>
+
+        <span>
+          Active
+        </span>
+
+        <strong id="driverActiveDeliveries">
+          0
+        </strong>
+
+        <small>
+          Deliveries still in progress
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="driver-stat-card">
+
+      <div class="driver-stat-icon">
+        🏪
+      </div>
+
+      <div>
+
+        <span>
+          Picked Up
+        </span>
+
+        <strong id="driverPickedUpDeliveries">
+          0
+        </strong>
+
+        <small>
+          Orders collected from sellers
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="driver-stat-card">
+
+      <div class="driver-stat-icon">
+        🛵
+      </div>
+
+      <div>
+
+        <span>
+          Out for Delivery
+        </span>
+
+        <strong id="driverOutDeliveries">
+          0
+        </strong>
+
+        <small>
+          Orders currently on the way
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="driver-stat-card warning-driver-stat">
+
+      <div class="driver-stat-icon">
+        ⏳
+      </div>
+
+      <div>
+
+        <span>
+          Submitted
+        </span>
+
+        <strong id="driverSubmittedDeliveries">
+          0
+        </strong>
+
+        <small>
+          Waiting for administrator validation
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="driver-stat-card success-driver-stat">
+
+      <div class="driver-stat-icon">
+        ✅
+      </div>
+
+      <div>
+
+        <span>
+          Delivered
+        </span>
+
+        <strong id="driverDeliveredDeliveries">
+          0
+        </strong>
+
+        <small>
+          Successfully completed deliveries
+        </small>
+
+      </div>
+
+    </article>
+
   </section>
+
+  <!-- =====================================================
+       FILTERS
+  ====================================================== -->
 
   <section class="driver-delivery-toolbar">
-    <div>
-      <label>Search</label>
-      <input
-        id="driverDeliverySearch"
-        type="search"
-        placeholder="Search order, customer, phone or address">
+
+    <div class="driver-delivery-toolbar-head">
+
+      <div>
+
+        <span class="section-kicker">
+          Delivery Filters
+        </span>
+
+        <h2>
+          Find Assigned Orders
+        </h2>
+
+        <p>
+          Search by customer, order number, phone number, address, status or date.
+        </p>
+
+      </div>
+
+      <button
+        id="clearDriverDeliveryFiltersBtn"
+        type="button"
+        class="secondary-btn"
+      >
+        Clear Filters
+      </button>
+
     </div>
 
-    <div>
-      <label>Status</label>
-      <select id="driverDeliveryStatusFilter">
-        <option value="">All Deliveries</option>
-        <option value="Ready for Pickup">Ready for Pickup</option>
-        <option value="Picked Up">Picked Up</option>
-        <option value="Out for Delivery">Out for Delivery</option>
-        <option value="Delivery Submitted">Delivery Submitted</option>
-        <option value="Delivered">Delivered</option>
-      </select>
+    <div class="driver-delivery-filter-grid">
+
+      <div class="driver-delivery-filter-field driver-delivery-search-field">
+
+        <label for="driverDeliverySearch">
+          Search
+        </label>
+
+        <input
+          id="driverDeliverySearch"
+          type="search"
+          placeholder="Search order, customer, phone or address"
+          autocomplete="off"
+        >
+
+      </div>
+
+      <div class="driver-delivery-filter-field">
+
+        <label for="driverDeliveryStatusFilter">
+          Delivery Status
+        </label>
+
+        <select id="driverDeliveryStatusFilter">
+
+          <option value="">
+            All Deliveries
+          </option>
+
+          <option value="Ready for Pickup">
+            Ready for Pickup
+          </option>
+
+          <option value="Picked Up">
+            Picked Up
+          </option>
+
+          <option value="Out for Delivery">
+            Out for Delivery
+          </option>
+
+          <option value="Delivery Submitted">
+            Delivery Submitted
+          </option>
+
+          <option value="Delivered">
+            Delivered
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="driver-delivery-filter-field">
+
+        <label for="driverDeliveryDateFilter">
+          Delivery Date
+        </label>
+
+        <input
+          id="driverDeliveryDateFilter"
+          type="date"
+        >
+
+      </div>
+
     </div>
 
-    <div>
-      <label>Date</label>
-      <input id="driverDeliveryDateFilter" type="date">
-    </div>
   </section>
 
+  <!-- =====================================================
+       DELIVERY LIST
+  ====================================================== -->
+
   <section class="driver-delivery-main-card">
-    <div class="section-row-title">
+
+    <div class="section-row-title driver-delivery-list-heading">
+
       <div>
-        <h2>Assigned Deliveries</h2>
-        <p id="driverDeliveryResultCount">Loading assigned deliveries...</p>
+
+        <span class="section-kicker">
+          Driver Jobs
+        </span>
+
+        <h2>
+          Assigned Deliveries
+        </h2>
+
+        <p id="driverDeliveryResultCount">
+          Loading assigned deliveries...
+        </p>
+
       </div>
+
+      <div class="driver-delivery-list-status">
+
+        <span>
+          Live Updates
+        </span>
+
+        <strong>
+          Enabled
+        </strong>
+
+      </div>
+
     </div>
 
-    <div id="deliveryOrdersList" class="driver-delivery-list">
+    <div
+      id="deliveryOrdersList"
+      class="driver-delivery-list"
+      aria-live="polite"
+    >
       Loading assigned deliveries...
     </div>
+
+  </section>
+
+  <!-- =====================================================
+       DRIVER SAFETY INFORMATION
+  ====================================================== -->
+
+  <section class="driver-delivery-help-grid">
+
+    <article class="driver-delivery-help-card">
+
+      <div class="driver-delivery-help-icon">
+        📍
+      </div>
+
+      <h3>
+        Confirm the Location
+      </h3>
+
+      <p>
+        Always verify the pinned customer location and delivery instructions
+        before travelling.
+      </p>
+
+    </article>
+
+    <article class="driver-delivery-help-card">
+
+      <div class="driver-delivery-help-icon">
+        📞
+      </div>
+
+      <h3>
+        Contact the Customer
+      </h3>
+
+      <p>
+        Call or message the customer before arrival when directions are unclear.
+      </p>
+
+    </article>
+
+    <article class="driver-delivery-help-card">
+
+      <div class="driver-delivery-help-icon">
+        ✍️
+      </div>
+
+      <h3>
+        Collect Confirmation
+      </h3>
+
+      <p>
+        Collect the customer signature and required delivery proof before
+        submitting the delivery.
+      </p>
+
+    </article>
+
   </section>
 
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-<script type="module" src="js/nav.js?v=4.0"></script>
-<script type="module" src="js/delivery.js?v=7.0"></script>
+
+<script
+  type="module"
+  src="js/nav.js?v=5.1"
+></script>
+
+<script
+  type="module"
+  src="js/delivery.js?v=7.1"
+></script>
 
 </body>
 </html>
