@@ -2,108 +2,391 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <title>Manage Users | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Manage customers, sellers, delivery drivers and administrators on MauMarket."
+  >
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="navbar">
-  <h2>Manage Users</h2>
+<!-- Navigation is injected automatically by nav.js -->
 
-  <nav>
-    <a href="admin.html">Admin</a>
-    <a href="admin-analytics.html">Analytics</a>
-    <a href="admin-products.html">Products</a>
-    <a href="admin-delivery.html">Delivery</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+<main class="container admin-users-page">
 
-<main class="container">
+  <!-- =====================================================
+       PAGE HERO
+  ====================================================== -->
 
-  <section class="dashboard-section-title">
-    <h1>User Management</h1>
-    <p>Approve sellers, approve delivery drivers, block users, and monitor platform accounts.</p>
+  <section class="admin-users-hero">
+
+    <div class="admin-users-hero-content">
+
+      <span class="hero-badge">
+        MauMarket Administration
+      </span>
+
+      <h1>
+        User Management
+      </h1>
+
+      <p>
+        Approve sellers and delivery drivers, review account status,
+        block users and monitor every MauMarket account from one place.
+      </p>
+
+    </div>
+
+    <aside class="admin-users-hero-card">
+
+      <div class="admin-users-hero-icon">
+        👥
+      </div>
+
+      <h2>
+        Account Control
+      </h2>
+
+      <p>
+        Keep the MauMarket community safe by reviewing account access,
+        approval status and user roles.
+      </p>
+
+      <div class="admin-users-hero-status">
+
+        <span>
+          Administration Status
+        </span>
+
+        <strong>
+          Active
+        </strong>
+
+      </div>
+
+    </aside>
+
   </section>
 
-  <section class="cards">
-    <div class="card">
-      <h3>Total Users</h3>
-      <h2 id="totalUsersCount">0</h2>
-    </div>
+  <!-- =====================================================
+       STATISTICS
+  ====================================================== -->
 
-    <div class="card">
-      <h3>Customers</h3>
-      <h2 id="customersCount">0</h2>
-    </div>
+  <section class="admin-users-stats">
 
-    <div class="card">
-      <h3>Sellers</h3>
-      <h2 id="sellersCount">0</h2>
-    </div>
+    <article class="admin-user-stat-card">
 
-    <div class="card">
-      <h3>Delivery Drivers</h3>
-      <h2 id="deliveryCount">0</h2>
-    </div>
+      <div class="admin-user-stat-icon">
+        👥
+      </div>
 
-    <div class="card">
-      <h3>Pending Approval</h3>
-      <h2 id="pendingCount">0</h2>
-    </div>
+      <div>
+        <span>
+          Total Users
+        </span>
 
-    <div class="card">
-      <h3>Blocked</h3>
-      <h2 id="blockedCount">0</h2>
-    </div>
+        <strong id="totalUsersCount">
+          0
+        </strong>
+
+        <small>
+          All registered accounts
+        </small>
+      </div>
+
+    </article>
+
+    <article class="admin-user-stat-card">
+
+      <div class="admin-user-stat-icon">
+        🛍️
+      </div>
+
+      <div>
+        <span>
+          Customers
+        </span>
+
+        <strong id="customersCount">
+          0
+        </strong>
+
+        <small>
+          Buyer accounts
+        </small>
+      </div>
+
+    </article>
+
+    <article class="admin-user-stat-card">
+
+      <div class="admin-user-stat-icon">
+        🏪
+      </div>
+
+      <div>
+        <span>
+          Sellers
+        </span>
+
+        <strong id="sellersCount">
+          0
+        </strong>
+
+        <small>
+          Marketplace sellers
+        </small>
+      </div>
+
+    </article>
+
+    <article class="admin-user-stat-card">
+
+      <div class="admin-user-stat-icon">
+        🚚
+      </div>
+
+      <div>
+        <span>
+          Delivery Drivers
+        </span>
+
+        <strong id="deliveryCount">
+          0
+        </strong>
+
+        <small>
+          Delivery accounts
+        </small>
+      </div>
+
+    </article>
+
+    <article class="admin-user-stat-card warning-stat-card">
+
+      <div class="admin-user-stat-icon">
+        ⏳
+      </div>
+
+      <div>
+        <span>
+          Pending Approval
+        </span>
+
+        <strong id="pendingCount">
+          0
+        </strong>
+
+        <small>
+          Waiting for review
+        </small>
+      </div>
+
+    </article>
+
+    <article class="admin-user-stat-card danger-stat-card">
+
+      <div class="admin-user-stat-icon">
+        ⛔
+      </div>
+
+      <div>
+        <span>
+          Blocked
+        </span>
+
+        <strong id="blockedCount">
+          0
+        </strong>
+
+        <small>
+          Restricted accounts
+        </small>
+      </div>
+
+    </article>
+
   </section>
 
-  <section class="form-card">
+  <!-- =====================================================
+       FILTERS
+  ====================================================== -->
+
+  <section class="form-card admin-users-filter-card">
+
     <div class="section-row-title">
-      <h2>Filter Users</h2>
-      <span>Search and manage accounts</span>
-    </div>
 
-    <div class="admin-filter-row">
-      <input id="userSearchInput" placeholder="Search by name, email, phone, role...">
+      <div>
 
-      <select id="roleFilter">
-        <option value="">All Roles</option>
-        <option value="customer">Customers</option>
-        <option value="seller">Sellers</option>
-        <option value="delivery">Delivery</option>
-        <option value="admin">Admins</option>
-      </select>
+        <span class="section-kicker">
+          Search and Filter
+        </span>
 
-      <select id="statusFilter">
-        <option value="">All Status</option>
-        <option value="approved">Approved</option>
-        <option value="pending">Pending Approval</option>
-        <option value="blocked">Blocked</option>
-      </select>
+        <h2>
+          Filter Users
+        </h2>
 
-      <button id="clearFiltersBtn" type="button" class="secondary-btn">
-        Clear
+        <p>
+          Find accounts by name, email, phone number, role or account status.
+        </p>
+
+      </div>
+
+      <button
+        id="clearFiltersBtn"
+        type="button"
+        class="secondary-btn"
+      >
+        Clear Filters
       </button>
+
     </div>
+
+    <div class="admin-filter-row admin-users-filter-row">
+
+      <div class="admin-filter-field admin-user-search-field">
+
+        <label for="userSearchInput">
+          Search Users
+        </label>
+
+        <input
+          id="userSearchInput"
+          type="search"
+          placeholder="Search by name, email, phone or role"
+          autocomplete="off"
+        >
+
+      </div>
+
+      <div class="admin-filter-field">
+
+        <label for="roleFilter">
+          Role
+        </label>
+
+        <select id="roleFilter">
+
+          <option value="">
+            All Roles
+          </option>
+
+          <option value="customer">
+            Customers
+          </option>
+
+          <option value="seller">
+            Sellers
+          </option>
+
+          <option value="delivery">
+            Delivery
+          </option>
+
+          <option value="admin">
+            Administrators
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="admin-filter-field">
+
+        <label for="statusFilter">
+          Account Status
+        </label>
+
+        <select id="statusFilter">
+
+          <option value="">
+            All Statuses
+          </option>
+
+          <option value="approved">
+            Approved
+          </option>
+
+          <option value="pending">
+            Pending Approval
+          </option>
+
+          <option value="blocked">
+            Blocked
+          </option>
+
+        </select>
+
+      </div>
+
+    </div>
+
   </section>
 
-  <section class="form-card">
+  <!-- =====================================================
+       USERS LIST
+  ====================================================== -->
+
+  <section class="form-card admin-users-list-card">
+
     <div class="section-row-title">
-      <h2>Users</h2>
-      <span id="usersResultCount">Loading...</span>
+
+      <div>
+
+        <span class="section-kicker">
+          Platform Accounts
+        </span>
+
+        <h2>
+          Users
+        </h2>
+
+        <p>
+          Review account information and manage user access.
+        </p>
+
+      </div>
+
+      <span
+        id="usersResultCount"
+        class="admin-users-result-count"
+      >
+        Loading...
+      </span>
+
     </div>
 
-    <div id="usersList">
+    <div
+      id="usersList"
+      class="admin-users-list"
+      aria-live="polite"
+    >
       Loading users...
     </div>
+
   </section>
 
 </main>
 
-<script type="module" src="js/admin-users.js?v=3.5"></script>
+<script
+  type="module"
+  src="js/nav.js?v=5.1"
+></script>
+
+<script
+  type="module"
+  src="js/admin-users.js?v=3.6"
+></script>
 
 </body>
 </html>
