@@ -23,6 +23,7 @@ const searchInput = document.getElementById("driverDeliverySearch");
 const statusFilter = document.getElementById("driverDeliveryStatusFilter");
 const dateFilter = document.getElementById("driverDeliveryDateFilter");
 const resultCount = document.getElementById("driverDeliveryResultCount");
+const clearFiltersBtn = document.getElementById("clearDriverDeliveryFiltersBtn");
 
 const totalEl = document.getElementById("driverTotalDeliveries");
 const activeEl = document.getElementById("driverActiveDeliveries");
@@ -66,14 +67,23 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function bindEvents() {
-  refreshBtn?.addEventListener("click", loadOrders);
+  if (document.body.dataset.driverDeliveryEventsBound === "true") return;
+
+  document.body.dataset.driverDeliveryEventsBound = "true";
+
+  refreshBtn?.addEventListener("click", async () => {
+    await loadOrders();
+  });
+
   searchInput?.addEventListener("input", applyFilters);
   statusFilter?.addEventListener("change", applyFilters);
   dateFilter?.addEventListener("change", applyFilters);
+  clearFiltersBtn?.addEventListener("click", clearDriverFilters);
 }
 
 async function loadOrders() {
   setLoading();
+  setRefreshLoading(true);
 
   try {
     const q = query(
@@ -99,7 +109,36 @@ async function loadOrders() {
     applyFilters();
   } catch (error) {
     renderError(error.message);
+  } finally {
+    setRefreshLoading(false);
   }
+}
+
+function clearDriverFilters() {
+  if (searchInput) searchInput.value = "";
+  if (statusFilter) statusFilter.value = "";
+  if (dateFilter) dateFilter.value = "";
+
+  applyFilters();
+
+  document.querySelector(".driver-delivery-main-card")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function setRefreshLoading(isLoading) {
+  if (!refreshBtn) return;
+
+  if (isLoading) {
+    refreshBtn.dataset.originalText = refreshBtn.textContent || "Refresh Deliveries";
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Refreshing...";
+    return;
+  }
+
+  refreshBtn.disabled = false;
+  refreshBtn.textContent = refreshBtn.dataset.originalText || "Refresh Deliveries";
 }
 
 function applyFilters() {
@@ -123,7 +162,8 @@ function applyFilters() {
     const jobDate = getJobDate(job);
 
     const matchesSearch = !search || text.includes(search);
-    const matchesStatus = !status || job.orderStatus === status;
+    const currentStatus = job.orderStatus || job.deliveryStatus || "";
+    const matchesStatus = !status || normalize(currentStatus) === normalize(status);
     const matchesDate = !date || jobDate === date;
 
     return matchesSearch && matchesStatus && matchesDate;
@@ -170,8 +210,13 @@ function renderJobs(jobs) {
   if (jobs.length === 0) {
     deliveryOrdersList.innerHTML = `
       <div class="driver-empty-state">
+        <div class="driver-empty-icon">📦</div>
         <h3>No deliveries found</h3>
         <p>No assigned deliveries match your current filters.</p>
+        <div class="driver-empty-actions">
+          <button type="button" class="secondary-btn" data-empty-action="clear">Clear Filters</button>
+          <button type="button" class="btn" data-empty-action="refresh">Refresh Deliveries</button>
+        </div>
       </div>
     `;
     return;
@@ -189,6 +234,9 @@ function renderJobs(jobs) {
 
     setupSignature(orderId, card);
   });
+
+  deliveryOrdersList.querySelector('[data-empty-action="clear"]')?.addEventListener("click", clearDriverFilters);
+  deliveryOrdersList.querySelector('[data-empty-action="refresh"]')?.addEventListener("click", loadOrders);
 }
 
 function deliveryCardHtml(order) {
@@ -375,6 +423,19 @@ function deliveryCardHtml(order) {
                 class="secondary-btn"
                 href="tel:${escapeHtml(order.customerPhone)}">
                 Call Customer
+              </a>
+            `
+            : ""
+        }
+        ${
+          order.customerPhone
+            ? `
+              <a
+                class="secondary-btn whatsapp-driver-btn"
+                target="_blank"
+                rel="noopener"
+                href="${escapeHtml(getWhatsAppUrl(order))}">
+                WhatsApp Customer
               </a>
             `
             : ""
@@ -768,7 +829,8 @@ function renderPickupStops(stops){
 function setLoading() {
   if (deliveryOrdersList) {
     deliveryOrdersList.innerHTML = `
-      <div class="driver-empty-state">
+      <div class="driver-empty-state driver-loading-state">
+        <div class="driver-loading-spinner" aria-hidden="true"></div>
         <h3>Loading assigned deliveries...</h3>
         <p>Please wait while MauMarket loads your delivery jobs.</p>
       </div>
@@ -902,6 +964,26 @@ function getMapUrl(job) {
   return "";
 }
 
+function getWhatsAppUrl(job) {
+  const phone = normalizeMauritiusPhone(job.customerPhone || "");
+  const orderId = job.orderId || job.id || "";
+  const message = [
+    "Hello, this is your MauMarket delivery driver.",
+    "",
+    `Order: ${String(orderId).slice(0, 12)}`,
+    "I am contacting you regarding your delivery."
+  ].join("\n");
+
+  return `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`;
+}
+
+function normalizeMauritiusPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("230")) return digits;
+  return `230${digits}`;
+}
+
 function getDriverName() {
   return (
     currentUserData?.name ||
@@ -928,7 +1010,8 @@ function shortText(value, max = 40) {
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString("en-US", {
-    maximumFractionDigits: 0
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
   });
 }
 
