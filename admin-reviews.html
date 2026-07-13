@@ -2,83 +2,465 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <title>Manage Reviews | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Review and moderate customer, seller and delivery feedback on MauMarket."
+  >
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="navbar">
-  <h2>Manage Reviews</h2>
+<!-- Navigation is injected automatically by nav.js -->
 
-  <nav>
-    <a href="admin.html">Admin</a>
-    <a href="admin-users.html">Users</a>
-    <a href="admin-products.html">Products</a>
-    <a href="admin-analytics.html">Analytics</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+<main class="container admin-reviews-page">
 
-<main class="container">
+  <!-- =====================================================
+       HERO
+  ====================================================== -->
 
-  <section class="dashboard-section-title">
-    <h1>Review Moderation</h1>
-    <p>Monitor customer reviews, ratings, seller feedback, and delivery feedback.</p>
+  <section class="admin-reviews-hero">
+
+    <div class="admin-reviews-hero-content">
+
+      <span class="hero-badge">
+        MauMarket Administration
+      </span>
+
+      <h1>
+        Review Moderation
+      </h1>
+
+      <p>
+        Monitor customer feedback, seller ratings, delivery ratings and
+        verified order reviews from one professional dashboard.
+      </p>
+
+    </div>
+
+    <aside class="admin-reviews-hero-card">
+
+      <div class="admin-reviews-hero-icon">
+        ★
+      </div>
+
+      <h2>
+        Reputation Control
+      </h2>
+
+      <p>
+        Review customer feedback, investigate complaints and remove
+        inappropriate or fraudulent reviews.
+      </p>
+
+      <div class="profile-status-row">
+
+        <span>
+          Moderation Status
+        </span>
+
+        <strong>
+          Active
+        </strong>
+
+      </div>
+
+    </aside>
+
   </section>
 
-  <section class="cards">
-    <div class="card">
-      <h3>Total Reviews</h3>
-      <h2 id="totalReviews">0</h2>
-    </div>
+  <!-- =====================================================
+       STATISTICS
+  ====================================================== -->
 
-    <div class="card">
-      <h3>Avg Seller Rating</h3>
-      <h2><span id="averageSellerRating">0.0</span> ⭐</h2>
-    </div>
+  <section class="admin-reviews-stats">
 
-    <div class="card">
-      <h3>Avg Delivery Rating</h3>
-      <h2><span id="averageDeliveryRating">0.0</span> ⭐</h2>
-    </div>
+    <article class="admin-review-stat-card">
+
+      <div class="admin-review-stat-icon">
+        💬
+      </div>
+
+      <div>
+
+        <span>
+          Total Reviews
+        </span>
+
+        <strong id="totalReviews">
+          0
+        </strong>
+
+        <small>
+          All customer reviews
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-review-stat-card">
+
+      <div class="admin-review-stat-icon">
+        🏪
+      </div>
+
+      <div>
+
+        <span>
+          Average Seller Rating
+        </span>
+
+        <strong>
+          <span id="averageSellerRating">0.0</span> ★
+        </strong>
+
+        <small>
+          Overall seller satisfaction
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-review-stat-card">
+
+      <div class="admin-review-stat-icon">
+        🚚
+      </div>
+
+      <div>
+
+        <span>
+          Average Delivery Rating
+        </span>
+
+        <strong>
+          <span id="averageDeliveryRating">0.0</span> ★
+        </strong>
+
+        <small>
+          Overall delivery satisfaction
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-review-stat-card success-card">
+
+      <div class="admin-review-stat-icon">
+        ⭐
+      </div>
+
+      <div>
+
+        <span>
+          Five-Star Reviews
+        </span>
+
+        <strong id="fiveStarReviews">
+          0
+        </strong>
+
+        <small>
+          Excellent seller ratings
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-review-stat-card warning-card">
+
+      <div class="admin-review-stat-icon">
+        ⚠
+      </div>
+
+      <div>
+
+        <span>
+          Low Ratings
+        </span>
+
+        <strong id="lowRatingReviews">
+          0
+        </strong>
+
+        <small>
+          Reviews rated two stars or below
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-review-stat-card">
+
+      <div class="admin-review-stat-icon">
+        ✅
+      </div>
+
+      <div>
+
+        <span>
+          Verified Reviews
+        </span>
+
+        <strong id="verifiedReviewsCount">
+          0
+        </strong>
+
+        <small>
+          Reviews linked to an order
+        </small>
+
+      </div>
+
+    </article>
+
   </section>
 
-  <section class="form-card">
+  <!-- =====================================================
+       FILTERS
+  ====================================================== -->
+
+  <section class="form-card admin-reviews-filter-card">
+
     <div class="section-row-title">
-      <h2>Filter Reviews</h2>
-      <span>Search and moderate feedback</span>
+
+      <div>
+
+        <span class="section-kicker">
+          Search and Filter
+        </span>
+
+        <h2>
+          Filter Reviews
+        </h2>
+
+        <p>
+          Search customer feedback and filter reviews by seller rating.
+        </p>
+
+      </div>
+
+      <button
+        id="clearReviewFiltersBtn"
+        type="button"
+        class="secondary-btn"
+      >
+        Clear Filters
+      </button>
+
     </div>
 
-    <div class="admin-filter-row">
-      <input id="reviewSearchInput" placeholder="Search customer, email, order ID, review text...">
+    <div class="admin-filter-row admin-reviews-filter-row">
 
-      <select id="ratingFilter">
-        <option value="">All Ratings</option>
-        <option value="5">5 Stars</option>
-        <option value="4">4 Stars</option>
-        <option value="3">3 Stars</option>
-        <option value="2">2 Stars</option>
-        <option value="1">1 Star</option>
-      </select>
+      <div class="admin-filter-field admin-review-search-field">
+
+        <label for="reviewSearchInput">
+          Search Reviews
+        </label>
+
+        <input
+          id="reviewSearchInput"
+          type="search"
+          placeholder="Search customer, email, order ID or review text"
+          autocomplete="off"
+        >
+
+      </div>
+
+      <div class="admin-filter-field">
+
+        <label for="ratingFilter">
+          Seller Rating
+        </label>
+
+        <select id="ratingFilter">
+
+          <option value="">
+            All Ratings
+          </option>
+
+          <option value="5">
+            5 Stars
+          </option>
+
+          <option value="4">
+            4 Stars
+          </option>
+
+          <option value="3">
+            3 Stars
+          </option>
+
+          <option value="2">
+            2 Stars
+          </option>
+
+          <option value="1">
+            1 Star
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="admin-filter-field">
+
+        <label for="reviewSortFilter">
+          Sort
+        </label>
+
+        <select id="reviewSortFilter">
+
+          <option value="newest">
+            Newest
+          </option>
+
+          <option value="oldest">
+            Oldest
+          </option>
+
+          <option value="highest">
+            Highest Rating
+          </option>
+
+          <option value="lowest">
+            Lowest Rating
+          </option>
+
+        </select>
+
+      </div>
+
     </div>
+
   </section>
 
-  <section class="form-card">
+  <!-- =====================================================
+       REVIEWS LIST
+  ====================================================== -->
+
+  <section class="form-card admin-reviews-list-card">
+
     <div class="section-row-title">
-      <h2>Reviews</h2>
-      <span id="reviewsResultCount">Loading...</span>
+
+      <div>
+
+        <span class="section-kicker">
+          Customer Feedback
+        </span>
+
+        <h2>
+          Reviews
+        </h2>
+
+        <p>
+          Review seller and delivery feedback linked to MauMarket orders.
+        </p>
+
+      </div>
+
+      <span
+        id="reviewsResultCount"
+        class="admin-result-count"
+      >
+        Loading...
+      </span>
+
     </div>
 
-    <div id="reviewsList">
+    <div
+      id="reviewsList"
+      class="admin-reviews-list"
+      aria-live="polite"
+    >
       Loading reviews...
     </div>
+
   </section>
 
 </main>
 
-<script type="module" src="js/admin-reviews.js?v=3.5"></script>
+<!-- =====================================================
+     ORDER DETAILS MODAL
+====================================================== -->
+
+<div
+  id="reviewOrderModal"
+  class="review-order-modal"
+  aria-hidden="true"
+>
+
+  <div
+    id="reviewOrderModalOverlay"
+    class="review-order-modal-overlay"
+  ></div>
+
+  <section
+    class="review-order-modal-card"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reviewOrderModalTitle"
+  >
+
+    <div class="review-order-modal-head">
+
+      <div>
+
+        <span class="section-kicker">
+          Order Information
+        </span>
+
+        <h2 id="reviewOrderModalTitle">
+          Order Details
+        </h2>
+
+      </div>
+
+      <button
+        id="closeReviewOrderModalBtn"
+        type="button"
+        class="review-order-modal-close"
+        aria-label="Close order details"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div
+      id="reviewOrderModalContent"
+      class="review-order-modal-content"
+    >
+      Loading order...
+    </div>
+
+  </section>
+
+</div>
+
+<script
+  type="module"
+  src="js/nav.js?v=5.1"
+></script>
+
+<script
+  type="module"
+  src="js/admin-reviews.js?v=4.0"
+></script>
 
 </body>
 </html>
