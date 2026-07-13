@@ -2,27 +2,461 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <title>Seller Payouts | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Review seller earnings and manage MauMarket seller payouts."
+  >
+
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="navbar">
-  <h2>Seller Payouts</h2>
-  <nav>
-    <a href="admin.html">Admin</a>
-    <a href="admin-commission.html">Commission</a>
-    <a href="admin-analytics.html">Analytics</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+<!-- Navigation is injected automatically by nav.js -->
 
-<main class="container">
-  <h1>Payout Management</h1>
-  <div id="payoutsList">Loading payouts...</div>
+<main class="container admin-payouts-page">
+
+  <!-- =====================================================
+       HERO
+  ====================================================== -->
+
+  <section class="admin-payouts-hero">
+
+    <div class="admin-payouts-hero-content">
+
+      <span class="hero-badge">
+        MauMarket Administration
+      </span>
+
+      <h1>
+        Seller Payout Management
+      </h1>
+
+      <p>
+        Review seller earnings, MauMarket commission, completed payments
+        and outstanding payouts from verified marketplace orders.
+      </p>
+
+    </div>
+
+    <aside class="admin-payouts-hero-card">
+
+      <div class="admin-payouts-hero-icon">
+        Rs
+      </div>
+
+      <h2>
+        Secure Payout Control
+      </h2>
+
+      <p>
+        Only verified orders are included when calculating seller earnings
+        and pending payouts.
+      </p>
+
+      <div class="profile-status-row">
+
+        <span>
+          Payout System
+        </span>
+
+        <strong>
+          Active
+        </strong>
+
+      </div>
+
+    </aside>
+
+  </section>
+
+  <!-- =====================================================
+       EXPLANATION
+  ====================================================== -->
+
+  <section class="commission-explanation-grid">
+
+    <article class="commission-info-card">
+
+      <div class="commission-info-icon">
+        🛒
+      </div>
+
+      <div>
+        <strong>
+          Verified Sales
+        </strong>
+
+        <span>
+          Only payment-verified orders are included.
+        </span>
+      </div>
+
+    </article>
+
+    <article class="commission-info-card">
+
+      <div class="commission-info-icon">
+        %
+      </div>
+
+      <div>
+        <strong>
+          MauMarket Commission
+        </strong>
+
+        <span>
+          Platform commission is removed before seller payout.
+        </span>
+      </div>
+
+    </article>
+
+    <article class="commission-info-card">
+
+      <div class="commission-info-icon">
+        🏦
+      </div>
+
+      <div>
+        <strong>
+          Seller Payout
+        </strong>
+
+        <span>
+          Payments are recorded to prevent duplicate payouts.
+        </span>
+      </div>
+
+    </article>
+
+  </section>
+
+  <!-- =====================================================
+       STATISTICS
+  ====================================================== -->
+
+  <section class="admin-payouts-stats">
+
+    <article class="admin-payout-stat-card">
+
+      <div class="admin-payout-stat-icon">
+        🏪
+      </div>
+
+      <div>
+
+        <span>
+          Sellers With Earnings
+        </span>
+
+        <strong id="payoutSellersCount">
+          0
+        </strong>
+
+        <small>
+          Sellers from verified orders
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-payout-stat-card">
+
+      <div class="admin-payout-stat-icon">
+        📈
+      </div>
+
+      <div>
+
+        <span>
+          Total Seller Earnings
+        </span>
+
+        <strong>
+          Rs <span id="totalSellerEarnings">0</span>
+        </strong>
+
+        <small>
+          Total payable before recorded payments
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-payout-stat-card success-card">
+
+      <div class="admin-payout-stat-icon">
+        ✅
+      </div>
+
+      <div>
+
+        <span>
+          Total Paid
+        </span>
+
+        <strong>
+          Rs <span id="totalPaidAmount">0</span>
+        </strong>
+
+        <small>
+          Successfully recorded payouts
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-payout-stat-card warning-card">
+
+      <div class="admin-payout-stat-icon">
+        ⏳
+      </div>
+
+      <div>
+
+        <span>
+          Pending Payouts
+        </span>
+
+        <strong>
+          Rs <span id="totalPendingPayouts">0</span>
+        </strong>
+
+        <small>
+          Outstanding seller payments
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-payout-stat-card">
+
+      <div class="admin-payout-stat-icon">
+        %
+      </div>
+
+      <div>
+
+        <span>
+          Total Commission
+        </span>
+
+        <strong>
+          Rs <span id="payoutCommissionTotal">0</span>
+        </strong>
+
+        <small>
+          MauMarket platform earnings
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-payout-stat-card">
+
+      <div class="admin-payout-stat-icon">
+        🧾
+      </div>
+
+      <div>
+
+        <span>
+          Completed Payouts
+        </span>
+
+        <strong id="completedPayoutsCount">
+          0
+        </strong>
+
+        <small>
+          Recorded payout transactions
+        </small>
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <!-- =====================================================
+       FILTERS
+  ====================================================== -->
+
+  <section class="form-card admin-payout-filters-card">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Search and Filter
+        </span>
+
+        <h2>
+          Filter Seller Payouts
+        </h2>
+
+        <p>
+          Search sellers and filter accounts by payout status.
+        </p>
+
+      </div>
+
+      <button
+        id="clearPayoutFiltersBtn"
+        type="button"
+        class="secondary-btn"
+      >
+        Clear Filters
+      </button>
+
+    </div>
+
+    <div class="admin-filter-row admin-payout-filter-row">
+
+      <div class="admin-filter-field admin-payout-search-field">
+
+        <label for="payoutSearchInput">
+          Search Seller
+        </label>
+
+        <input
+          id="payoutSearchInput"
+          type="search"
+          placeholder="Search shop name or seller ID"
+          autocomplete="off"
+        >
+
+      </div>
+
+      <div class="admin-filter-field">
+
+        <label for="payoutStatusFilter">
+          Payout Status
+        </label>
+
+        <select id="payoutStatusFilter">
+
+          <option value="">
+            All Sellers
+          </option>
+
+          <option value="pending">
+            Pending Payout
+          </option>
+
+          <option value="paid">
+            Fully Paid
+          </option>
+
+          <option value="partial">
+            Partially Paid
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="admin-filter-field">
+
+        <label for="payoutSortFilter">
+          Sort
+        </label>
+
+        <select id="payoutSortFilter">
+
+          <option value="pending-high">
+            Highest Pending
+          </option>
+
+          <option value="earnings-high">
+            Highest Earnings
+          </option>
+
+          <option value="paid-high">
+            Highest Paid
+          </option>
+
+          <option value="alphabetical">
+            Shop Name A–Z
+          </option>
+
+        </select>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       PAYOUT LIST
+  ====================================================== -->
+
+  <section class="form-card admin-payouts-list-card">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Seller Accounts
+        </span>
+
+        <h2>
+          Seller Payouts
+        </h2>
+
+        <p>
+          Review seller totals and record completed payments.
+        </p>
+
+      </div>
+
+      <span
+        id="payoutsResultCount"
+        class="admin-result-count"
+      >
+        Loading...
+      </span>
+
+    </div>
+
+    <div
+      id="payoutsList"
+      class="admin-payouts-list"
+      aria-live="polite"
+    >
+      Loading payouts...
+    </div>
+
+  </section>
+
 </main>
 
-<script type="module" src="js/admin-payouts.js"></script>
+<script
+  type="module"
+  src="js/nav.js?v=5.1"
+></script>
+
+<script
+  type="module"
+  src="js/admin-payouts.js?v=2.0"
+></script>
+
 </body>
 </html>
