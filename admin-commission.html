@@ -2,94 +2,351 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <title>Commission Dashboard | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Track MauMarket sales, commission, seller payouts and delivery revenue."
+  >
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="navbar">
-  <h2>Commission Dashboard</h2>
+<!-- Navigation is injected automatically by nav.js -->
 
-  <nav>
-    <a href="admin.html">Admin</a>
-    <a href="admin-payments.html">Payments</a>
-    <a href="admin-delivery.html">Delivery</a>
-    <a href="admin-payouts.html">Payouts</a>
-    <a href="admin-analytics.html">Analytics</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+<main class="container admin-commission-page">
 
-<main class="container">
+  <!-- =====================================================
+       HERO
+  ====================================================== -->
 
-  <section class="dashboard-section-title">
-    <h1>MauMarket Revenue</h1>
-    <p>Track buyer sales, 10% MauMarket commission, seller payouts, and delivery fees.</p>
+  <section class="admin-commission-hero">
+
+    <div class="admin-commission-hero-content">
+
+      <span class="hero-badge">
+        MauMarket Administration
+      </span>
+
+      <h1>
+        Commission Dashboard
+      </h1>
+
+      <p>
+        Monitor verified sales, MauMarket commission, seller payouts,
+        delivery fees and order revenue from one place.
+      </p>
+
+    </div>
+
+    <aside class="admin-commission-hero-card">
+
+      <div class="admin-commission-hero-icon">
+        Rs
+      </div>
+
+      <h2>
+        Revenue Control
+      </h2>
+
+      <p>
+        Review how each verified order is divided between the seller,
+        MauMarket commission and delivery charges.
+      </p>
+
+      <div class="profile-status-row">
+
+        <span>
+          Commission Rate
+        </span>
+
+        <strong>
+          10%
+        </strong>
+
+      </div>
+
+    </aside>
+
   </section>
 
-  <section class="buyer-trust-strip">
-    <div>
-      <strong>Buyer Price</strong>
-      <span>Final price paid by customer</span>
-    </div>
+  <!-- =====================================================
+       COMMISSION EXPLANATION
+  ====================================================== -->
 
-    <div>
-      <strong>Seller Payout</strong>
-      <span>Seller price before commission</span>
-    </div>
+  <section class="commission-explanation-grid">
 
-    <div>
-      <strong>MauMarket 10%</strong>
-      <span>Your platform commission</span>
-    </div>
+    <article class="commission-info-card">
+
+      <div class="commission-info-icon">
+        🛒
+      </div>
+
+      <div>
+        <strong>
+          Buyer Price
+        </strong>
+
+        <span>
+          The final product amount paid by the customer.
+        </span>
+      </div>
+
+    </article>
+
+    <article class="commission-info-card">
+
+      <div class="commission-info-icon">
+        🏪
+      </div>
+
+      <div>
+        <strong>
+          Seller Payout
+        </strong>
+
+        <span>
+          The amount owed to sellers before payment processing.
+        </span>
+      </div>
+
+    </article>
+
+    <article class="commission-info-card">
+
+      <div class="commission-info-icon">
+        %
+      </div>
+
+      <div>
+        <strong>
+          MauMarket Commission
+        </strong>
+
+        <span>
+          The platform earns 10% on applicable marketplace sales.
+        </span>
+      </div>
+
+    </article>
+
   </section>
 
-  <section class="cards">
-    <div class="card">
-      <h3>Total Sales</h3>
-      <h2>Rs <span id="totalSales">0</span></h2>
-    </div>
+  <!-- =====================================================
+       REVENUE STATISTICS
+  ====================================================== -->
 
-    <div class="card">
-      <h3>Your Commission</h3>
-      <h2>Rs <span id="totalCommission">0</span></h2>
-    </div>
+  <section class="admin-commission-stats">
 
-    <div class="card">
-      <h3>Seller Payouts</h3>
-      <h2>Rs <span id="totalSellerPayout">0</span></h2>
-    </div>
+    <article class="admin-commission-stat-card">
 
-    <div class="card">
-      <h3>Delivery Fees</h3>
-      <h2>Rs <span id="totalDeliveryFees">0</span></h2>
-    </div>
+      <div class="admin-commission-stat-icon">
+        📈
+      </div>
 
-    <div class="card">
-      <h3>Verified Orders</h3>
-      <h2 id="verifiedOrdersCount">0</h2>
-    </div>
+      <div>
 
-    <div class="card">
-      <h3>Avg Commission / Order</h3>
-      <h2>Rs <span id="avgCommission">0</span></h2>
-    </div>
+        <span>
+          Total Sales
+        </span>
+
+        <strong>
+          Rs <span id="totalSales">0</span>
+        </strong>
+
+        <small>
+          Verified buyer sales
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-commission-stat-card commission-highlight-card">
+
+      <div class="admin-commission-stat-icon">
+        %
+      </div>
+
+      <div>
+
+        <span>
+          MauMarket Commission
+        </span>
+
+        <strong>
+          Rs <span id="totalCommission">0</span>
+        </strong>
+
+        <small>
+          Platform revenue
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-commission-stat-card">
+
+      <div class="admin-commission-stat-icon">
+        🏦
+      </div>
+
+      <div>
+
+        <span>
+          Seller Payouts
+        </span>
+
+        <strong>
+          Rs <span id="totalSellerPayout">0</span>
+        </strong>
+
+        <small>
+          Amount due to sellers
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-commission-stat-card">
+
+      <div class="admin-commission-stat-icon">
+        🚚
+      </div>
+
+      <div>
+
+        <span>
+          Delivery Fees
+        </span>
+
+        <strong>
+          Rs <span id="totalDeliveryFees">0</span>
+        </strong>
+
+        <small>
+          Delivery revenue collected
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-commission-stat-card">
+
+      <div class="admin-commission-stat-icon">
+        ✅
+      </div>
+
+      <div>
+
+        <span>
+          Verified Orders
+        </span>
+
+        <strong id="verifiedOrdersCount">
+          0
+        </strong>
+
+        <small>
+          Orders included in revenue
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="admin-commission-stat-card">
+
+      <div class="admin-commission-stat-icon">
+        📊
+      </div>
+
+      <div>
+
+        <span>
+          Average Commission
+        </span>
+
+        <strong>
+          Rs <span id="avgCommission">0</span>
+        </strong>
+
+        <small>
+          Average earned per order
+        </small>
+
+      </div>
+
+    </article>
+
   </section>
 
-  <section class="form-card">
+  <!-- =====================================================
+       VERIFIED ORDERS
+  ====================================================== -->
+
+  <section class="form-card admin-commission-orders-card">
+
     <div class="section-row-title">
-      <h2>Verified Orders</h2>
-      <span id="commissionOrdersCountText">Loading...</span>
+
+      <div>
+
+        <span class="section-kicker">
+          Revenue Breakdown
+        </span>
+
+        <h2>
+          Verified Orders
+        </h2>
+
+        <p>
+          Review the sales, commission, seller payout and delivery fee
+          breakdown for each verified order.
+        </p>
+
+      </div>
+
+      <span
+        id="commissionOrdersCountText"
+        class="admin-result-count"
+      >
+        Loading...
+      </span>
+
     </div>
 
-    <div id="commissionOrders">Loading...</div>
+    <div
+      id="commissionOrders"
+      class="admin-commission-orders-list"
+      aria-live="polite"
+    >
+      Loading verified orders...
+    </div>
+
   </section>
 
 </main>
 
-<script type="module" src="js/admin-commission.js?v=4.6-commission"></script>
+<script
+  type="module"
+  src="js/nav.js?v=5.1"
+></script>
+
+<script
+  type="module"
+  src="js/admin-commission.js?v=4.7"
+></script>
 
 </body>
 </html>
