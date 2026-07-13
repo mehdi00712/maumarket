@@ -1,122 +1,357 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Manage Products | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+
+    <title>Manage Products | MauMarket</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Manage products and services listed on MauMarket."
+    >
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="navbar">
-  <h2>Manage Products</h2>
+<!-- Navigation injected by nav.js -->
 
-  <nav>
-    <a href="admin.html">Admin</a>
-    <a href="admin-users.html">Users</a>
-    <a href="admin-analytics.html">Analytics</a>
-    <a href="products.html">Marketplace</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+<main class="container admin-products-page">
 
-<main class="container">
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
 
-  <section class="dashboard-section-title">
-    <h1>Marketplace Product Management</h1>
-    <p>Review, moderate, hide, activate and manage all products and services listed on MauMarket.</p>
-  </section>
+    <section class="admin-products-hero">
 
-  <section class="cards">
+        <div class="admin-products-hero-content">
 
-    <div class="card">
-      <h3>Total Listings</h3>
-      <h2 id="totalListings">0</h2>
-    </div>
+            <span class="hero-badge">
+                MauMarket Administration
+            </span>
 
-    <div class="card">
-      <h3>Active Listings</h3>
-      <h2 id="activeListings">0</h2>
-    </div>
+            <h1>
+                Marketplace Product Management
+            </h1>
 
-    <div class="card">
-      <h3>Hidden Listings</h3>
-      <h2 id="hiddenListings">0</h2>
-    </div>
+            <p>
+                Review, moderate, hide, activate and manage every product and
+                service listed on MauMarket from one professional dashboard.
+            </p>
 
-    <div class="card">
-      <h3>Products</h3>
-      <h2 id="productListings">0</h2>
-    </div>
+        </div>
 
-    <div class="card">
-      <h3>Services</h3>
-      <h2 id="serviceListings">0</h2>
-    </div>
+        <aside class="admin-products-hero-card">
 
-    <div class="card">
-      <h3>Out Of Stock</h3>
-      <h2 id="outOfStockListings">0</h2>
-    </div>
+            <div class="admin-products-hero-icon">
+                📦
+            </div>
 
-  </section>
+            <h2>
+                Marketplace Control
+            </h2>
 
-  <section class="form-card">
+            <p>
+                Keep the marketplace organised by managing listings, services,
+                stock availability and seller content.
+            </p>
 
-    <div class="section-row-title">
-      <h2>Filter Listings</h2>
-      <span>Search and moderate products</span>
-    </div>
+            <div class="profile-status-row">
 
-    <div class="admin-filter-row">
+                <span>
+                    Marketplace Status
+                </span>
 
-      <input
-        id="productSearchInput"
-        type="text"
-        placeholder="Search title, category, seller..."
-      >
+                <strong>
+                    Live
+                </strong>
 
-      <select id="typeFilter">
-        <option value="">All Types</option>
-        <option value="product">Products</option>
-        <option value="service">Services</option>
-      </select>
+            </div>
 
-      <select id="statusFilter">
-        <option value="">All Status</option>
-        <option value="active">Active</option>
-        <option value="hidden">Hidden</option>
-      </select>
+        </aside>
 
-      <button
-        id="clearProductFiltersBtn"
-        class="secondary-btn"
-        type="button"
-      >
-        Clear Filters
-      </button>
+    </section>
 
-    </div>
+    <!-- =====================================================
+         STATISTICS
+    ====================================================== -->
 
-  </section>
+    <section class="admin-products-stats">
 
-  <section class="form-card">
+        <article class="admin-stat-card">
 
-    <div class="section-row-title">
-      <h2>Marketplace Listings</h2>
-      <span id="productsResultCount">Loading...</span>
-    </div>
+            <div class="admin-stat-icon">📦</div>
 
-    <div id="adminProductsList">
-      Loading products...
-    </div>
+            <div>
 
-  </section>
+                <span>Total Listings</span>
+
+                <strong id="totalListings">
+                    0
+                </strong>
+
+                <small>Products & Services</small>
+
+            </div>
+
+        </article>
+
+        <article class="admin-stat-card success-card">
+
+            <div class="admin-stat-icon">✅</div>
+
+            <div>
+
+                <span>Active Listings</span>
+
+                <strong id="activeListings">
+                    0
+                </strong>
+
+                <small>Visible to customers</small>
+
+            </div>
+
+        </article>
+
+        <article class="admin-stat-card warning-card">
+
+            <div class="admin-stat-icon">🙈</div>
+
+            <div>
+
+                <span>Hidden Listings</span>
+
+                <strong id="hiddenListings">
+                    0
+                </strong>
+
+                <small>Hidden by administrators</small>
+
+            </div>
+
+        </article>
+
+        <article class="admin-stat-card">
+
+            <div class="admin-stat-icon">🛒</div>
+
+            <div>
+
+                <span>Products</span>
+
+                <strong id="productListings">
+                    0
+                </strong>
+
+                <small>Physical products</small>
+
+            </div>
+
+        </article>
+
+        <article class="admin-stat-card">
+
+            <div class="admin-stat-icon">🛠️</div>
+
+            <div>
+
+                <span>Services</span>
+
+                <strong id="serviceListings">
+                    0
+                </strong>
+
+                <small>Service listings</small>
+
+            </div>
+
+        </article>
+
+        <article class="admin-stat-card danger-card">
+
+            <div class="admin-stat-icon">📉</div>
+
+            <div>
+
+                <span>Out Of Stock</span>
+
+                <strong id="outOfStockListings">
+                    0
+                </strong>
+
+                <small>Needs attention</small>
+
+            </div>
+
+        </article>
+
+    </section>
+
+    <!-- =====================================================
+         FILTERS
+    ====================================================== -->
+
+    <section class="form-card">
+
+        <div class="section-row-title">
+
+            <div>
+
+                <span class="section-kicker">
+                    Marketplace Filters
+                </span>
+
+                <h2>
+                    Filter Listings
+                </h2>
+
+                <p>
+                    Quickly search, filter and moderate marketplace listings.
+                </p>
+
+            </div>
+
+            <button
+                id="clearProductFiltersBtn"
+                class="secondary-btn"
+                type="button">
+
+                Clear Filters
+
+            </button>
+
+        </div>
+
+        <div class="admin-filter-row">
+
+            <div class="admin-filter-field">
+
+                <label for="productSearchInput">
+                    Search
+                </label>
+
+                <input
+                    id="productSearchInput"
+                    type="search"
+                    placeholder="Search title, seller, category..."
+                >
+
+            </div>
+
+            <div class="admin-filter-field">
+
+                <label for="typeFilter">
+                    Listing Type
+                </label>
+
+                <select id="typeFilter">
+
+                    <option value="">
+                        All Types
+                    </option>
+
+                    <option value="product">
+                        Products
+                    </option>
+
+                    <option value="service">
+                        Services
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="admin-filter-field">
+
+                <label for="statusFilter">
+                    Listing Status
+                </label>
+
+                <select id="statusFilter">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option value="active">
+                        Active
+                    </option>
+
+                    <option value="hidden">
+                        Hidden
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         PRODUCTS
+    ====================================================== -->
+
+    <section class="form-card">
+
+        <div class="section-row-title">
+
+            <div>
+
+                <span class="section-kicker">
+                    Marketplace
+                </span>
+
+                <h2>
+                    Listings
+                </h2>
+
+                <p>
+                    Moderate marketplace products and services.
+                </p>
+
+            </div>
+
+            <span
+                id="productsResultCount"
+                class="admin-result-count">
+
+                Loading...
+
+            </span>
+
+        </div>
+
+        <div
+            id="adminProductsList"
+            class="admin-products-list">
+
+            Loading products...
+
+        </div>
+
+    </section>
 
 </main>
 
-<script type="module" src="js/admin-products.js?v=3.5"></script>
+<script
+    type="module"
+    src="js/nav.js?v=5.1">
+</script>
+
+<script
+    type="module"
+    src="js/admin-products.js?v=3.6">
+</script>
 
 </body>
 </html>
