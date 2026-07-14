@@ -12,7 +12,7 @@
 
   <meta
     name="description"
-    content="Manage your MauMarket shop, products, services, pricing and public seller link."
+    content="Manage your MauMarket business information, products, services, pricing and listings."
   >
 
   <link rel="stylesheet" href="styles.css">
@@ -41,13 +41,13 @@
       </h1>
 
       <p>
-        Manage your shop profile, personalized public link, products,
-        services, pricing, product slots and marketplace listings.
+        Manage your private business information, products, services, pricing,
+        product slots and marketplace listings from one secure dashboard.
       </p>
 
       <div class="seller-hero-points">
 
-        <span>✓ Personalized shop page</span>
+        <span>✓ Private business profile</span>
         <span>✓ Dynamic product categories</span>
         <span>✓ Automatic customer pricing</span>
         <span>✓ Marketplace visibility controls</span>
@@ -67,8 +67,8 @@
       </h2>
 
       <p>
-        Build your MauMarket shop and share your personalized link directly
-        with customers.
+        Manage your seller account while MauMarket protects your business identity
+        from public buyers.
       </p>
 
       <div class="profile-status-row">
@@ -100,11 +100,11 @@
       </div>
 
       <strong>
-        Shop Profile
+        Private Seller Profile
       </strong>
 
       <span>
-        Build trust with a professional public seller page.
+        Your phone, address and business identity stay private from buyers.
       </span>
 
     </div>
@@ -116,11 +116,11 @@
       </div>
 
       <strong>
-        Personalized Link
+        Managed Delivery
       </strong>
 
       <span>
-        Share a unique shop link with customers.
+        MauMarket coordinates private seller pickup and customer delivery.
       </span>
 
     </div>
@@ -170,30 +170,30 @@
       <div>
 
         <span class="section-kicker">
-          Public Shop Profile
+          Public Private Seller Profile
         </span>
 
         <h2>
-          Your Shop
+          Business & Pickup Information
         </h2>
 
         <p>
-          This information appears on your public MauMarket shop page.
+          This information is used internally for verification, administration and delivery pickup. It is not shown publicly to buyers.
         </p>
 
       </div>
+</div>
 
-      <a
-        id="viewPublicShopBtn"
-        href="#"
-        target="_blank"
-        rel="noopener"
-        class="secondary-btn"
-        style="display:none;"
-      >
-        View Public Shop
-      </a>
-
+    <div class="seller-private-notice">
+      <div class="seller-private-notice-icon">🛡</div>
+      <div>
+        <strong>Your seller identity stays private</strong>
+        <p>
+          Buyers only see “Verified MauMarket Merchant.” Your business name,
+          phone number and pickup information are available only to MauMarket
+          administrators and assigned delivery drivers.
+        </p>
+      </div>
     </div>
 
     <div class="seller-shop-form-grid">
@@ -201,7 +201,7 @@
       <div class="form-group">
 
         <label for="shopName">
-          Shop Name
+          Business Name
         </label>
 
         <input
@@ -217,7 +217,7 @@
       <div class="form-group">
 
         <label for="shopPhone">
-          Shop Phone
+          Business Phone
         </label>
 
         <input
@@ -233,12 +233,12 @@
       <div class="form-group seller-shop-description-field">
 
         <label for="shopDescription">
-          Shop Description
+          Business Description
         </label>
 
         <textarea
           id="shopDescription"
-          placeholder="Tell customers what your shop sells and what makes it special"
+          placeholder="Describe your business, products and services for MauMarket verification"
           maxlength="800"
         ></textarea>
 
@@ -247,7 +247,7 @@
       <div class="form-group">
 
         <label for="shopLocation">
-          Shop Location
+          General Business Area
         </label>
 
         <input
@@ -260,121 +260,40 @@
 
       </div>
 
-    </div>
+      <div class="form-group seller-pickup-address-field">
 
-    <!-- ===================================================
-         PERSONALIZED SHOP LINK
-    ==================================================== -->
+        <label for="shopPickupAddress">
+          Exact Pickup Address
+        </label>
 
-    <section class="seller-public-link-section">
+        <textarea
+          id="shopPickupAddress"
+          placeholder="Enter the exact pickup address for MauMarket delivery drivers"
+          maxlength="500"
+        ></textarea>
 
-      <div class="seller-public-link-heading">
-
-        <div>
-
-          <span class="section-kicker">
-            Personalized Shop Address
-          </span>
-
-          <h3>
-            Your Public Shop Link
-          </h3>
-
-          <p>
-            Choose a unique link that customers can use to visit your shop
-            and browse all your active products and services.
-          </p>
-
-        </div>
-
-        <span
-          id="shopSlugStatus"
-          class="shop-slug-status"
-        >
-          Not checked
-        </span>
+        <small class="muted">
+          This exact address is never shown publicly to buyers.
+        </small>
 
       </div>
 
       <div class="form-group">
 
-        <label for="shopSlug">
-          Personalized Link Name
+        <label for="shopPickupInstructions">
+          Pickup Instructions
         </label>
 
-        <div class="shop-slug-input-group">
-
-          <span
-            id="shopSlugPrefix"
-            class="shop-slug-prefix"
-          >
-            shop.html?shop=
-          </span>
-
-          <input
-            id="shopSlug"
-            type="text"
-            placeholder="mehdi-electronics"
-            maxlength="40"
-            autocomplete="off"
-            spellcheck="false"
-          >
-
-        </div>
-
-        <small class="muted">
-          Use lowercase letters, numbers and hyphens only. Example:
-          <strong>mehdi-electronics</strong>
-        </small>
+        <textarea
+          id="shopPickupInstructions"
+          placeholder="Gate, building, floor, landmark, opening hours or collection instructions"
+          maxlength="500"
+        ></textarea>
 
       </div>
 
-      <div class="seller-public-link-preview">
-
-        <div>
-
-          <span>
-            Your shareable link
-          </span>
-
-          <input
-            id="publicShopLink"
-            type="text"
-            value=""
-            readonly
-            placeholder="Save your shop to generate the public link"
-          >
-
-        </div>
-
-        <button
-          id="copyShopLinkBtn"
-          type="button"
-          class="secondary-btn"
-          disabled
-        >
-          Copy Link
-        </button>
-
-        <button
-          id="shareShopLinkBtn"
-          type="button"
-          class="secondary-btn"
-          disabled
-        >
-          Share Link
-        </button>
-
-      </div>
-
-      <p
-        id="shopLinkMessage"
-        class="seller-shop-link-message"
-      ></p>
-
-    </section>
-
-    <!-- ===================================================
+    </div>
+<!-- ===================================================
          SHOP IMAGES
     ==================================================== -->
 
@@ -383,7 +302,7 @@
       <div class="form-group">
 
         <label for="shopLogo">
-          Shop Logo
+          Business Logo
         </label>
 
         <input
@@ -393,7 +312,7 @@
         >
 
         <small class="muted">
-          Recommended: square image, at least 500 × 500 pixels.
+          Used internally in seller and administration tools.
         </small>
 
         <div
@@ -407,7 +326,7 @@
       <div class="form-group">
 
         <label for="shopBanner">
-          Shop Banner
+          Business Banner
         </label>
 
         <input
@@ -417,7 +336,7 @@
         >
 
         <small class="muted">
-          Recommended: wide image, at least 1400 × 500 pixels.
+          Optional internal branding image for your seller account.
         </small>
 
         <div
@@ -437,17 +356,9 @@
         type="button"
         class="btn"
       >
-        Save Shop
+        Save Business Information
       </button>
-
-      <a
-        href="shops.html"
-        class="secondary-btn"
-      >
-        Browse Shops
-      </a>
-
-    </div>
+</div>
 
     <p
       id="shopMessage"
@@ -537,7 +448,7 @@
         </h2>
 
         <p>
-          Create a new listing for buyers across Mauritius.
+          Publish products and services under MauMarket. Your business identity is not shown publicly to buyers.
         </p>
 
       </div>
@@ -749,7 +660,7 @@
         >
 
         <small class="muted">
-          For products, enter the seller pickup area or delivery coverage.
+          Used internally for delivery and service planning.
         </small>
 
       </div>
@@ -767,7 +678,7 @@
         >
 
         <small class="muted">
-          Use a clear image with a simple background.
+          Use a clear image with no phone number, shop name, address or social media details.
         </small>
 
         <div
@@ -832,16 +743,7 @@
 
       </div>
 
-      <a
-        id="sellerPublicShopItemsBtn"
-        href="#"
-        target="_blank"
-        rel="noopener"
-        class="secondary-btn"
-        style="display:none;"
-      >
-        View Shop Listings
-      </a>
+      <a href="products.html" class="secondary-btn">View Marketplace</a>
 
     </div>
 
@@ -859,12 +761,12 @@
 
 <script
   type="module"
-  src="js/nav.js?v=5.2"
+  src="js/nav.js?v=5.3"
 ></script>
 
 <script
   type="module"
-  src="js/seller.js?v=5.0"
+  src="js/seller.js?v=6.0"
 ></script>
 
 </body>
