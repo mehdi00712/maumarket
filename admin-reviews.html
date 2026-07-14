@@ -2,465 +2,211 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
   <title>Manage Reviews | MauMarket</title>
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <meta
-    name="description"
-    content="Review and moderate customer, seller and delivery feedback on MauMarket."
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Moderate customer reviews, merchant ratings and delivery feedback on MauMarket.">
+  <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-<!-- Navigation is injected automatically by nav.js -->
+<!-- Navigation injected by nav.js -->
 
 <main class="container admin-reviews-page">
 
-  <!-- =====================================================
-       HERO
-  ====================================================== -->
+<section class="admin-reviews-hero">
 
-  <section class="admin-reviews-hero">
+<div class="admin-reviews-hero-content">
 
-    <div class="admin-reviews-hero-content">
+<span class="hero-badge">
+MauMarket Administration
+</span>
 
-      <span class="hero-badge">
-        MauMarket Administration
-      </span>
+<h1>Review Moderation</h1>
 
-      <h1>
-        Review Moderation
-      </h1>
-
-      <p>
-        Monitor customer feedback, seller ratings, delivery ratings and
-        verified order reviews from one professional dashboard.
-      </p>
-
-    </div>
-
-    <aside class="admin-reviews-hero-card">
-
-      <div class="admin-reviews-hero-icon">
-        ★
-      </div>
-
-      <h2>
-        Reputation Control
-      </h2>
-
-      <p>
-        Review customer feedback, investigate complaints and remove
-        inappropriate or fraudulent reviews.
-      </p>
-
-      <div class="profile-status-row">
-
-        <span>
-          Moderation Status
-        </span>
-
-        <strong>
-          Active
-        </strong>
-
-      </div>
-
-    </aside>
-
-  </section>
-
-  <!-- =====================================================
-       STATISTICS
-  ====================================================== -->
-
-  <section class="admin-reviews-stats">
-
-    <article class="admin-review-stat-card">
-
-      <div class="admin-review-stat-icon">
-        💬
-      </div>
-
-      <div>
-
-        <span>
-          Total Reviews
-        </span>
-
-        <strong id="totalReviews">
-          0
-        </strong>
-
-        <small>
-          All customer reviews
-        </small>
-
-      </div>
-
-    </article>
-
-    <article class="admin-review-stat-card">
-
-      <div class="admin-review-stat-icon">
-        🏪
-      </div>
-
-      <div>
-
-        <span>
-          Average Seller Rating
-        </span>
-
-        <strong>
-          <span id="averageSellerRating">0.0</span> ★
-        </strong>
-
-        <small>
-          Overall seller satisfaction
-        </small>
-
-      </div>
-
-    </article>
-
-    <article class="admin-review-stat-card">
-
-      <div class="admin-review-stat-icon">
-        🚚
-      </div>
-
-      <div>
-
-        <span>
-          Average Delivery Rating
-        </span>
-
-        <strong>
-          <span id="averageDeliveryRating">0.0</span> ★
-        </strong>
-
-        <small>
-          Overall delivery satisfaction
-        </small>
-
-      </div>
-
-    </article>
-
-    <article class="admin-review-stat-card success-card">
-
-      <div class="admin-review-stat-icon">
-        ⭐
-      </div>
-
-      <div>
-
-        <span>
-          Five-Star Reviews
-        </span>
-
-        <strong id="fiveStarReviews">
-          0
-        </strong>
-
-        <small>
-          Excellent seller ratings
-        </small>
-
-      </div>
-
-    </article>
-
-    <article class="admin-review-stat-card warning-card">
-
-      <div class="admin-review-stat-icon">
-        ⚠
-      </div>
-
-      <div>
-
-        <span>
-          Low Ratings
-        </span>
-
-        <strong id="lowRatingReviews">
-          0
-        </strong>
-
-        <small>
-          Reviews rated two stars or below
-        </small>
-
-      </div>
-
-    </article>
-
-    <article class="admin-review-stat-card">
-
-      <div class="admin-review-stat-icon">
-        ✅
-      </div>
-
-      <div>
-
-        <span>
-          Verified Reviews
-        </span>
-
-        <strong id="verifiedReviewsCount">
-          0
-        </strong>
-
-        <small>
-          Reviews linked to an order
-        </small>
-
-      </div>
-
-    </article>
-
-  </section>
-
-  <!-- =====================================================
-       FILTERS
-  ====================================================== -->
-
-  <section class="form-card admin-reviews-filter-card">
-
-    <div class="section-row-title">
-
-      <div>
-
-        <span class="section-kicker">
-          Search and Filter
-        </span>
-
-        <h2>
-          Filter Reviews
-        </h2>
-
-        <p>
-          Search customer feedback and filter reviews by seller rating.
-        </p>
-
-      </div>
-
-      <button
-        id="clearReviewFiltersBtn"
-        type="button"
-        class="secondary-btn"
-      >
-        Clear Filters
-      </button>
-
-    </div>
-
-    <div class="admin-filter-row admin-reviews-filter-row">
-
-      <div class="admin-filter-field admin-review-search-field">
-
-        <label for="reviewSearchInput">
-          Search Reviews
-        </label>
-
-        <input
-          id="reviewSearchInput"
-          type="search"
-          placeholder="Search customer, email, order ID or review text"
-          autocomplete="off"
-        >
-
-      </div>
-
-      <div class="admin-filter-field">
-
-        <label for="ratingFilter">
-          Seller Rating
-        </label>
-
-        <select id="ratingFilter">
-
-          <option value="">
-            All Ratings
-          </option>
-
-          <option value="5">
-            5 Stars
-          </option>
-
-          <option value="4">
-            4 Stars
-          </option>
-
-          <option value="3">
-            3 Stars
-          </option>
-
-          <option value="2">
-            2 Stars
-          </option>
-
-          <option value="1">
-            1 Star
-          </option>
-
-        </select>
-
-      </div>
-
-      <div class="admin-filter-field">
-
-        <label for="reviewSortFilter">
-          Sort
-        </label>
-
-        <select id="reviewSortFilter">
-
-          <option value="newest">
-            Newest
-          </option>
-
-          <option value="oldest">
-            Oldest
-          </option>
-
-          <option value="highest">
-            Highest Rating
-          </option>
-
-          <option value="lowest">
-            Lowest Rating
-          </option>
-
-        </select>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- =====================================================
-       REVIEWS LIST
-  ====================================================== -->
-
-  <section class="form-card admin-reviews-list-card">
-
-    <div class="section-row-title">
-
-      <div>
-
-        <span class="section-kicker">
-          Customer Feedback
-        </span>
-
-        <h2>
-          Reviews
-        </h2>
-
-        <p>
-          Review seller and delivery feedback linked to MauMarket orders.
-        </p>
-
-      </div>
-
-      <span
-        id="reviewsResultCount"
-        class="admin-result-count"
-      >
-        Loading...
-      </span>
-
-    </div>
-
-    <div
-      id="reviewsList"
-      class="admin-reviews-list"
-      aria-live="polite"
-    >
-      Loading reviews...
-    </div>
-
-  </section>
-
-</main>
-
-<!-- =====================================================
-     ORDER DETAILS MODAL
-====================================================== -->
-
-<div
-  id="reviewOrderModal"
-  class="review-order-modal"
-  aria-hidden="true"
->
-
-  <div
-    id="reviewOrderModalOverlay"
-    class="review-order-modal-overlay"
-  ></div>
-
-  <section
-    class="review-order-modal-card"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="reviewOrderModalTitle"
-  >
-
-    <div class="review-order-modal-head">
-
-      <div>
-
-        <span class="section-kicker">
-          Order Information
-        </span>
-
-        <h2 id="reviewOrderModalTitle">
-          Order Details
-        </h2>
-
-      </div>
-
-      <button
-        id="closeReviewOrderModalBtn"
-        type="button"
-        class="review-order-modal-close"
-        aria-label="Close order details"
-      >
-        ×
-      </button>
-
-    </div>
-
-    <div
-      id="reviewOrderModalContent"
-      class="review-order-modal-content"
-    >
-      Loading order...
-    </div>
-
-  </section>
+<p>
+Monitor customer feedback, merchant ratings, delivery ratings and verified
+reviews submitted after completed MauMarket orders.
+</p>
 
 </div>
 
-<script
-  type="module"
-  src="js/nav.js?v=5.1"
-></script>
+<aside class="admin-reviews-hero-card">
 
-<script
-  type="module"
-  src="js/admin-reviews.js?v=4.0"
-></script>
+<div class="admin-reviews-hero-icon">⭐</div>
+
+<h2>Reputation Centre</h2>
+
+<p>
+Investigate complaints, moderate inappropriate reviews and maintain trust
+across the marketplace.
+</p>
+
+<div class="profile-status-row">
+<span>Moderation</span>
+<strong>Active</strong>
+</div>
+
+</aside>
+
+</section>
+
+<section class="admin-reviews-stats">
+
+<article class="admin-review-stat-card">
+<div class="admin-review-stat-icon">💬</div>
+<div>
+<span>Total Reviews</span>
+<strong id="totalReviews">0</strong>
+<small>Customer reviews</small>
+</div>
+</article>
+
+<article class="admin-review-stat-card">
+<div class="admin-review-stat-icon">🏪</div>
+<div>
+<span>Average Merchant Rating</span>
+<strong><span id="averageMerchantRating">0.0</span> ★</strong>
+<small>Overall merchant satisfaction</small>
+</div>
+</article>
+
+<article class="admin-review-stat-card">
+<div class="admin-review-stat-icon">🚚</div>
+<div>
+<span>Average Delivery Rating</span>
+<strong><span id="averageDeliveryRating">0.0</span> ★</strong>
+<small>Delivery experience</small>
+</div>
+</article>
+
+<article class="admin-review-stat-card success-card">
+<div class="admin-review-stat-icon">⭐</div>
+<div>
+<span>Five-Star Reviews</span>
+<strong id="fiveStarReviews">0</strong>
+<small>Excellent experiences</small>
+</div>
+</article>
+
+<article class="admin-review-stat-card warning-card">
+<div class="admin-review-stat-icon">⚠️</div>
+<div>
+<span>Low Ratings</span>
+<strong id="lowRatingReviews">0</strong>
+<small>2 stars or below</small>
+</div>
+</article>
+
+<article class="admin-review-stat-card">
+<div class="admin-review-stat-icon">✅</div>
+<div>
+<span>Verified Reviews</span>
+<strong id="verifiedReviewsCount">0</strong>
+<small>Linked to completed orders</small>
+</div>
+</article>
+
+</section>
+
+<section class="form-card admin-reviews-filter-card">
+
+<div class="section-row-title">
+<div>
+<span class="section-kicker">Search & Filter</span>
+<h2>Filter Reviews</h2>
+<p>Search customer feedback and filter by merchant rating.</p>
+</div>
+
+<button id="clearReviewFiltersBtn" type="button" class="secondary-btn">
+Clear Filters
+</button>
+</div>
+
+<div class="admin-filter-row admin-reviews-filter-row">
+
+<div class="admin-filter-field admin-review-search-field">
+<label for="reviewSearchInput">Search Reviews</label>
+<input id="reviewSearchInput" type="search" placeholder="Search customer, order, product or review">
+</div>
+
+<div class="admin-filter-field">
+<label for="ratingFilter">Merchant Rating</label>
+<select id="ratingFilter">
+<option value="">All Ratings</option>
+<option value="5">5 Stars</option>
+<option value="4">4 Stars</option>
+<option value="3">3 Stars</option>
+<option value="2">2 Stars</option>
+<option value="1">1 Star</option>
+</select>
+</div>
+
+<div class="admin-filter-field">
+<label for="reviewSortFilter">Sort</label>
+<select id="reviewSortFilter">
+<option value="newest">Newest</option>
+<option value="oldest">Oldest</option>
+<option value="highest">Highest Rating</option>
+<option value="lowest">Lowest Rating</option>
+</select>
+</div>
+
+</div>
+
+</section>
+
+<section class="form-card admin-reviews-list-card">
+
+<div class="section-row-title">
+<div>
+<span class="section-kicker">Customer Feedback</span>
+<h2>Reviews</h2>
+<p>Review merchant and delivery feedback linked to MauMarket orders.</p>
+</div>
+
+<span id="reviewsResultCount" class="admin-result-count">
+Loading...
+</span>
+</div>
+
+<div id="reviewsList" class="admin-reviews-list" aria-live="polite">
+Loading reviews...
+</div>
+
+</section>
+
+</main>
+
+<div id="reviewOrderModal" class="review-order-modal" aria-hidden="true">
+
+<div id="reviewOrderModalOverlay" class="review-order-modal-overlay"></div>
+
+<section class="review-order-modal-card" role="dialog" aria-modal="true" aria-labelledby="reviewOrderModalTitle">
+
+<div class="review-order-modal-head">
+
+<div>
+<span class="section-kicker">Order Information</span>
+<h2 id="reviewOrderModalTitle">Order Details</h2>
+</div>
+
+<button id="closeReviewOrderModalBtn" type="button" class="review-order-modal-close" aria-label="Close">
+×
+</button>
+
+</div>
+
+<div id="reviewOrderModalContent" class="review-order-modal-content">
+Loading order...
+</div>
+
+</section>
+
+</div>
+
+<script type="module" src="js/nav.js?v=5.3"></script>
+<script type="module" src="js/admin-reviews.js?v=5.0-private-merchant"></script>
 
 </body>
 </html>
