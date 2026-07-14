@@ -2,4 +2,4 @@ User-agent: *
 
 Allow: /
 
-Sitemap: https://mehdi00712.github.io/maumarket/sitemap.xml
+Sitemap: https://maumarket.mu/sitemap.xml
