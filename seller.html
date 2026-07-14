@@ -2,203 +2,870 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <title>Seller Dashboard | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Manage your MauMarket shop, products, services, pricing and public seller link."
+  >
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<main class="container seller-page">
+<!-- Navigation is injected automatically by nav.js -->
 
-  <section class="dashboard-section-title">
-    <h1>Seller Dashboard</h1>
-    <p>Manage your shop, listings, prices, product slots and orders from one place.</p>
-  </section>
+<main class="container seller-page premium-seller-page">
 
-  <section class="buyer-trust-strip">
-    <div>
-      <strong>🏪 Shop Profile</strong>
-      <span>Build trust with a clean seller page.</span>
-    </div>
+  <!-- =====================================================
+       SELLER HERO
+  ====================================================== -->
 
-    <div>
-      <strong>📦 Manage Listings</strong>
-      <span>Add products and services for MauMarket buyers.</span>
-    </div>
+  <section class="seller-dashboard-hero">
 
-    <div>
-      <strong>💰 Smart Pricing</strong>
-      <span>Enter your seller price and let MauMarket calculate the customer price.</span>
-    </div>
-  </section>
+    <div class="seller-dashboard-hero-content">
 
-  <section class="form-card">
-    <div class="section-row-title">
-      <div>
-        <h2>Your Shop</h2>
-        <p class="muted">This information appears on your public shop page.</p>
-      </div>
-    </div>
+      <span class="hero-badge">
+        MauMarket Seller
+      </span>
 
-    <div class="form-group">
-      <label>Shop Name</label>
-      <input id="shopName" placeholder="Example: Mehdi Electronics">
-    </div>
-
-    <div class="form-group">
-      <label>Shop Description</label>
-      <textarea id="shopDescription" placeholder="Tell customers what your shop sells"></textarea>
-    </div>
-
-    <div class="form-group">
-      <label>Shop Phone</label>
-      <input id="shopPhone" placeholder="Example: 57750662">
-    </div>
-
-    <div class="form-group">
-      <label>Shop Location</label>
-      <input id="shopLocation" placeholder="Example: Beau Bassin">
-    </div>
-
-    <div class="form-group">
-      <label>Shop Logo</label>
-      <input id="shopLogo" type="file" accept="image/*">
-    </div>
-
-    <div class="form-group">
-      <label>Shop Banner</label>
-      <input id="shopBanner" type="file" accept="image/*">
-    </div>
-
-    <button id="saveShopBtn" type="button">Save Shop</button>
-    <p id="shopMessage"></p>
-  </section>
-
-  <section class="form-card">
-    <div class="section-row-title">
-      <div>
-        <h2>Product Slots</h2>
-        <p class="muted">Request more slots when you want to list more items.</p>
-      </div>
-    </div>
-
-    <p id="slotInfo">Loading slots...</p>
-    <button id="requestSlotsBtn" type="button">Request More Slots</button>
-    <p id="slotMessage"></p>
-  </section>
-
-  <section class="form-card">
-    <div class="section-row-title">
-      <div>
-        <h2 id="formTitle">Add Product / Service</h2>
-        <p class="muted">Create listings for buyers across Mauritius.</p>
-      </div>
-    </div>
-
-    <div class="commission-info-box">
-      <h3>Pricing Preview</h3>
+      <h1>
+        Seller Dashboard
+      </h1>
 
       <p>
-        Enter the amount you want to receive. The customer price is calculated automatically.
+        Manage your shop profile, personalized public link, products,
+        services, pricing, product slots and marketplace listings.
       </p>
 
-      <div class="commission-example">
-        <div>
-          <strong>Seller Price</strong>
-          <span id="sellerPricePreview">Rs 0</span>
-        </div>
+      <div class="seller-hero-points">
 
-        <div>
-          <strong>MauMarket</strong>
-          <span id="commissionPreview">Rs 0</span>
-        </div>
+        <span>✓ Personalized shop page</span>
+        <span>✓ Dynamic product categories</span>
+        <span>✓ Automatic customer pricing</span>
+        <span>✓ Marketplace visibility controls</span>
 
-        <div>
-          <strong>Customer Price</strong>
-          <span id="buyerPricePreview">Rs 0</span>
-        </div>
       </div>
+
     </div>
 
-    <div class="form-group">
-      <label>Item Type</label>
-      <select id="itemType">
-        <option value="product">Product</option>
-        <option value="service">Service</option>
-      </select>
-    </div>
+    <aside class="seller-dashboard-hero-card">
 
-    <div class="form-group">
-      <label>Title</label>
-      <input id="itemTitle" placeholder="Example: Wireless Headphones">
-    </div>
+      <div class="seller-dashboard-hero-icon">
+        🏪
+      </div>
 
-    <div class="form-group">
-      <label>Description</label>
-      <textarea id="itemDescription" placeholder="Describe the product or service"></textarea>
-    </div>
+      <h2>
+        Seller Control Centre
+      </h2>
 
-    <div class="form-group">
-      <label>Seller Price</label>
-      <input id="itemPrice" type="number" min="0" step="0.01" placeholder="Price you want to receive">
-      <small class="muted">
-        Buyers will only see the final customer price.
-      </small>
-    </div>
+      <p>
+        Build your MauMarket shop and share your personalized link directly
+        with customers.
+      </p>
 
-    <div class="form-group">
-      <label>Stock Quantity</label>
-      <input id="itemStock" type="number" min="0" placeholder="Stock quantity">
-    </div>
+      <div class="profile-status-row">
 
-    <div class="form-group">
-      <label>Category</label>
-      <select id="itemCategory">
-        <option value="Beauty">Beauty</option>
-        <option value="Electronics">Electronics</option>
-        <option value="Fashion">Fashion</option>
-        <option value="Food">Food</option>
-        <option value="Hardware">Hardware</option>
-        <option value="Home">Home</option>
-        <option value="Services">Services</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
+        <span>
+          Seller Account
+        </span>
 
-    <div class="form-group">
-      <label>Service Area</label>
-      <input id="serviceArea" placeholder="Example: Port Louis, Curepipe">
-    </div>
+        <strong>
+          Active
+        </strong>
 
-    <div class="form-group">
-      <label>Image</label>
-      <input id="itemImage" type="file" accept="image/*">
-    </div>
+      </div>
 
-    <div class="seller-actions">
-      <button id="saveItemBtn" type="button">Add Item</button>
-      <button id="cancelEditBtn" type="button" class="secondary-btn" style="display:none;">Cancel Edit</button>
-    </div>
+    </aside>
 
-    <p id="itemMessage"></p>
   </section>
 
-  <section>
-    <div class="section-row-title">
-      <div>
-        <h1>Your Items</h1>
-        <p class="muted">Edit, hide or delete your products and services.</p>
+  <!-- =====================================================
+       SELLER BENEFITS
+  ====================================================== -->
+
+  <section class="buyer-trust-strip seller-benefits-strip">
+
+    <div>
+
+      <div class="seller-benefit-icon">
+        🏪
       </div>
+
+      <strong>
+        Shop Profile
+      </strong>
+
+      <span>
+        Build trust with a professional public seller page.
+      </span>
+
     </div>
 
-    <div id="myItems" class="cards"></div>
+    <div>
+
+      <div class="seller-benefit-icon">
+        🔗
+      </div>
+
+      <strong>
+        Personalized Link
+      </strong>
+
+      <span>
+        Share a unique shop link with customers.
+      </span>
+
+    </div>
+
+    <div>
+
+      <div class="seller-benefit-icon">
+        📦
+      </div>
+
+      <strong>
+        Manage Listings
+      </strong>
+
+      <span>
+        Add products and services for buyers across Mauritius.
+      </span>
+
+    </div>
+
+    <div>
+
+      <div class="seller-benefit-icon">
+        💰
+      </div>
+
+      <strong>
+        Smart Pricing
+      </strong>
+
+      <span>
+        Enter your seller price and let MauMarket calculate the buyer price.
+      </span>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       SHOP PROFILE
+  ====================================================== -->
+
+  <section class="form-card seller-shop-profile-card">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Public Shop Profile
+        </span>
+
+        <h2>
+          Your Shop
+        </h2>
+
+        <p>
+          This information appears on your public MauMarket shop page.
+        </p>
+
+      </div>
+
+      <a
+        id="viewPublicShopBtn"
+        href="#"
+        target="_blank"
+        rel="noopener"
+        class="secondary-btn"
+        style="display:none;"
+      >
+        View Public Shop
+      </a>
+
+    </div>
+
+    <div class="seller-shop-form-grid">
+
+      <div class="form-group">
+
+        <label for="shopName">
+          Shop Name
+        </label>
+
+        <input
+          id="shopName"
+          type="text"
+          placeholder="Example: Mehdi Electronics"
+          maxlength="80"
+          autocomplete="organization"
+        >
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="shopPhone">
+          Shop Phone
+        </label>
+
+        <input
+          id="shopPhone"
+          type="tel"
+          placeholder="Example: 57750662"
+          maxlength="20"
+          autocomplete="tel"
+        >
+
+      </div>
+
+      <div class="form-group seller-shop-description-field">
+
+        <label for="shopDescription">
+          Shop Description
+        </label>
+
+        <textarea
+          id="shopDescription"
+          placeholder="Tell customers what your shop sells and what makes it special"
+          maxlength="800"
+        ></textarea>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="shopLocation">
+          Shop Location
+        </label>
+
+        <input
+          id="shopLocation"
+          type="text"
+          placeholder="Example: Beau Bassin"
+          maxlength="120"
+          autocomplete="address-level2"
+        >
+
+      </div>
+
+    </div>
+
+    <!-- ===================================================
+         PERSONALIZED SHOP LINK
+    ==================================================== -->
+
+    <section class="seller-public-link-section">
+
+      <div class="seller-public-link-heading">
+
+        <div>
+
+          <span class="section-kicker">
+            Personalized Shop Address
+          </span>
+
+          <h3>
+            Your Public Shop Link
+          </h3>
+
+          <p>
+            Choose a unique link that customers can use to visit your shop
+            and browse all your active products and services.
+          </p>
+
+        </div>
+
+        <span
+          id="shopSlugStatus"
+          class="shop-slug-status"
+        >
+          Not checked
+        </span>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="shopSlug">
+          Personalized Link Name
+        </label>
+
+        <div class="shop-slug-input-group">
+
+          <span
+            id="shopSlugPrefix"
+            class="shop-slug-prefix"
+          >
+            shop.html?shop=
+          </span>
+
+          <input
+            id="shopSlug"
+            type="text"
+            placeholder="mehdi-electronics"
+            maxlength="40"
+            autocomplete="off"
+            spellcheck="false"
+          >
+
+        </div>
+
+        <small class="muted">
+          Use lowercase letters, numbers and hyphens only. Example:
+          <strong>mehdi-electronics</strong>
+        </small>
+
+      </div>
+
+      <div class="seller-public-link-preview">
+
+        <div>
+
+          <span>
+            Your shareable link
+          </span>
+
+          <input
+            id="publicShopLink"
+            type="text"
+            value=""
+            readonly
+            placeholder="Save your shop to generate the public link"
+          >
+
+        </div>
+
+        <button
+          id="copyShopLinkBtn"
+          type="button"
+          class="secondary-btn"
+          disabled
+        >
+          Copy Link
+        </button>
+
+        <button
+          id="shareShopLinkBtn"
+          type="button"
+          class="secondary-btn"
+          disabled
+        >
+          Share Link
+        </button>
+
+      </div>
+
+      <p
+        id="shopLinkMessage"
+        class="seller-shop-link-message"
+      ></p>
+
+    </section>
+
+    <!-- ===================================================
+         SHOP IMAGES
+    ==================================================== -->
+
+    <div class="seller-shop-media-grid">
+
+      <div class="form-group">
+
+        <label for="shopLogo">
+          Shop Logo
+        </label>
+
+        <input
+          id="shopLogo"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+        >
+
+        <small class="muted">
+          Recommended: square image, at least 500 × 500 pixels.
+        </small>
+
+        <div
+          id="shopLogoPreview"
+          class="seller-media-preview"
+          style="display:none;"
+        ></div>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="shopBanner">
+          Shop Banner
+        </label>
+
+        <input
+          id="shopBanner"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+        >
+
+        <small class="muted">
+          Recommended: wide image, at least 1400 × 500 pixels.
+        </small>
+
+        <div
+          id="shopBannerPreview"
+          class="seller-media-preview seller-banner-preview"
+          style="display:none;"
+        ></div>
+
+      </div>
+
+    </div>
+
+    <div class="seller-actions seller-shop-save-actions">
+
+      <button
+        id="saveShopBtn"
+        type="button"
+        class="btn"
+      >
+        Save Shop
+      </button>
+
+      <a
+        href="shops.html"
+        class="secondary-btn"
+      >
+        Browse Shops
+      </a>
+
+    </div>
+
+    <p
+      id="shopMessage"
+      class="seller-form-message"
+    ></p>
+
+  </section>
+
+  <!-- =====================================================
+       PRODUCT SLOTS
+  ====================================================== -->
+
+  <section class="form-card seller-slots-card">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Listing Capacity
+        </span>
+
+        <h2>
+          Product Slots
+        </h2>
+
+        <p>
+          Request more slots when you need to publish additional products
+          or services.
+        </p>
+
+      </div>
+
+      <div class="seller-slot-icon">
+        📊
+      </div>
+
+    </div>
+
+    <div class="seller-slot-status-box">
+
+      <div>
+
+        <span>
+          Current Slot Usage
+        </span>
+
+        <strong id="slotInfo">
+          Loading slots...
+        </strong>
+
+      </div>
+
+      <button
+        id="requestSlotsBtn"
+        type="button"
+        class="secondary-btn"
+      >
+        Request More Slots
+      </button>
+
+    </div>
+
+    <p
+      id="slotMessage"
+      class="seller-form-message"
+    ></p>
+
+  </section>
+
+  <!-- =====================================================
+       PRODUCT / SERVICE FORM
+  ====================================================== -->
+
+  <section class="form-card seller-listing-form-card">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Marketplace Listing
+        </span>
+
+        <h2 id="formTitle">
+          Add Product / Service
+        </h2>
+
+        <p>
+          Create a new listing for buyers across Mauritius.
+        </p>
+
+      </div>
+
+    </div>
+
+    <!-- ===================================================
+         PRICING PREVIEW
+    ==================================================== -->
+
+    <div class="commission-info-box seller-pricing-preview">
+
+      <div>
+
+        <span class="section-kicker">
+          Automatic Pricing
+        </span>
+
+        <h3>
+          Pricing Preview
+        </h3>
+
+        <p>
+          Enter the amount you want to receive. MauMarket automatically
+          calculates the final price shown to customers.
+        </p>
+
+      </div>
+
+      <div class="commission-example">
+
+        <div>
+
+          <span>
+            Seller Price
+          </span>
+
+          <strong id="sellerPricePreview">
+            Rs 0
+          </strong>
+
+          <small>
+            Amount you receive
+          </small>
+
+        </div>
+
+        <div>
+
+          <span>
+            MauMarket
+          </span>
+
+          <strong id="commissionPreview">
+            Rs 0
+          </strong>
+
+          <small>
+            Platform commission
+          </small>
+
+        </div>
+
+        <div>
+
+          <span>
+            Customer Price
+          </span>
+
+          <strong id="buyerPricePreview">
+            Rs 0
+          </strong>
+
+          <small>
+            Price visible to buyers
+          </small>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="seller-listing-form-grid">
+
+      <div class="form-group">
+
+        <label for="itemType">
+          Item Type
+        </label>
+
+        <select id="itemType">
+
+          <option value="product">
+            Product
+          </option>
+
+          <option value="service">
+            Service
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="itemTitle">
+          Title
+        </label>
+
+        <input
+          id="itemTitle"
+          type="text"
+          placeholder="Example: Wireless Headphones"
+          maxlength="120"
+        >
+
+      </div>
+
+      <div class="form-group seller-listing-description-field">
+
+        <label for="itemDescription">
+          Description
+        </label>
+
+        <textarea
+          id="itemDescription"
+          placeholder="Describe the product or service"
+          maxlength="2000"
+        ></textarea>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="itemPrice">
+          Seller Price
+        </label>
+
+        <input
+          id="itemPrice"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Price you want to receive"
+        >
+
+        <small class="muted">
+          Buyers only see the final customer price.
+        </small>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="itemStock">
+          Stock Quantity
+        </label>
+
+        <input
+          id="itemStock"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Stock quantity"
+        >
+
+        <small class="muted">
+          For services, use the number of available bookings.
+        </small>
+
+      </div>
+
+      <!-- Categories are loaded dynamically from Firestore -->
+
+      <div class="form-group">
+
+        <label for="itemCategory">
+          Category
+        </label>
+
+        <select
+          id="itemCategory"
+          disabled
+        >
+          <option value="">
+            Loading categories...
+          </option>
+        </select>
+
+        <small class="muted">
+          Categories are managed by MauMarket administrators.
+        </small>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="serviceArea">
+          Service Area
+        </label>
+
+        <input
+          id="serviceArea"
+          type="text"
+          placeholder="Example: Port Louis, Curepipe"
+          maxlength="200"
+        >
+
+        <small class="muted">
+          For products, enter the seller pickup area or delivery coverage.
+        </small>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="itemImage">
+          Listing Image
+        </label>
+
+        <input
+          id="itemImage"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+        >
+
+        <small class="muted">
+          Use a clear image with a simple background.
+        </small>
+
+        <div
+          id="itemImagePreview"
+          class="seller-media-preview seller-item-image-preview"
+          style="display:none;"
+        ></div>
+
+      </div>
+
+    </div>
+
+    <div class="seller-actions seller-listing-save-actions">
+
+      <button
+        id="saveItemBtn"
+        type="button"
+        class="btn"
+      >
+        Add Item
+      </button>
+
+      <button
+        id="cancelEditBtn"
+        type="button"
+        class="secondary-btn"
+        style="display:none;"
+      >
+        Cancel Edit
+      </button>
+
+    </div>
+
+    <p
+      id="itemMessage"
+      class="seller-form-message"
+    ></p>
+
+  </section>
+
+  <!-- =====================================================
+       SELLER ITEMS
+  ====================================================== -->
+
+  <section class="seller-items-section">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Your Marketplace Content
+        </span>
+
+        <h2>
+          Your Items
+        </h2>
+
+        <p>
+          Edit, hide, activate or delete your products and services.
+        </p>
+
+      </div>
+
+      <a
+        id="sellerPublicShopItemsBtn"
+        href="#"
+        target="_blank"
+        rel="noopener"
+        class="secondary-btn"
+        style="display:none;"
+      >
+        View Shop Listings
+      </a>
+
+    </div>
+
+    <div
+      id="myItems"
+      class="cards seller-items-grid"
+      aria-live="polite"
+    >
+      Loading your items...
+    </div>
+
   </section>
 
 </main>
 
-<script type="module" src="js/nav.js?v=2.0"></script>
-<script type="module" src="js/seller.js?v=4.6-shared-nav"></script>
+<script
+  type="module"
+  src="js/nav.js?v=5.2"
+></script>
+
+<script
+  type="module"
+  src="js/seller.js?v=5.0"
+></script>
 
 </body>
 </html>
