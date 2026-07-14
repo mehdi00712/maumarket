@@ -19,6 +19,8 @@ import {
   - Filter by category
   - Sort by featured, rating, listings, newest and alphabetical
   - Responsive premium shop cards
+  - Personalized public shop links
+  - Backward-compatible seller ID fallback
 */
 
 const shopsGrid = document.getElementById("shopsGrid");
@@ -131,6 +133,12 @@ async function loadShopsDirectory() {
         return {
           id: docSnap.id,
           ownerId,
+          sellerId: data.sellerId || ownerId,
+          slug: normalizeShopSlug(
+            data.slug ||
+            data.shopSlug ||
+            ""
+          ),
           verified: data.verified !== false,
           active: data.active !== false,
           approved: data.approved !== false,
@@ -331,6 +339,7 @@ function renderShops(shouldScroll = false) {
       ${shop.description || ""}
       ${shop.location || ""}
       ${shop.address || ""}
+      ${shop.slug || ""}
       ${shopCategories.join(" ")}
     `.toLowerCase();
 
@@ -417,11 +426,12 @@ function createShopCard(shop) {
       `;
 
   const primaryCategory = getShopCategories(shop)[0] || "General";
+  const publicShopUrl = buildShopUrl(shop);
 
   card.innerHTML = `
     <a
       class="directory-shop-card-link"
-      href="shop.html?id=${encodeURIComponent(shop.id)}"
+      href="${escapeHtml(publicShopUrl)}"
       aria-label="Visit ${escapeHtml(shopName)}">
 
       <div class="directory-shop-banner">
@@ -695,6 +705,45 @@ function updateResultsText(count) {
       shopsDirectoryTitle.textContent = "All Shops";
     }
   }
+}
+
+function normalizeShopSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[\'’]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function buildShopUrl(shop) {
+  const slug = normalizeShopSlug(
+    shop?.slug ||
+    shop?.shopSlug ||
+    ""
+  );
+
+  if (slug) {
+    return `shop.html?shop=${encodeURIComponent(slug)}`;
+  }
+
+  const sellerId =
+    shop?.ownerId ||
+    shop?.sellerId ||
+    shop?.id ||
+    "";
+
+  if (sellerId) {
+    return `shop.html?id=${encodeURIComponent(sellerId)}`;
+  }
+
+  return "shops.html";
 }
 
 function getShopCategories(shop) {
