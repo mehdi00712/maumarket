@@ -12,9 +12,15 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const ordersList = document.getElementById("ordersList");
+const orderSearch = document.getElementById("orderSearch");
+const orderStatusFilter = document.getElementById("orderStatusFilter");
 
 let currentUser = null;
 let reviewedOrderIds = new Set();
+let allOrders = [];
+
+orderSearch?.addEventListener("input", renderOrders);
+orderStatusFilter?.addEventListener("change", renderOrders);
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -23,142 +29,446 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
-  await loadReviewedOrders();
-  await loadOrders();
+
+  try {
+    await Promise.all([
+      loadReviewedOrders(),
+      loadOrders()
+    ]);
+  } catch (error) {
+    console.error("Orders page could not load:", error);
+
+    showOrdersError(
+      getFriendlyOrdersError(
+        error,
+        "Your orders could not be loaded. Please refresh and try again."
+      )
+    );
+  }
 });
 
 async function loadReviewedOrders() {
-  const q = query(
+  const reviewsQuery = query(
     collection(db, "reviews"),
     where("customerId", "==", currentUser.uid)
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(reviewsQuery);
+
   reviewedOrderIds = new Set();
 
   snapshot.forEach((docSnap) => {
     const review = docSnap.data();
-    if (review.orderId) reviewedOrderIds.add(review.orderId);
+
+    if (review.orderId) {
+      reviewedOrderIds.add(String(review.orderId));
+    }
   });
 }
 
 async function loadOrders() {
-  ordersList.innerHTML = "Loading orders...";
+  showOrdersLoading();
 
-  const q = query(
+  const ordersQuery = query(
     collection(db, "orders"),
     where("customerId", "==", currentUser.uid)
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(ordersQuery);
 
-  if (snapshot.empty) {
-    ordersList.innerHTML = "<p>No orders yet.</p>";
+  allOrders = snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data()
+  }));
+
+  allOrders.sort((a, b) => {
+    return Number(b.createdAt?.seconds || 0) -
+      Number(a.createdAt?.seconds || 0);
+  });
+
+  renderOrders();
+}
+
+function renderOrders() {
+  if (!ordersList) return;
+
+  const search = String(orderSearch?.value || "")
+    .toLowerCase()
+    .trim();
+
+  const selectedStatus =
+    String(orderStatusFilter?.value || "").trim();
+
+  const filteredOrders = allOrders.filter((order) => {
+    const searchableText = `
+      ${order.id || ""}
+      ${order.orderNumber || ""}
+      ${order.orderStatus || ""}
+      ${order.paymentStatus || ""}
+      ${order.deliveryAddress || ""}
+      ${(order.items || []).map((item) => item.title || "").join(" ")}
+    `.toLowerCase();
+
+    const matchesSearch =
+      !search || searchableText.includes(search);
+
+    const matchesStatus =
+      !selectedStatus ||
+      String(order.orderStatus || "") === selectedStatus;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  if (allOrders.length === 0) {
+    renderEmptyOrders();
     return;
   }
 
-  const orders = [];
+  if (filteredOrders.length === 0) {
+    ordersList.innerHTML = `
+      <div class="empty-market-card">
+        <h3>No matching orders</h3>
+        <p>Try changing your search or status filter.</p>
+        <button
+          id="clearOrderFiltersBtn"
+          type="button"
+          class="secondary-btn">
+          Clear Filters
+        </button>
+      </div>
+    `;
 
-  snapshot.forEach((docSnap) => {
-    orders.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
-  });
+    document
+      .getElementById("clearOrderFiltersBtn")
+      ?.addEventListener("click", clearOrderFilters);
 
-  orders.sort((a, b) => {
-    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-  });
+    return;
+  }
 
   ordersList.innerHTML = "";
 
-  orders.forEach((order) => {
-    const itemsHtml = (order.items || []).map(item => `
-      <li>${item.title || "Item"} — Rs ${Number(item.price || 0)} x ${Number(item.quantity || 1)}</li>
-    `).join("");
+  filteredOrders.forEach((order) => {
+    ordersList.appendChild(createOrderCard(order));
+  });
+}
 
-    const paymentButton =
-      order.paymentStatus === "not_paid" || order.paymentStatus === "rejected"
-        ? `<a class="btn" href="payment.html?id=${order.id}">Pay with Juice</a>`
-        : "";
+function createOrderCard(order) {
+  const orderStatus =
+    order.orderStatus || "Pending Payment";
 
-    const proofButton = order.paymentProofUrl
-      ? `<a class="small-link" href="${order.paymentProofUrl}" target="_blank">View Payment Proof</a>`
-      : "";
+  const paymentStatus =
+    order.paymentStatus || "not_paid";
 
-    const canReview = order.orderStatus === "Delivered" && !reviewedOrderIds.has(order.id);
+  const items = Array.isArray(order.items)
+    ? order.items
+    : [];
 
-    const reviewButton = canReview
-      ? `<a class="btn" href="review.html?id=${order.id}">Leave Review</a>`
-      : "";
+  const itemsHtml = items.length
+    ? items.map((item) => {
+        const quantity = Number(item.quantity || 1);
+        const price = Number(
+          item.buyerPrice ||
+          item.price ||
+          0
+        );
 
-    const reviewedBadge =
-      order.orderStatus === "Delivered" && reviewedOrderIds.has(order.id)
-        ? `<span class="status-badge active">Reviewed</span>`
-        : "";
+        return `
+          <li class="customer-order-item">
+            <div>
+              <strong>${escapeHtml(item.title || "Item")}</strong>
+              <span>Verified MauMarket Merchant</span>
+            </div>
 
-    const rejectReason = order.paymentRejectReason
-      ? `<p><strong>Reject Reason:</strong> ${order.paymentRejectReason}</p>`
-      : "";
-
-    const deliveryNote = order.deliveryNote
-      ? `<p><strong>Delivery Note:</strong> ${order.deliveryNote}</p>`
-      : "";
-
-    const driverInfo = order.deliveryGuyName
-      ? `<p><strong>Delivery Driver:</strong> ${order.deliveryGuyName}</p>`
-      : "";
-
-    const deliverySubmitted =
-      order.orderStatus === "Delivery Submitted"
-        ? `<p class="muted"><strong>Delivery submitted:</strong> Waiting for admin validation.</p>`
-        : "";
-
-    const signatureInfo = order.deliverySignedBy
-      ? `<p><strong>Signed By:</strong> ${order.deliverySignedBy}</p>`
-      : "";
-
-    const div = document.createElement("div");
-    div.className = "order-card";
-
-    div.innerHTML = `
-      <h3>Order #${order.id.slice(0, 8)} ${reviewedBadge}</h3>
-
-      <div class="tracking-box">
-        <span class="${getStepClass(order.orderStatus, "Pending Payment")}">Pending</span>
-        <span class="${getStepClass(order.orderStatus, "Payment Submitted")}">Submitted</span>
-        <span class="${getStepClass(order.orderStatus, "Preparing Order")}">Preparing</span>
-        <span class="${getStepClass(order.orderStatus, "Ready for Pickup")}">Ready</span>
-        <span class="${getStepClass(order.orderStatus, "Picked Up")}">Picked Up</span>
-        <span class="${getStepClass(order.orderStatus, "Out for Delivery")}">Out</span>
-        <span class="${getStepClass(order.orderStatus, "Delivery Submitted")}">Checking</span>
-        <span class="${getStepClass(order.orderStatus, "Delivered")}">Delivered</span>
-      </div>
-
-      <p><strong>Status:</strong> ${order.orderStatus || "Pending Payment"}</p>
-      <p><strong>Payment:</strong> ${order.paymentStatus || "not_paid"}</p>
-      <p><strong>Total:</strong> Rs ${order.grandTotal || 0}</p>
-      <p><strong>Delivery Address:</strong> ${order.deliveryAddress || ""}</p>
-
-      ${driverInfo}
-      ${deliverySubmitted}
-      ${signatureInfo}
-      ${rejectReason}
-      ${deliveryNote}
-
-      <h4>Items</h4>
-      <ul>${itemsHtml}</ul>
-
-      <div class="seller-actions">
-        ${paymentButton}
-        ${reviewButton}
-      </div>
-
-      ${proofButton}
+            <div>
+              ${quantity} × ${formatRs(price)}
+            </div>
+          </li>
+        `;
+      }).join("")
+    : `
+      <li class="customer-order-item">
+        <div>
+          <strong>No item details available</strong>
+        </div>
+      </li>
     `;
 
-    ordersList.appendChild(div);
-  });
+  const paymentButton =
+    paymentStatus === "not_paid" ||
+    paymentStatus === "rejected"
+      ? `
+        <a
+          class="btn"
+          href="payment.html?id=${encodeURIComponent(order.id)}">
+          Pay with Juice
+        </a>
+      `
+      : "";
+
+  const proofButton = order.paymentProofUrl
+    ? `
+      <a
+        class="small-link"
+        href="${escapeHtml(order.paymentProofUrl)}"
+        target="_blank"
+        rel="noopener">
+        View Payment Proof
+      </a>
+    `
+    : "";
+
+  const delivered =
+    orderStatus === "Delivered";
+
+  const reviewed =
+    reviewedOrderIds.has(order.id);
+
+  const reviewButton =
+    delivered && !reviewed
+      ? `
+        <a
+          class="btn"
+          href="review.html?id=${encodeURIComponent(order.id)}">
+          Leave Review
+        </a>
+      `
+      : "";
+
+  const reviewedBadge =
+    delivered && reviewed
+      ? `
+        <span class="status-badge active">
+          Reviewed
+        </span>
+      `
+      : "";
+
+  const rejectReason = order.paymentRejectReason
+    ? `
+      <div class="order-alert order-alert-danger">
+        <strong>Payment Rejected</strong>
+        <p>${escapeHtml(order.paymentRejectReason)}</p>
+      </div>
+    `
+    : "";
+
+  const deliveryNote = order.deliveryNote
+    ? `
+      <p>
+        <strong>Delivery Note:</strong>
+        ${escapeHtml(order.deliveryNote)}
+      </p>
+    `
+    : "";
+
+  const driverInfo = order.deliveryGuyName
+    ? `
+      <p>
+        <strong>Delivery Driver:</strong>
+        ${escapeHtml(order.deliveryGuyName)}
+      </p>
+    `
+    : "";
+
+  const deliverySubmitted =
+    orderStatus === "Delivery Submitted"
+      ? `
+        <div class="order-alert">
+          <strong>Delivery submitted</strong>
+          <p>Waiting for MauMarket admin validation.</p>
+        </div>
+      `
+      : "";
+
+  const signatureInfo = order.deliverySignedBy
+    ? `
+      <p>
+        <strong>Signed By:</strong>
+        ${escapeHtml(order.deliverySignedBy)}
+      </p>
+    `
+    : "";
+
+  const orderReference =
+    order.orderNumber ||
+    order.orderId ||
+    order.id;
+
+  const card = document.createElement("article");
+  card.className = "order-card premium-customer-order-card";
+
+  card.innerHTML = `
+    <div class="customer-order-card-head">
+      <div>
+        <span class="section-kicker">
+          MauMarket Order
+        </span>
+
+        <h3>
+          Order #${escapeHtml(shortReference(orderReference))}
+          ${reviewedBadge}
+        </h3>
+
+        <p>
+          Placed ${escapeHtml(formatTimestamp(order.createdAt))}
+        </p>
+      </div>
+
+      <span class="status-pill">
+        ${escapeHtml(orderStatus)}
+      </span>
+    </div>
+
+    <div class="tracking-box">
+      <span class="${getStepClass(orderStatus, "Pending Payment")}">
+        Pending
+      </span>
+
+      <span class="${getStepClass(orderStatus, "Payment Submitted")}">
+        Submitted
+      </span>
+
+      <span class="${getStepClass(orderStatus, "Preparing Order")}">
+        Preparing
+      </span>
+
+      <span class="${getStepClass(orderStatus, "Ready for Pickup")}">
+        Ready
+      </span>
+
+      <span class="${getStepClass(orderStatus, "Picked Up")}">
+        Picked Up
+      </span>
+
+      <span class="${getStepClass(orderStatus, "Out for Delivery")}">
+        Out
+      </span>
+
+      <span class="${getStepClass(orderStatus, "Delivery Submitted")}">
+        Checking
+      </span>
+
+      <span class="${getStepClass(orderStatus, "Delivered")}">
+        Delivered
+      </span>
+    </div>
+
+    <div class="customer-order-summary-grid">
+      <div>
+        <span>Order Status</span>
+        <strong>${escapeHtml(orderStatus)}</strong>
+      </div>
+
+      <div>
+        <span>Payment Status</span>
+        <strong>${escapeHtml(formatStatus(paymentStatus))}</strong>
+      </div>
+
+      <div>
+        <span>Total</span>
+        <strong>${formatRs(order.grandTotal || 0)}</strong>
+      </div>
+
+      <div>
+        <span>Merchant</span>
+        <strong>Verified MauMarket Merchant</strong>
+      </div>
+    </div>
+
+    <div class="customer-order-delivery-box">
+      <h4>Delivery Information</h4>
+
+      <p>
+        <strong>Address:</strong>
+        ${escapeHtml(order.deliveryAddress || "Not provided")}
+      </p>
+
+      ${driverInfo}
+      ${signatureInfo}
+      ${deliveryNote}
+    </div>
+
+    ${deliverySubmitted}
+    ${rejectReason}
+
+    <div class="customer-order-items-box">
+      <h4>Items</h4>
+
+      <ul>
+        ${itemsHtml}
+      </ul>
+    </div>
+
+    <div class="seller-actions customer-order-actions">
+      ${paymentButton}
+      ${reviewButton}
+    </div>
+
+    ${proofButton}
+  `;
+
+  return card;
+}
+
+function clearOrderFilters() {
+  if (orderSearch) {
+    orderSearch.value = "";
+  }
+
+  if (orderStatusFilter) {
+    orderStatusFilter.value = "";
+  }
+
+  renderOrders();
+}
+
+function renderEmptyOrders() {
+  ordersList.innerHTML = `
+    <div class="empty-market-card">
+      <h3>No orders yet</h3>
+      <p>
+        Browse MauMarket and place your first secure order.
+      </p>
+
+      <a
+        class="btn"
+        href="products.html">
+        Browse Marketplace
+      </a>
+    </div>
+  `;
+}
+
+function showOrdersLoading() {
+  if (!ordersList) return;
+
+  ordersList.innerHTML = Array.from({ length: 3 })
+    .map(() => `
+      <div class="order-card order-skeleton-card">
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line medium"></div>
+      </div>
+    `)
+    .join("");
+}
+
+function showOrdersError(message) {
+  if (!ordersList) return;
+
+  ordersList.innerHTML = `
+    <div class="empty-market-card">
+      <h3>Orders could not load</h3>
+      <p>${escapeHtml(message)}</p>
+
+      <button
+        type="button"
+        class="secondary-btn"
+        onclick="window.location.reload()">
+        Try Again
+      </button>
+    </div>
+  `;
 }
 
 function getStepClass(currentStatus, stepStatus) {
@@ -173,12 +483,93 @@ function getStepClass(currentStatus, stepStatus) {
     "Delivered"
   ];
 
-  if (currentStatus === "Payment Rejected" || currentStatus === "Cancelled") {
+  if (
+    currentStatus === "Payment Rejected" ||
+    currentStatus === "Cancelled"
+  ) {
     return "track-step cancelled";
   }
 
-  const currentIndex = steps.indexOf(currentStatus || "Pending Payment");
+  const currentIndex = steps.indexOf(
+    currentStatus || "Pending Payment"
+  );
+
   const stepIndex = steps.indexOf(stepStatus);
 
-  return currentIndex >= stepIndex ? "track-step done" : "track-step";
+  return currentIndex >= stepIndex
+    ? "track-step done"
+    : "track-step";
+}
+
+function getFriendlyOrdersError(error, fallbackMessage) {
+  const code = String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to access these orders.",
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+    "failed-precondition":
+      "The orders could not be prepared. Please refresh and try again.",
+    "resource-exhausted":
+      "The service is temporarily busy. Please try again.",
+    "auth/network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return messages[code] || fallbackMessage;
+}
+
+function formatStatus(value) {
+  return String(value || "Not available")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function shortReference(value) {
+  const reference = String(value || "");
+
+  return reference.length > 10
+    ? reference.slice(0, 8)
+    : reference;
+}
+
+function formatTimestamp(timestamp) {
+  if (!timestamp) return "date unavailable";
+
+  let date;
+
+  if (typeof timestamp.toDate === "function") {
+    date = timestamp.toDate();
+  } else if (timestamp.seconds) {
+    date = new Date(timestamp.seconds * 1000);
+  } else {
+    date = new Date(timestamp);
+  }
+
+  if (Number.isNaN(date.getTime())) {
+    return "date unavailable";
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function formatRs(value) {
+  return `Rs ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
