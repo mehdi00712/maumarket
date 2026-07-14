@@ -4,59 +4,123 @@
   <meta charset="UTF-8">
   <title>Shopping Cart | MauMarket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Review your selected products before completing your secure MauMarket checkout.">
+  <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<main class="container cart-page">
+<!-- Navigation injected by nav.js -->
 
-  <section class="dashboard-section-title">
-    <h1>Shopping Cart</h1>
-    <p>Review your selected items and complete your MauMarket checkout securely.</p>
+<main class="container cart-page premium-cart-page">
+
+  <section class="cart-hero">
+
+    <div>
+
+      <span class="hero-badge">Secure MauMarket Cart</span>
+
+      <h1>Shopping Cart</h1>
+
+      <p>
+        Review your selected products before completing your secure checkout.
+      </p>
+
+      <div class="cart-hero-points">
+        <span>✓ Verified MauMarket Merchants</span>
+        <span>✓ Protected Payment</span>
+        <span>✓ Managed Delivery</span>
+        <span>✓ Buyer Protection</span>
+      </div>
+
+    </div>
+
+    <aside class="cart-hero-card">
+      <div class="cart-hero-icon">🛡</div>
+      <h2>Protected Purchase</h2>
+      <p>
+        Merchant identity and pickup information remain private while
+        MauMarket securely manages every order.
+      </p>
+    </aside>
+
   </section>
 
   <section class="buyer-trust-strip">
-    <div class="trust-card">
-      <div class="trust-icon">🛡️</div>
-      <strong>Secure Shopping</strong>
-      <span>Shop safely with verified MauMarket sellers.</span>
-    </div>
 
     <div class="trust-card">
       <div class="trust-icon">🔒</div>
-      <strong>Protected Checkout</strong>
-      <span>Your payment is verified before processing.</span>
+      <strong>Secure Payment</strong>
+      <span>Every payment is reviewed before processing.</span>
+    </div>
+
+    <div class="trust-card">
+      <div class="trust-icon">✓</div>
+      <strong>Verified Merchants</strong>
+      <span>All merchants are verified by MauMarket.</span>
     </div>
 
     <div class="trust-card">
       <div class="trust-icon">🚚</div>
-      <strong>Tracked Delivery</strong>
-      <span>Delivery is handled through MauMarket.</span>
+      <strong>MauMarket Delivery</strong>
+      <span>Collection and delivery are managed by MauMarket.</span>
     </div>
+
   </section>
 
   <section class="cart-layout">
 
     <section class="cart-main">
+
       <div class="cart-section-head">
+
         <div>
+
+          <span class="section-kicker">Your Basket</span>
+
           <h2>Your Items</h2>
-          <p>Update quantities or remove products before checkout.</p>
+
+          <p>
+            Update quantities or remove products before checkout.
+          </p>
+
         </div>
 
         <a href="products.html" class="secondary-btn">
           Continue Shopping
         </a>
+
+      </div>
+
+      <div class="private-merchant-cart-note">
+
+        <div class="private-merchant-cart-icon">🛍</div>
+
+        <div>
+
+          <strong>Verified MauMarket Merchants</strong>
+
+          <p>
+            Merchant names, phone numbers and pickup addresses are kept
+            private. MauMarket coordinates fulfilment for every order.
+          </p>
+
+        </div>
+
       </div>
 
       <div id="cartItems">
         Loading your cart...
       </div>
+
     </section>
 
-    <aside class="cart-summary-card">
-      <h2>Order Summary</h2>
+    <aside class="cart-summary-card premium-cart-summary">
+
+      <span class="section-kicker">Order Summary</span>
+
+      <h2>Total Payment</h2>
 
       <div class="summary-row">
         <span>Items</span>
@@ -65,7 +129,7 @@
 
       <div class="summary-row">
         <span>Products Total</span>
-        <span>Rs <span id="productsTotal">0</span></span>
+        <strong>Rs <span id="productsTotal">0</span></strong>
       </div>
 
       <div class="summary-row">
@@ -84,24 +148,44 @@
         Proceed to Checkout
       </a>
 
+      <div class="cart-safe-note">
+        🔒 Payment verification is handled securely by MauMarket.
+      </div>
+
       <div class="cart-guarantee">
+
         <h3>MauMarket Protection</h3>
 
-        <ul>
-          <li>✓ Verified sellers</li>
-          <li>✓ Secure payment verification</li>
-          <li>✓ Delivery tracking</li>
-          <li>✓ Customer support</li>
-        </ul>
+        <div class="checkout-guarantee-grid">
+
+          <article><span>✓</span><small>Verified Merchants</small></article>
+          <article><span>✓</span><small>Payment Review</small></article>
+          <article><span>✓</span><small>Order Tracking</small></article>
+          <article><span>✓</span><small>Customer Support</small></article>
+
+        </div>
+
       </div>
+
+      <div class="merchant-privacy-card">
+
+        <strong>Merchant Privacy</strong>
+
+        <p>
+          Business names, contact numbers and pickup locations are not
+          displayed to buyers.
+        </p>
+
+      </div>
+
     </aside>
 
   </section>
 
 </main>
 
-<script type="module" src="js/nav.js?v=2.0"></script>
-<script type="module" src="js/cart.js?v=5.0"></script>
+<script type="module" src="js/nav.js?v=5.3"></script>
+<script type="module" src="js/cart.js?v=6.0-private-merchant"></script>
 
 </body>
 </html>
