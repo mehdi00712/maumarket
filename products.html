@@ -12,9 +12,10 @@
 
     <meta
         name="description"
-        content="Shop products and services from trusted Mauritian sellers on MauMarket."
+        content="Shop products and services securely through MauMarket with verified merchants, protected payments and island-wide delivery."
     >
 
+    <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -43,8 +44,8 @@
             </h1>
 
             <p>
-                Shop products and services from trusted Mauritian sellers with
-                secure checkout and island-wide delivery.
+                Discover products and services from verified MauMarket merchants with
+                protected payments, reliable support and island-wide delivery.
             </p>
 
             <div class="hero-buttons">
@@ -57,10 +58,10 @@
                 </a>
 
                 <a
-                    href="#featuredShopsSection"
+                    href="#marketplaceHighlights"
                     class="btn-outline hero-secondary"
                 >
-                    Explore Shops
+                    Explore Highlights
                 </a>
 
             </div>
@@ -71,11 +72,11 @@
                     <span>✓</span>
 
                     <strong>
-                        Local Sellers
+                        Verified Merchants
                     </strong>
 
                     <small>
-                        Support local businesses
+                        Approved by MauMarket
                     </small>
                 </div>
 
@@ -107,11 +108,11 @@
                     <span>✓</span>
 
                     <strong>
-                        Verified Shops
+                        MauMarket Protection
                     </strong>
 
                     <small>
-                        Approved sellers
+                        Buyer-first protection
                     </small>
                 </div>
 
@@ -154,45 +155,76 @@
         </div>
 
     </section>
-
     <!-- =====================================================
-         PREMIUM FEATURED SHOPS
+         MARKETPLACE HIGHLIGHTS
     ====================================================== -->
 
     <section
-        id="featuredShopsSection"
-        class="homepage-section clean-shops-section premium-featured-shops-section"
+        id="marketplaceHighlights"
+        class="homepage-section marketplace-highlights-section"
     >
 
-        <div class="section-row-title featured-shops-section-head">
+        <div class="section-row-title">
 
             <div>
                 <span class="section-kicker">
-                    Trusted Sellers
+                    Discover More
                 </span>
 
                 <h2>
-                    Featured Shops
+                    Marketplace Highlights
                 </h2>
 
                 <p>
-                    Discover verified MauMarket sellers, their products,
-                    services and customer ratings.
+                    Browse trending products, new arrivals, top-rated items
+                    and offers protected by MauMarket.
                 </p>
             </div>
 
-            <a href="shops.html">
-                Browse Shops
+            <a href="#marketProducts">
+                View All Products
             </a>
 
         </div>
 
-        <div
-            id="featuredShops"
-            class="featured-shops-row premium-featured-shops-row"
-            aria-live="polite"
-        >
-            Loading featured shops...
+        <div class="marketplace-highlight-grid">
+
+            <article class="marketplace-highlight-card">
+                <div class="marketplace-highlight-icon">🔥</div>
+                <h3>Trending Now</h3>
+                <p>Popular products customers are viewing across MauMarket.</p>
+                <a href="#marketProducts" data-market-highlight="trending">
+                    Browse Trending
+                </a>
+            </article>
+
+            <article class="marketplace-highlight-card">
+                <div class="marketplace-highlight-icon">🆕</div>
+                <h3>New Arrivals</h3>
+                <p>Explore recently added products and services.</p>
+                <a href="#marketProducts" data-market-highlight="newest">
+                    See New Items
+                </a>
+            </article>
+
+            <article class="marketplace-highlight-card">
+                <div class="marketplace-highlight-icon">⭐</div>
+                <h3>Top Rated</h3>
+                <p>Discover items with strong verified buyer feedback.</p>
+                <a href="#marketProducts" data-market-highlight="rating">
+                    Browse Top Rated
+                </a>
+            </article>
+
+            <article class="marketplace-highlight-card">
+                <div class="marketplace-highlight-icon">🛡</div>
+                <h3>Protected Shopping</h3>
+                <p>Payments, delivery and support are handled through MauMarket.</p>
+                <a href="#whyMauMarket">
+                    Learn More
+                </a>
+            </article>
+
         </div>
 
     </section>
@@ -334,11 +366,11 @@
 
                     <div>
                         <strong>
-                            Verified Sellers
+                            Verified Merchants
                         </strong>
 
                         <small>
-                            Every seller is approved.
+                            Every merchant is approved by MauMarket.
                         </small>
                     </div>
                 </div>
@@ -352,7 +384,7 @@
                         </strong>
 
                         <small>
-                            Safe checkout for buyers.
+                            Payments are reviewed and protected.
                         </small>
                     </div>
                 </div>
@@ -362,11 +394,11 @@
 
                     <div>
                         <strong>
-                            Delivery Support
+                            MauMarket Delivery
                         </strong>
 
                         <small>
-                            Island-wide delivery.
+                            Pickup and delivery managed by MauMarket.
                         </small>
                     </div>
                 </div>
@@ -420,7 +452,7 @@
          WHY MAUMARKET
     ====================================================== -->
 
-    <section class="homepage-section why-market">
+    <section id="whyMauMarket" class="homepage-section why-market">
 
         <div class="section-row-title">
 
@@ -444,11 +476,11 @@
                 </div>
 
                 <h3>
-                    Verified Sellers
+                    Verified Merchants
                 </h3>
 
                 <p>
-                    Every seller goes through an approval process before selling.
+                    Every merchant is reviewed and approved before products can appear.
                 </p>
             </article>
 
@@ -491,10 +523,47 @@
                 </h3>
 
                 <p>
-                    Support is available for orders, payments, sellers and
-                    deliveries.
+                    Support is available for orders, payments, delivery and
+                    buyer protection.
                 </p>
             </article>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         MERCHANT PRIVACY & BUYER TRUST
+    ====================================================== -->
+
+    <section class="homepage-section merchant-privacy-section">
+
+        <div class="merchant-privacy-card">
+
+            <div class="merchant-privacy-icon">
+                🛡
+            </div>
+
+            <div>
+                <span class="section-kicker">
+                    Buyer-First Marketplace
+                </span>
+
+                <h2>
+                    Shop Through MauMarket With Confidence
+                </h2>
+
+                <p>
+                    Buyer communication, payment verification, delivery and support
+                    stay inside MauMarket. Merchant contact details and pickup
+                    information remain private and are used only for administration
+                    and delivery operations.
+                </p>
+            </div>
+
+            <a href="#marketProducts" class="btn">
+                Browse Marketplace
+            </a>
 
         </div>
 
@@ -504,12 +573,12 @@
 
 <script
     type="module"
-    src="js/nav.js?v=5.0"
+    src="js/nav.js?v=5.3"
 ></script>
 
 <script
     type="module"
-    src="js/products.js?v=7.4"
+    src="js/products.js?v=8.0-private-merchants"
 ></script>
 
 </body>
