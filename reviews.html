@@ -2,106 +2,395 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <title>Reviews | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Read verified MauMarket product and delivery reviews from completed orders."
+  >
+
+  <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="amazon-topbar">
-  <a class="brand logo-brand" href="index.html">
-    <img src="images/maumarketlogo.png" alt="MauMarket">
-  </a>
+<!-- Navigation is injected automatically by nav.js -->
 
-  <div class="amazon-search">
-    <select>
-      <option>All</option>
-    </select>
+<main class="container reviews-page private-merchant-reviews-page">
 
-    <input id="reviewsSearchInput" placeholder="Search MauMarket">
-    <button id="reviewsSearchBtn" type="button">Search</button>
-  </div>
+  <!-- =====================================================
+       REVIEWS HERO
+  ====================================================== -->
 
-  <nav>
-    <a href="products.html">Marketplace</a>
-    <a href="cart.html">Cart</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+  <section class="reviews-hero">
 
-<div class="amazon-subnav">
-  <a href="products.html">All</a>
-  <a href="products.html?category=Beauty">Beauty</a>
-  <a href="products.html?category=Electronics">Electronics</a>
-  <a href="products.html?category=Fashion">Fashion</a>
-  <a href="products.html?category=Food">Food</a>
-  <a href="products.html?category=Hardware">Hardware</a>
-  <a href="products.html?category=Home">Home</a>
-  <a href="products.html?category=Services">Services</a>
-</div>
+    <div class="reviews-hero-content">
 
-<main class="container">
+      <span class="hero-badge">
+        Verified Buyer Feedback
+      </span>
 
-  <section class="form-card">
-    <h1>Customer Reviews</h1>
-    <p class="muted">Verified MauMarket reviews from delivered orders.</p>
+      <h1>
+        MauMarket Reviews
+      </h1>
 
-    <div class="review-summary-card">
+      <p>
+        Read verified feedback from completed MauMarket orders, including
+        product quality, packaging and delivery experience.
+      </p>
+
+      <div class="reviews-hero-points">
+
+        <span>✓ Verified purchases</span>
+        <span>✓ Product-focused reviews</span>
+        <span>✓ Delivery feedback</span>
+        <span>✓ Buyer protection</span>
+
+      </div>
+
+    </div>
+
+    <aside class="reviews-hero-card">
+
+      <div class="reviews-hero-icon">
+        ⭐
+      </div>
+
+      <h2>
+        Trusted Feedback
+      </h2>
+
+      <p>
+        Reviews are linked to MauMarket orders. Merchant identity and
+        private business information are not displayed publicly.
+      </p>
+
+    </aside>
+
+  </section>
+
+  <!-- =====================================================
+       REVIEW SUMMARY
+  ====================================================== -->
+
+  <section class="form-card premium-reviews-summary-card">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Community Ratings
+        </span>
+
+        <h2>
+          Customer Review Summary
+        </h2>
+
+        <p>
+          Ratings from completed and verified MauMarket purchases.
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="review-summary-card private-review-summary-card">
+
       <div class="review-score">
-        <h2 id="averageRating">0.0</h2>
-        <p>Average Rating</p>
+
+        <span>
+          Overall Rating
+        </span>
+
+        <h2 id="averageRating">
+          0.0
+        </h2>
+
+        <div class="review-summary-stars">
+          ★★★★★
+        </div>
+
+        <p>
+          Average verified rating
+        </p>
+
       </div>
 
       <div class="review-stats">
-        <p>Total Reviews: <strong id="totalReviews">0</strong></p>
-        <p>Verified Purchases: <strong id="verifiedReviews">0</strong></p>
+
+        <div>
+
+          <span>
+            Total Reviews
+          </span>
+
+          <strong id="totalReviews">
+            0
+          </strong>
+
+        </div>
+
+        <div>
+
+          <span>
+            Verified Purchases
+          </span>
+
+          <strong id="verifiedReviews">
+            0
+          </strong>
+
+        </div>
+
       </div>
-    </div>
-  </section>
 
-  <section class="shop-section-head">
-    <div>
-      <h2>All Reviews</h2>
-      <p id="reviewCount" class="muted"></p>
     </div>
 
-    <select id="reviewSort">
-      <option value="newest">Newest</option>
-      <option value="highest">Highest Rated</option>
-      <option value="lowest">Lowest Rated</option>
-    </select>
   </section>
 
-  <section id="reviewsList" class="reviews-list">
-    Loading reviews...
+  <!-- =====================================================
+       REVIEW FILTERS
+  ====================================================== -->
+
+  <section class="form-card reviews-toolbar-card">
+
+    <div class="shop-section-head reviews-section-head">
+
+      <div>
+
+        <span class="section-kicker">
+          Buyer Feedback
+        </span>
+
+        <h2>
+          All Reviews
+        </h2>
+
+        <p
+          id="reviewCount"
+          class="muted"
+        >
+          Loading reviews...
+        </p>
+
+      </div>
+
+      <div class="reviews-filter-row">
+
+        <div class="form-group">
+
+          <label for="reviewsSearchInput">
+            Search Reviews
+          </label>
+
+          <input
+            id="reviewsSearchInput"
+            type="search"
+            placeholder="Search review text or product..."
+            autocomplete="off"
+          >
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="reviewSort">
+            Sort
+          </label>
+
+          <select id="reviewSort">
+
+            <option value="newest">
+              Newest
+            </option>
+
+            <option value="highest">
+              Highest Rated
+            </option>
+
+            <option value="lowest">
+              Lowest Rated
+            </option>
+
+          </select>
+
+        </div>
+
+        <button
+          id="reviewsSearchBtn"
+          type="button"
+          class="secondary-btn"
+        >
+          Search Products
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       REVIEW LIST
+  ====================================================== -->
+
+  <section
+    id="reviewsList"
+    class="reviews-list private-reviews-list"
+    aria-live="polite"
+  >
+
+    <div class="reviews-loading-card">
+
+      <div class="reviews-loading-spinner"></div>
+
+      <p>
+        Loading reviews...
+      </p>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       BUYER TRUST
+  ====================================================== -->
+
+  <section class="reviews-protection-section">
+
+    <article>
+
+      <div>
+        🛡
+      </div>
+
+      <span>
+
+        <strong>
+          Verified Reviews
+        </strong>
+
+        <small>
+          Feedback from real MauMarket orders
+        </small>
+
+      </span>
+
+    </article>
+
+    <article>
+
+      <div>
+        📦
+      </div>
+
+      <span>
+
+        <strong>
+          Product Experience
+        </strong>
+
+        <small>
+          Reviews focus on the product received
+        </small>
+
+      </span>
+
+    </article>
+
+    <article>
+
+      <div>
+        🚚
+      </div>
+
+      <span>
+
+        <strong>
+          Delivery Feedback
+        </strong>
+
+        <small>
+          Buyers may rate delivery performance
+        </small>
+
+      </span>
+
+    </article>
+
+    <article>
+
+      <div>
+        🔒
+      </div>
+
+      <span>
+
+        <strong>
+          Merchant Privacy
+        </strong>
+
+        <small>
+          Private seller information is protected
+        </small>
+
+      </span>
+
+    </article>
+
   </section>
 
 </main>
 
 <script>
-const reviewsSearchInput = document.getElementById("reviewsSearchInput");
-const reviewsSearchBtn = document.getElementById("reviewsSearchBtn");
+  const reviewsSearchInput =
+    document.getElementById("reviewsSearchInput");
 
-function runReviewsSearch() {
-  const search = reviewsSearchInput.value.trim();
+  const reviewsSearchBtn =
+    document.getElementById("reviewsSearchBtn");
 
-  window.location.href = search
-    ? `products.html?search=${encodeURIComponent(search)}`
-    : "products.html";
-}
+  function runReviewsSearch() {
+    const search =
+      reviewsSearchInput?.value.trim() || "";
 
-reviewsSearchBtn?.addEventListener("click", runReviewsSearch);
-
-reviewsSearchInput?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    runReviewsSearch();
+    window.location.href = search
+      ? `products.html?search=${encodeURIComponent(search)}`
+      : "products.html";
   }
-});
+
+  reviewsSearchBtn?.addEventListener(
+    "click",
+    runReviewsSearch
+  );
+
+  reviewsSearchInput?.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        runReviewsSearch();
+      }
+    }
+  );
 </script>
 
-<script type="module" src="js/reviews.js"></script>
+<script
+  type="module"
+  src="js/nav.js?v=5.3"
+></script>
+
+<script
+  type="module"
+  src="js/reviews.js?v=4.0-private-merchant"
+></script>
 
 </body>
 </html>
