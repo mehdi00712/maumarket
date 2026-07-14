@@ -19,12 +19,13 @@ import {
 
 /*
   MauMarket products.js
-  Clean marketplace version
+  Clean marketplace version with personalized shop links
   - Smaller product cards
   - No messy emojis in headings
   - Buyer-facing price only
   - Categories
   - Featured shops
+  - Personalized public shop links
   - Top deals
   - Trending
   - Main marketplace filters
@@ -503,6 +504,11 @@ async function openAdBanner(index) {
   }
 
   const targetShopId = banner.shopId || banner.sellerId || "";
+  const targetShopSlug = normalizeShopSlug(
+    banner.shopSlug ||
+    banner.slug ||
+    ""
+  );
   const targetProductId = banner.productId || "";
   const customUrl = banner.linkUrl || banner.url || "";
 
@@ -516,8 +522,17 @@ async function openAdBanner(index) {
     return;
   }
 
+  if (targetShopSlug) {
+    window.location.href = buildShopUrl({
+      id: targetShopId,
+      slug: targetShopSlug
+    });
+    return;
+  }
+
   if (targetShopId) {
-    window.location.href = `shop.html?id=${encodeURIComponent(targetShopId)}`;
+    const targetShop = await getShop(targetShopId);
+    window.location.href = buildShopUrl(targetShop);
     return;
   }
 
@@ -551,7 +566,26 @@ async function loadItems() {
         ...docSnap.data()
       };
 
-      item.shop = await getShop(item.sellerId);
+      item.shop = await getShop(
+        item.sellerId ||
+        item.shopId ||
+        ""
+      );
+
+      item.shopSlug =
+        normalizeShopSlug(
+          item.shopSlug ||
+          item.shop?.slug ||
+          ""
+        );
+
+      item.shopUrl = buildShopUrl(
+        item.shop || {
+          id: item.sellerId || item.shopId || "",
+          slug: item.shopSlug
+        }
+      );
+
       allItems.push(item);
     }
 
@@ -594,12 +628,22 @@ async function getShop(sellerId) {
     const shopSnap = await getDoc(doc(db, "shops", sellerId));
 
     if (shopSnap.exists()) {
+      const shopData = shopSnap.data();
+
       shopCache[sellerId] = {
         id: sellerId,
+        ownerId: shopData.ownerId || sellerId,
+        sellerId: shopData.sellerId || sellerId,
         verified: true,
         averageRating: 0,
         totalReviews: 0,
-        ...shopSnap.data()
+        ...shopData,
+        slug:
+          normalizeShopSlug(
+            shopData.slug ||
+            shopData.shopSlug ||
+            ""
+          )
       };
     } else {
       shopCache[sellerId] = emptyShop(sellerId);
@@ -615,6 +659,9 @@ async function getShop(sellerId) {
 function emptyShop(id) {
   return {
     id,
+    ownerId: id,
+    sellerId: id,
+    slug: "",
     shopName: "MauMarket Seller",
     verified: false,
     averageRating: 0,
@@ -804,7 +851,7 @@ function renderFeaturedShops() {
     card.innerHTML = `
       <a
         class="compact-shop-link"
-        href="shop.html?id=${encodeURIComponent(shop.id)}"
+        href="${escapeHtml(buildShopUrl(shop))}"
         aria-label="Visit ${escapeHtml(shop.shopName || "Shop")}">
 
         <div class="compact-shop-banner">
@@ -1027,10 +1074,15 @@ function createProductCard(item) {
 
       <h3>${escapeHtml(item.title || "Untitled")}</h3>
 
-      <p class="seller-line">
+      <a
+        class="seller-line product-shop-link"
+        href="${escapeHtml(buildShopUrl(item.shop || {
+          id: item.sellerId || item.shopId || "",
+          slug: item.shopSlug || ""
+        }))}">
         <span>Verified</span>
-        ${escapeHtml(item.shop?.shopName || "Shop")}
-      </p>
+        ${escapeHtml(item.shop?.shopName || item.shopName || "Shop")}
+      </a>
 
       <p class="rating-line-small">${ratingText}</p>
 
@@ -1142,6 +1194,23 @@ async function addProductToCart(item, card, button) {
       category: item.category || "",
       imageUrl: item.imageUrl || "",
       shopName: item.shop?.shopName || item.shopName || "MauMarket Seller",
+      shopId:
+        item.shop?.id ||
+        item.shopId ||
+        item.sellerId ||
+        "",
+      shopSlug:
+        normalizeShopSlug(
+          item.shop?.slug ||
+          item.shopSlug ||
+          ""
+        ),
+      shopUrl: buildShopUrl(
+        item.shop || {
+          id: item.shopId || item.sellerId || "",
+          slug: item.shopSlug || ""
+        }
+      ),
 
       price: buyerPrice,
       buyerPrice,
@@ -1557,6 +1626,55 @@ function attachFilterEvents() {
 
     runSearch(true);
   });
+}
+
+/* =========================================================
+   PERSONALIZED SHOP LINKS
+   ========================================================= */
+
+function normalizeShopSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function buildShopUrl(shopOrId) {
+  const shop =
+    typeof shopOrId === "string"
+      ? { id: shopOrId }
+      : (shopOrId || {});
+
+  const slug = normalizeShopSlug(
+    shop.slug ||
+    shop.shopSlug ||
+    ""
+  );
+
+  if (slug) {
+    return `shop.html?shop=${encodeURIComponent(slug)}`;
+  }
+
+  const id =
+    shop.id ||
+    shop.ownerId ||
+    shop.sellerId ||
+    shop.shopId ||
+    "";
+
+  if (id) {
+    return `shop.html?id=${encodeURIComponent(id)}`;
+  }
+
+  return "shops.html";
 }
 
 /* =========================================================
