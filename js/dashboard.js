@@ -16,7 +16,7 @@ import {
 
 /* ==========================================================
    MAUMARKET DASHBOARD
-   Buyer / Seller / Delivery / Admin
+   Buyer / Merchant / Delivery / Admin
 ========================================================== */
 
 const welcome = document.getElementById("welcome");
@@ -24,6 +24,7 @@ const statusText = document.getElementById("status");
 const actions = document.getElementById("actions");
 const roleBadge = document.getElementById("roleBadge");
 const quickStats = document.getElementById("quickStats");
+const accountStatusText = document.getElementById("accountStatusText");
 
 const logoutBtn = document.getElementById("logoutBtn");
 
@@ -52,6 +53,11 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     const data = snap.data();
+
+    if (accountStatusText) {
+      accountStatusText.textContent =
+        data.approved === false ? "Pending" : "Active";
+    }
 
     if (data.blocked === true) {
       renderBlocked();
@@ -88,7 +94,15 @@ onAuthStateChanged(auth, async (user) => {
 
     await renderBuyerDashboard(user.uid);
   } catch (error) {
-    renderError("Dashboard error", error.message);
+    console.error("Dashboard failed to load:", error);
+
+    renderError(
+      "Dashboard unavailable",
+      getFriendlyDashboardError(
+        error,
+        "Your dashboard could not be loaded. Please refresh and try again."
+      )
+    );
   }
 });
 
@@ -135,6 +149,7 @@ function renderError(title, message) {
 
 function renderBlocked() {
   roleBadge.textContent = "Blocked";
+  if (accountStatusText) accountStatusText.textContent = "Blocked";
   welcome.textContent = "Account blocked";
   statusText.textContent = "Your account has been blocked. Please contact MauMarket support.";
   quickStats.innerHTML = "";
@@ -156,7 +171,7 @@ function renderBlocked() {
 
 async function renderBuyerDashboard(uid) {
   roleBadge.textContent = "Buyer Account";
-  statusText.textContent = "Shop products, save favourites, checkout securely and track every order.";
+  statusText.textContent = "Browse products, save favourites, checkout securely and track every MauMarket order.";
 
   let cartCount = 0;
   let wishlistCount = 0;
@@ -167,14 +182,14 @@ async function renderBuyerDashboard(uid) {
     const cartSnap = await getDocs(collection(db, "carts", uid, "items"));
     cartCount = cartSnap.size;
   } catch (error) {
-    console.warn("Could not load cart count:", error.message);
+    console.warn("Could not load cart count.");
   }
 
   try {
     const wishlistSnap = await getDocs(collection(db, "wishlists", uid, "items"));
     wishlistCount = wishlistSnap.size;
   } catch (error) {
-    console.warn("Could not load wishlist count:", error.message);
+    console.warn("Could not load wishlist count.");
   }
 
   try {
@@ -197,14 +212,14 @@ async function renderBuyerDashboard(uid) {
       }
     });
   } catch (error) {
-    console.warn("Could not load buyer orders:", error.message);
+    console.warn("Could not load buyer orders.");
   }
 
   actions.innerHTML = `
     ${dashboardCard({
-      label: "Shop",
+      label: "Business",
       title: "Marketplace",
-      description: "Browse local products and services from Mauritian sellers.",
+      description: "Browse products and services from verified MauMarket merchants.",
       link: "products.html",
       actionText: "Shop Now"
     })}
@@ -247,8 +262,8 @@ async function renderBuyerDashboard(uid) {
 ========================================================== */
 
 async function renderSellerDashboard(uid, data) {
-  roleBadge.textContent = "Seller Account";
-  statusText.textContent = "Manage your shop, listings, customer orders, earnings and analytics.";
+  roleBadge.textContent = "Merchant Account";
+  statusText.textContent = "Manage your private business profile, listings, orders, earnings and analytics.";
 
   let productCount = 0;
   let activeProducts = 0;
@@ -272,7 +287,7 @@ async function renderSellerDashboard(uid, data) {
       }
     });
   } catch (error) {
-    console.warn("Could not load seller products:", error.message);
+    console.warn("Could not load seller products.");
   }
 
   try {
@@ -290,38 +305,38 @@ async function renderSellerDashboard(uid, data) {
       }
     });
   } catch (error) {
-    console.warn("Could not load seller orders:", error.message);
+    console.warn("Could not load seller orders.");
   }
 
   actions.innerHTML = `
     ${dashboardCard({
-      label: "Shop",
-      title: "Seller Dashboard",
-      description: "Manage your shop profile, products, services and listings.",
+      label: "Business",
+      title: "Merchant Dashboard",
+      description: "Manage your private business details, products, services and listings.",
       link: "seller.html",
-      actionText: "Open Shop"
+      actionText: "Open Dashboard"
     })}
 
     ${dashboardCard({
       label: "Orders",
-      title: "Seller Orders",
-      description: "View customer orders and prepare items for delivery.",
+      title: "Merchant Orders",
+      description: "View orders and prepare products for MauMarket collection.",
       link: "seller-orders.html",
       actionText: "Manage Orders"
     })}
 
     ${dashboardCard({
       label: "Earnings",
-      title: "Seller Earnings",
-      description: "Track sales, payouts, commission and income history.",
+      title: "Merchant Earnings",
+      description: "Track sales, payouts, commission and merchant income history.",
       link: "seller-earnings.html",
       actionText: "View Earnings"
     })}
 
     ${dashboardCard({
       label: "Analytics",
-      title: "Seller Analytics",
-      description: "View shop performance, product stats and customer insights.",
+      title: "Merchant Analytics",
+      description: "View listing performance, product statistics and order insights.",
       link: "seller-analytics.html",
       actionText: "View Analytics"
     })}
@@ -329,7 +344,7 @@ async function renderSellerDashboard(uid, data) {
     ${dashboardCard({
       label: "Market",
       title: "Marketplace",
-      description: "View your shop and listings as customers see them.",
+      description: "View your public product listings in the MauMarket marketplace.",
       link: "products.html",
       actionText: "View Marketplace"
     })}
@@ -338,7 +353,7 @@ async function renderSellerDashboard(uid, data) {
   quickStats.innerHTML = `
     ${statCard(`${productCount}/${productLimit}`, "Product Slots", "Used listing capacity")}
     ${statCard(activeProducts, "Active Listings", "Visible products and services")}
-    ${statCard(sellerOrders, "Shop Orders", "Orders linked to your shop")}
+    ${statCard(sellerOrders, "Merchant Orders", "Orders linked to your business")}
     ${statCard(deliveredOrders, "Delivered Orders", "Completed customer orders")}
   `;
 }
@@ -385,7 +400,7 @@ async function renderDeliveryDashboard(uid) {
       }
     });
   } catch (error) {
-    console.warn("Could not load delivery jobs:", error.message);
+    console.warn("Could not load delivery jobs.");
   }
 
   actions.innerHTML = `
@@ -417,7 +432,7 @@ async function renderDeliveryDashboard(uid) {
   quickStats.innerHTML = `
     ${statCard(assigned, "Assigned Jobs", "All jobs assigned to you")}
     ${statCard(active, "Active Jobs", "Still in progress")}
-    ${statCard(pickedUp, "Picked Up", "Collected from seller")}
+    ${statCard(pickedUp, "Picked Up", "Collected from merchant")}
     ${statCard(outForDelivery, "Out For Delivery", "Currently delivering")}
     ${statCard(submitted, "Submitted", "Waiting admin validation")}
     ${statCard(delivered, "Delivered", "Completed deliveries")}
@@ -435,7 +450,7 @@ async function renderAdminDashboard() {
   let usersCount = 0;
   let productsCount = 0;
   let ordersCount = 0;
-  let pendingSellers = 0;
+  let pendingMerchants = 0;
 
   try {
     const usersSnap = await getDocs(collection(db, "users"));
@@ -445,25 +460,25 @@ async function renderAdminDashboard() {
       const user = docSnap.data();
 
       if (user.role === "seller" && user.approved !== true) {
-        pendingSellers++;
+        pendingMerchants++;
       }
     });
   } catch (error) {
-    console.warn("Could not load users:", error.message);
+    console.warn("Could not load users.");
   }
 
   try {
     const productsSnap = await getDocs(collection(db, "products"));
     productsCount = productsSnap.size;
   } catch (error) {
-    console.warn("Could not load products:", error.message);
+    console.warn("Could not load products.");
   }
 
   try {
     const ordersSnap = await getDocs(collection(db, "orders"));
     ordersCount = ordersSnap.size;
   } catch (error) {
-    console.warn("Could not load orders:", error.message);
+    console.warn("Could not load orders.");
   }
 
   actions.innerHTML = `
@@ -478,7 +493,7 @@ async function renderAdminDashboard() {
     ${dashboardCard({
       label: "Accounts",
       title: "Users",
-      description: "Manage buyers, sellers, delivery users and admins.",
+      description: "Manage buyers, merchants, delivery users and administrators.",
       link: "admin-users.html",
       actionText: "Manage Users"
     })}
@@ -510,15 +525,15 @@ async function renderAdminDashboard() {
     ${dashboardCard({
       label: "Revenue",
       title: "Commission Dashboard",
-      description: "Track MauMarket revenue, seller amounts and commission.",
+      description: "Track MauMarket revenue, merchant amounts and commission.",
       link: "admin-commission.html",
       actionText: "View Commission"
     })}
 
     ${dashboardCard({
-      label: "Sellers",
+      label: "Merchants",
       title: "Payouts",
-      description: "Manage seller payout status and payout records.",
+      description: "Manage merchant payout status and payout records.",
       link: "admin-payouts.html",
       actionText: "Manage Payouts"
     })}
@@ -542,7 +557,7 @@ async function renderAdminDashboard() {
     ${dashboardCard({
       label: "Marketing",
       title: "Ad Banners",
-      description: "Manage featured shop and marketplace banners.",
+      description: "Manage product promotions and marketplace banners.",
       link: "admin-banners.html",
       actionText: "Manage Banners"
     })}
@@ -550,7 +565,7 @@ async function renderAdminDashboard() {
     ${dashboardCard({
       label: "Requests",
       title: "Slot Requests",
-      description: "Approve seller requests for more product slots.",
+      description: "Approve merchant requests for additional product slots.",
       link: "admin-quota.html",
       actionText: "Review Requests"
     })}
@@ -568,7 +583,7 @@ async function renderAdminDashboard() {
     ${statCard(usersCount, "Users", "Registered platform accounts")}
     ${statCard(productsCount, "Products", "Products and services listed")}
     ${statCard(ordersCount, "Orders", "Orders placed on MauMarket")}
-    ${statCard(pendingSellers, "Pending Sellers", "Seller approvals waiting")}
+    ${statCard(pendingMerchants, "Pending Merchants", "Merchant approvals waiting")}
   `;
 }
 
@@ -577,16 +592,17 @@ async function renderAdminDashboard() {
 ========================================================== */
 
 function renderPendingSeller() {
-  roleBadge.textContent = "Seller Pending";
-  welcome.textContent = "Seller account pending";
-  statusText.textContent = "Your seller account is waiting for admin approval.";
+  roleBadge.textContent = "Merchant Pending";
+  if (accountStatusText) accountStatusText.textContent = "Pending";
+  welcome.textContent = "Merchant account pending";
+  statusText.textContent = "Your merchant account is waiting for admin approval.";
   quickStats.innerHTML = "";
 
   actions.innerHTML = `
     ${dashboardCard({
       label: "Pending",
       title: "Waiting for Approval",
-      description: "Admin must approve your seller account before you can sell.",
+      description: "Admin must approve your merchant account before you can publish listings.",
       link: "dashboard.html",
       actionText: "Check Status"
     })}
@@ -603,6 +619,7 @@ function renderPendingSeller() {
 
 function renderPendingDelivery() {
   roleBadge.textContent = "Delivery Pending";
+  if (accountStatusText) accountStatusText.textContent = "Pending";
   welcome.textContent = "Delivery account pending";
   statusText.textContent = "Your delivery account is waiting for admin approval.";
   quickStats.innerHTML = "";
@@ -624,10 +641,10 @@ const DASHBOARD_ICONS = {
   "Wishlist": "♡",
   "Shopping Cart": "🛒",
   "My Orders": "📦",
-  "Seller Dashboard": "🏪",
-  "Seller Orders": "📋",
-  "Seller Earnings": "₨",
-  "Seller Analytics": "📊",
+  "Merchant Dashboard": "🏪",
+  "Merchant Orders": "📋",
+  "Merchant Earnings": "₨",
+  "Merchant Analytics": "📊",
   "Delivery Dashboard": "🚚",
   "Assigned Deliveries": "📍",
   "Admin Panel": "⚙️",
@@ -651,7 +668,7 @@ const DASHBOARD_ICONS = {
   "Delivered Orders": "✅",
   "Product Slots": "🧺",
   "Active Listings": "🟢",
-  "Shop Orders": "📋",
+  "Merchant Orders": "📋",
   "Assigned Jobs": "🚚",
   "Active Jobs": "📍",
   "Picked Up": "📦",
@@ -659,7 +676,7 @@ const DASHBOARD_ICONS = {
   "Submitted": "🧾",
   "Users": "👥",
   "Orders": "📦",
-  "Pending Sellers": "⏳"
+  "Pending Merchants": "⏳"
 };
 
 /* ==========================================================
@@ -730,6 +747,25 @@ function skeletonCard() {
    HELPERS
 ========================================================== */
 
+
+function getFriendlyDashboardError(error, fallbackMessage) {
+  const code = String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to access this dashboard.",
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+    "failed-precondition":
+      "The dashboard could not be prepared. Please refresh and try again.",
+    "resource-exhausted":
+      "The service is temporarily busy. Please try again.",
+    "auth/network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return messages[code] || fallbackMessage;
+}
 
 function getDashboardIcon(title) {
   return DASHBOARD_ICONS[title] || "◇";
