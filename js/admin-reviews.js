@@ -16,7 +16,7 @@ import {
   MauMarket admin-reviews.js
   -----------------------------------------------------------
   - Administrator permission validation
-  - Seller and delivery rating statistics
+  - Merchant, product and delivery rating statistics
   - Search, rating filters and sorting
   - Secure review deletion
   - Order details displayed inside a modal
@@ -28,9 +28,9 @@ import {
 const reviewsList = document.getElementById("reviewsList");
 
 const totalReviews = document.getElementById("totalReviews");
-const averageSellerRating = document.getElementById(
-  "averageSellerRating"
-);
+const averageMerchantRating =
+  document.getElementById("averageMerchantRating") ||
+  document.getElementById("averageSellerRating");
 const averageDeliveryRating = document.getElementById(
   "averageDeliveryRating"
 );
@@ -114,8 +114,10 @@ onAuthStateChanged(auth, async (user) => {
     console.error("Admin review permission check failed:", error);
 
     showReviewsError(
-      error.message ||
-      "Your administrator account could not be verified."
+      getFriendlyAdminReviewError(
+        error,
+        "Your administrator account could not be verified."
+      )
     );
   }
 });
@@ -143,8 +145,10 @@ async function loadReviews() {
     console.error("Reviews could not load:", error);
 
     showReviewsError(
-      error.message ||
-      "Customer reviews could not be loaded."
+      getFriendlyAdminReviewError(
+        error,
+        "Customer reviews could not be loaded."
+      )
     );
   }
 }
@@ -154,8 +158,8 @@ async function loadReviews() {
    ========================================================= */
 
 function updateStats() {
-  let sellerTotal = 0;
-  let sellerCount = 0;
+  let merchantTotal = 0;
+  let merchantCount = 0;
 
   let deliveryTotal = 0;
   let deliveryCount = 0;
@@ -170,9 +174,9 @@ function updateStats() {
       review.deliveryRating || 0
     );
 
-    if (sellerRating > 0) {
-      sellerTotal += sellerRating;
-      sellerCount += 1;
+    if (merchantRating > 0) {
+      merchantTotal += merchantRating;
+      merchantCount += 1;
     }
 
     if (deliveryRating > 0) {
@@ -180,11 +184,11 @@ function updateStats() {
       deliveryCount += 1;
     }
 
-    if (sellerRating === 5) {
+    if (merchantRating === 5) {
       fiveStarCount += 1;
     }
 
-    if (sellerRating > 0 && sellerRating <= 2) {
+    if (merchantRating > 0 && merchantRating <= 2) {
       lowRatingCount += 1;
     }
 
@@ -197,8 +201,8 @@ function updateStats() {
     totalReviews.textContent = String(allReviews.length);
   }
 
-  if (averageSellerRating) {
-    averageSellerRating.textContent = sellerCount
+  if (averageMerchantRating) {
+    averageMerchantRating.textContent = sellerCount
       ? (sellerTotal / sellerCount).toFixed(1)
       : "0.0";
   }
@@ -249,13 +253,13 @@ function renderReviews() {
       !search ||
       searchableText.includes(search);
 
-    const sellerRating = Number(
-      review.sellerRating || 0
+    const merchantRating = Number(
+      review.merchantRating || review.sellerRating || review.rating || 0
     );
 
     const matchesRating =
       !activeRating ||
-      sellerRating === Number(activeRating);
+      merchantRating === Number(activeRating);
 
     return matchesSearch && matchesRating;
   });
@@ -278,7 +282,7 @@ function renderReviews() {
         </h3>
 
         <p>
-          Try changing the search text or seller rating filter.
+          Try changing the search text or merchant rating filter.
         </p>
 
         <button
@@ -311,8 +315,8 @@ function createReviewCard(review) {
 
   card.className = "admin-review-card";
 
-  const sellerRating = normalizeRating(
-    review.sellerRating
+  const merchantRating = normalizeRating(
+    review.merchantRating || review.sellerRating || review.rating
   );
 
   const deliveryRating = normalizeRating(
@@ -376,16 +380,16 @@ function createReviewCard(review) {
       <div class="admin-review-rating-box">
 
         <span>
-          Seller Rating
+          Merchant Rating
         </span>
 
         <strong>
-          ${renderStars(sellerRating)}
+          ${renderStars(merchantRating)}
         </strong>
 
         <small>
-          ${sellerRating > 0
-            ? `${sellerRating.toFixed(1)} out of 5`
+          ${merchantRating > 0
+            ? `${merchantRating.toFixed(1)} out of 5`
             : "Not rated"}
         </small>
 
@@ -448,7 +452,7 @@ function createReviewCard(review) {
       <div>
 
         <span>
-          Sellers
+          Merchants
         </span>
 
         <strong>
@@ -536,16 +540,16 @@ function sortReviews(reviews, sort) {
   if (sort === "highest") {
     copy.sort(
       (a, b) =>
-        Number(b.sellerRating || 0) -
-        Number(a.sellerRating || 0)
+        getReviewMerchantRating(b) -
+        getReviewMerchantRating(a)
     );
   }
 
   if (sort === "lowest") {
     copy.sort(
       (a, b) =>
-        Number(a.sellerRating || 0) -
-        Number(b.sellerRating || 0)
+        getReviewMerchantRating(a) -
+        getReviewMerchantRating(b)
     );
   }
 
@@ -614,8 +618,10 @@ async function openOrderModal(orderId) {
 
         <p>
           ${escapeHtml(
-            error.message ||
-            "The order information could not be retrieved."
+            getFriendlyAdminReviewError(
+              error,
+              "The order information could not be retrieved."
+            )
           )}
         </p>
 
@@ -688,7 +694,7 @@ function renderOrderModalContent(order) {
 
               <span>
                 ${escapeHtml(
-                  item.shopName || "MauMarket Seller"
+                  item.shopName || "Verified MauMarket Merchant"
                 )}
               </span>
 
@@ -739,7 +745,7 @@ function renderOrderModalContent(order) {
         <span>Order Status</span>
         <strong>
           ${escapeHtml(
-            order.status || "Pending"
+            order.orderStatus || order.status || "Pending"
           )}
         </strong>
       </div>
@@ -856,8 +862,10 @@ async function deleteReview({ review, button }) {
     console.error("Review deletion failed:", error);
 
     window.alert(
-      error.message ||
-      "The review could not be deleted."
+      getFriendlyAdminReviewError(
+        error,
+        "The review could not be deleted."
+      )
     );
 
     button.disabled = false;
@@ -962,6 +970,34 @@ function showReviewsError(message) {
 /* =========================================================
    HELPERS
    ========================================================= */
+
+function getReviewMerchantRating(review) {
+  return normalizeRating(
+    review?.merchantRating ||
+    review?.sellerRating ||
+    review?.rating ||
+    0
+  );
+}
+
+function getFriendlyAdminReviewError(error, fallbackMessage) {
+  const code = String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to manage reviews.",
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+    "failed-precondition":
+      "This operation could not be completed. Please refresh and try again.",
+    "resource-exhausted":
+      "The service is temporarily busy. Please try again.",
+    "auth/network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return messages[code] || fallbackMessage;
+}
 
 function normalizeRating(value) {
   const rating = Number(value || 0);
