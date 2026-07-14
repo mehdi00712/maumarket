@@ -2,95 +2,373 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Seller Orders | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Merchant Orders | MauMarket</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Manage merchant orders, earnings, commissions and MauMarket fulfilment."
+  >
+
+  <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header class="market-mobile-header">
-  <div class="mobile-top-row">
-    <a href="seller.html" class="logo-brand">
-      <img src="images/maumarketlogo.png" alt="MauMarket">
-    </a>
+<!-- Navigation is injected automatically by nav.js -->
 
-    <button id="sellerOrdersMenuBtn" class="hamburger-btn" type="button">☰</button>
-  </div>
+<main class="container seller-orders-page private-merchant-orders-page">
 
-  <nav id="sellerOrdersNav" class="mobile-nav">
-    <a href="seller.html">Seller</a>
-    <a href="seller-earnings.html">Earnings</a>
-    <a href="seller-analytics.html">Analytics</a>
-    <a href="products.html">Marketplace</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-</header>
+  <!-- =====================================================
+       HERO
+  ====================================================== -->
 
-<main class="container">
+  <section class="seller-orders-hero">
 
-  <section class="dashboard-section-title">
-    <h1>Orders For Your Shop</h1>
-    <p>Track customer orders, seller earnings, and MauMarket commission.</p>
+    <div class="seller-orders-hero-content">
+
+      <span class="hero-badge">
+        MauMarket Merchant
+      </span>
+
+      <h1>
+        Your Orders
+      </h1>
+
+      <p>
+        Track customer orders, prepare products for collection, review your
+        merchant earnings and monitor MauMarket commission.
+      </p>
+
+      <div class="seller-orders-hero-points">
+
+        <span>✓ Private merchant fulfilment</span>
+        <span>✓ MauMarket-managed delivery</span>
+        <span>✓ Automatic commission</span>
+        <span>✓ Secure order processing</span>
+
+      </div>
+
+    </div>
+
+    <aside class="seller-orders-hero-card">
+
+      <div class="seller-orders-hero-card-icon">
+        📦
+      </div>
+
+      <h2>
+        Order Control Centre
+      </h2>
+
+      <p>
+        Customer delivery information is available here only for order
+        fulfilment and remains protected inside MauMarket.
+      </p>
+
+      <div class="profile-status-row">
+
+        <span>
+          Merchant Status
+        </span>
+
+        <strong>
+          Active
+        </strong>
+
+      </div>
+
+    </aside>
+
   </section>
 
-  <section class="buyer-trust-strip">
-    <div>
-      <strong>Seller Earnings</strong>
-      <span>Your product price before commission</span>
-    </div>
+  <!-- =====================================================
+       COMMISSION EXPLANATION
+  ====================================================== -->
 
-    <div>
-      <strong>MauMarket 10%</strong>
-      <span>Automatically calculated</span>
-    </div>
+  <section class="seller-orders-finance-strip">
 
-    <div>
-      <strong>Buyer Total</strong>
-      <span>Final price paid by customer</span>
-    </div>
+    <article>
+
+      <div class="seller-orders-finance-icon">
+        💰
+      </div>
+
+      <div>
+
+        <strong>
+          Merchant Earnings
+        </strong>
+
+        <span>
+          Your product price before MauMarket commission.
+        </span>
+
+      </div>
+
+    </article>
+
+    <article>
+
+      <div class="seller-orders-finance-icon">
+        📊
+      </div>
+
+      <div>
+
+        <strong>
+          MauMarket 10%
+        </strong>
+
+        <span>
+          Platform commission calculated automatically.
+        </span>
+
+      </div>
+
+    </article>
+
+    <article>
+
+      <div class="seller-orders-finance-icon">
+        🛍
+      </div>
+
+      <div>
+
+        <strong>
+          Customer Total
+        </strong>
+
+        <span>
+          Final product price paid through MauMarket.
+        </span>
+
+      </div>
+
+    </article>
+
   </section>
 
-  <section class="cards">
-    <div class="card">
-      <h3>Total Orders</h3>
-      <h2 id="sellerTotalOrders">0</h2>
-    </div>
+  <!-- =====================================================
+       ORDER STATISTICS
+  ====================================================== -->
 
-    <div class="card">
-      <h3>Seller Earnings</h3>
-      <h2 id="sellerTotalEarnings">Rs 0</h2>
-    </div>
+  <section class="seller-orders-stats">
 
-    <div class="card">
-      <h3>MauMarket Commission</h3>
-      <h2 id="sellerTotalCommission">Rs 0</h2>
-    </div>
+    <article class="seller-orders-stat">
+
+      <span>
+        Total Orders
+      </span>
+
+      <strong id="sellerTotalOrders">
+        0
+      </strong>
+
+      <small>
+        Orders linked to your products
+      </small>
+
+    </article>
+
+    <article class="seller-orders-stat">
+
+      <span>
+        Merchant Earnings
+      </span>
+
+      <strong id="sellerTotalEarnings">
+        Rs 0
+      </strong>
+
+      <small>
+        Amount earned before payouts
+      </small>
+
+    </article>
+
+    <article class="seller-orders-stat">
+
+      <span>
+        MauMarket Commission
+      </span>
+
+      <strong id="sellerTotalCommission">
+        Rs 0
+      </strong>
+
+      <small>
+        Total platform commission
+      </small>
+
+    </article>
+
   </section>
 
-  <section class="form-card">
+  <!-- =====================================================
+       ORDER FILTERS
+  ====================================================== -->
+
+  <section class="form-card seller-orders-toolbar-card">
+
     <div class="section-row-title">
-      <h2>Your Orders</h2>
-      <span id="sellerOrdersCountText">Loading...</span>
+
+      <div>
+
+        <span class="section-kicker">
+          Order Management
+        </span>
+
+        <h2>
+          Filter Orders
+        </h2>
+
+        <p>
+          Search customer orders or filter them by fulfilment status.
+        </p>
+
+      </div>
+
+      <button
+        id="refreshSellerOrdersBtn"
+        type="button"
+        class="secondary-btn"
+      >
+        Refresh
+      </button>
+
     </div>
 
-    <div id="sellerOrdersList">
-      Loading seller orders...
+    <div class="seller-orders-toolbar">
+
+      <div class="form-group">
+
+        <label for="sellerOrderSearch">
+          Search
+        </label>
+
+        <input
+          id="sellerOrderSearch"
+          type="search"
+          placeholder="Search order, customer, product or address"
+          autocomplete="off"
+        >
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="sellerOrderStatusFilter">
+          Status
+        </label>
+
+        <select id="sellerOrderStatusFilter">
+
+          <option value="">
+            All Orders
+          </option>
+
+          <option value="Payment Submitted">
+            Payment Submitted
+          </option>
+
+          <option value="Preparing Order">
+            Preparing Order
+          </option>
+
+          <option value="Ready for Pickup">
+            Ready for Pickup
+          </option>
+
+          <option value="Picked Up">
+            Picked Up
+          </option>
+
+          <option value="Out for Delivery">
+            Out for Delivery
+          </option>
+
+          <option value="Delivery Submitted">
+            Delivery Submitted
+          </option>
+
+          <option value="Delivered">
+            Delivered
+          </option>
+
+          <option value="Cancelled">
+            Cancelled
+          </option>
+
+        </select>
+
+      </div>
+
     </div>
+
+  </section>
+
+  <!-- =====================================================
+       ORDERS LIST
+  ====================================================== -->
+
+  <section class="form-card seller-orders-list-card">
+
+    <div class="section-row-title seller-orders-list-heading">
+
+      <div>
+
+        <span class="section-kicker">
+          Merchant Orders
+        </span>
+
+        <h2>
+          Your Orders
+        </h2>
+
+        <p>
+          Prepare products and update fulfilment progress for MauMarket pickup.
+        </p>
+
+      </div>
+
+      <span
+        id="sellerOrdersCountText"
+        class="admin-result-count"
+      >
+        Loading...
+      </span>
+
+    </div>
+
+    <div
+      id="sellerOrdersList"
+      class="seller-orders-list"
+      aria-live="polite"
+    >
+      Loading merchant orders...
+    </div>
+
   </section>
 
 </main>
 
-<script>
-  const sellerOrdersMenuBtn = document.getElementById("sellerOrdersMenuBtn");
-  const sellerOrdersNav = document.getElementById("sellerOrdersNav");
+<script
+  type="module"
+  src="js/nav.js?v=5.3"
+></script>
 
-  sellerOrdersMenuBtn?.addEventListener("click", () => {
-    sellerOrdersNav?.classList.toggle("show");
-  });
-</script>
-
-<script type="module" src="js/seller-orders.js?v=4.6-commission"></script>
+<script
+  type="module"
+  src="js/seller-orders.js?v=5.0-private-merchant"
+></script>
 
 </body>
 </html>
