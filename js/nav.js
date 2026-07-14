@@ -14,13 +14,15 @@ import {
 
 /*
   MauMarket nav.js
-  Premium shared navigation
-  - Animated hamburger
-  - Role-based menu
-  - Instant marketplace search when already on products.html
-  - Redirect search when on another page
-  - Sticky desktop search
-  - Mobile bottom navigation
+  Private-merchant shared navigation
+  - Product-first buyer navigation
+  - No public shop or seller-directory links
+  - Dynamic categories from Firestore
+  - Role-based account menus
+  - Instant marketplace search
+  - Sticky desktop navigation
+  - Mobile side menu and bottom navigation
+  - Firestore cart badge
 */
 
 const LOGO_PATH = "images/maumarketlogo.png";
@@ -60,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           currentRole = "customer";
         }
       } catch (error) {
-        console.warn("Could not load nav user:", error.message);
+        console.warn("Could not load navigation account information.");
         currentRole = "customer";
       }
     }
@@ -94,7 +96,7 @@ function buildResponsiveNav() {
           <option value="">Loading Categories...</option>
         </select>
 
-        <input id="mmSearchInput" type="search" placeholder="Search products, services, shops..." autocomplete="off">
+        <input id="mmSearchInput" type="search" placeholder="Search products and services..." autocomplete="off">
 
         <button type="submit" aria-label="Search">Search</button>
       </form>
@@ -119,7 +121,7 @@ function buildResponsiveNav() {
   mobileSearch.className = "mm-mobile-search-wrap";
   mobileSearch.innerHTML = `
     <form id="mmMobileSearchForm" class="mm-mobile-search">
-      <input id="mmMobileSearchInput" type="search" placeholder="Search MauMarket..." autocomplete="off">
+      <input id="mmMobileSearchInput" type="search" placeholder="Search products and services..." autocomplete="off">
       <button type="submit" aria-label="Search">⌕</button>
     </form>
   `;
@@ -231,7 +233,7 @@ async function loadNavCategories() {
 
     renderNavCategoryOptions();
   } catch (error) {
-    console.warn("Could not load navigation categories:", error.message);
+    console.warn("Could not load navigation categories.");
     renderNavCategoryFallback();
   }
 
@@ -451,7 +453,7 @@ function renderDesktopLink(link) {
   }
 
   return `
-    <a href="${escapeHtml(link.href)}">
+    <a href="${escapeHtml(link.href)}" aria-label="${escapeHtml(link.label)}">
       ${escapeHtml(link.label)}
     </a>
   `;
@@ -468,7 +470,7 @@ function renderMobileLink(link) {
   }
 
   return `
-    <a class="mm-mobile-link" href="${escapeHtml(link.href)}">
+    <a class="mm-mobile-link" href="${escapeHtml(link.href)}" aria-label="${escapeHtml(link.label)}">
       <span>${link.icon || ""}</span>
       <strong>${escapeHtml(link.label)}</strong>
     </a>
@@ -477,7 +479,7 @@ function renderMobileLink(link) {
 
 function renderBottomLink(link) {
   return `
-    <a class="mm-bottom-link" href="${escapeHtml(link.href)}">
+    <a class="mm-bottom-link" href="${escapeHtml(link.href)}" aria-label="${escapeHtml(link.label)}">
       <span>${link.icon}</span>
       <small>${escapeHtml(link.label)}</small>
     </a>
@@ -509,7 +511,7 @@ function getLinksForRole() {
   if (currentRole === "seller") {
     return [
       { label: "Marketplace", icon: "⌂", href: "products.html" },
-      { label: "Seller", icon: "▣", href: "seller.html" },
+      { label: "Business", icon: "▣", href: "seller.html" },
       { label: "Orders", icon: "□", href: "seller-orders.html" },
       { label: "Earnings", icon: "₨", href: "seller-earnings.html" },
       { label: "Analytics", icon: "⌁", href: "seller-analytics.html" },
@@ -542,7 +544,7 @@ function getBottomLinks() {
   if (currentRole === "seller") {
     return [
       { label: "Home", icon: "⌂", href: "index.html" },
-      { label: "Shop", icon: "▣", href: "seller.html" },
+      { label: "Business", icon: "▣", href: "seller.html" },
       { label: "Orders", icon: "□", href: "seller-orders.html" },
       { label: "Market", icon: "◇", href: "products.html" },
       { label: "My Account", icon: "○", href: "dashboard.html" }
@@ -562,7 +564,7 @@ function getUserBoxHtml() {
   if (!currentUser) {
     return `
       <strong>Welcome to MauMarket</strong>
-      <span>Login or create an account to continue.</span>
+      <span>Sign in or create an account to shop securely.</span>
     `;
   }
 
@@ -577,7 +579,7 @@ function getUserBoxHtml() {
     currentRole === "admin"
       ? "Admin Account"
       : currentRole === "seller"
-        ? "Seller Account"
+        ? "Merchant Account"
         : "Buyer Account";
 
   return `
@@ -717,7 +719,11 @@ async function logoutUser() {
     await signOut(auth);
     window.location.href = "login.html";
   } catch (error) {
-    alert(error.message);
+    console.error("Logout failed:", error);
+
+    alert(
+      "You could not be signed out. Please check your connection and try again."
+    );
   }
 }
 
@@ -776,7 +782,7 @@ async function updateCartBadge(event) {
 
     setCartBadgeCount(count);
   } catch (error) {
-    console.warn("Could not load cart badge:", error.message);
+    console.warn("Could not load the cart badge.");
     setCartBadgeCount(0);
   }
 }
@@ -815,6 +821,21 @@ window.addEventListener("cart-updated", updateCartBadge);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) updateCartBadge();
 });
+
+function getFriendlyNavigationError(error, fallbackMessage) {
+  const code = String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to access this information.",
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+    "auth/network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return messages[code] || fallbackMessage;
+}
 
 function escapeHtml(value) {
   return String(value || "")
