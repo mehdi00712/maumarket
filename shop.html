@@ -4,60 +4,73 @@
   <meta charset="UTF-8">
   <title>Shop | MauMarket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse verified MauMarket seller products, reviews, shop information and ratings.">
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<main class="shop-page shop-wow-page">
+<!-- Navigation is injected automatically by nav.js -->
 
-  <div class="breadcrumbs shop-wow-breadcrumbs">
+<main class="shop-page shop-wow-page premium-public-shop-page">
+
+  <nav class="breadcrumbs shop-wow-breadcrumbs" aria-label="Breadcrumb">
     <a href="index.html">Home</a>
     <span>/</span>
     <a href="products.html">Marketplace</a>
     <span>/</span>
     <span id="breadcrumbShop">Shop</span>
-  </div>
+  </nav>
 
-  <section id="shopHeader" class="pro-shop-header shop-wow-header">
-    Loading shop...
+  <section
+    id="shopHeader"
+    class="pro-shop-header shop-wow-header premium-shop-hero"
+    aria-live="polite">
+    <div class="shop-page-loading">
+      <div class="shop-page-loading-spinner"></div>
+      <p>Loading shop...</p>
+    </div>
   </section>
 
-  <section class="shop-highlight-bar shop-wow-trust-row" id="shopTrustStrip">
-    <div class="shop-trust-item">
-      <span>✓</span>
+  <section
+    id="shopTrustStrip"
+    class="shop-highlight-bar shop-wow-trust-row premium-shop-trust-row">
+
+    <article class="shop-trust-item">
+      <div class="shop-trust-icon">✓</div>
       <div>
         <strong>Verified Seller</strong>
         <small>Seller checked by MauMarket</small>
       </div>
-    </div>
+    </article>
 
-    <div class="shop-trust-item">
-      <span>✓</span>
+    <article class="shop-trust-item">
+      <div class="shop-trust-icon">🔒</div>
       <div>
         <strong>Secure Checkout</strong>
         <small>Payments protected through MauMarket</small>
       </div>
-    </div>
+    </article>
 
-    <div class="shop-trust-item">
-      <span>✓</span>
+    <article class="shop-trust-item">
+      <div class="shop-trust-icon">🚚</div>
       <div>
         <strong>Tracked Delivery</strong>
         <small>Delivery handled by MauMarket</small>
       </div>
-    </div>
+    </article>
 
-    <div class="shop-trust-item">
-      <span>✓</span>
+    <article class="shop-trust-item">
+      <div class="shop-trust-icon">★</div>
       <div>
         <strong>Verified Reviews</strong>
         <small>Reviews from real buyers</small>
       </div>
-    </div>
+    </article>
+
   </section>
 
-  <section class="shop-highlight-bar legacy-shop-highlight" style="display:none;">
+  <section class="shop-highlight-bar legacy-shop-highlight" aria-hidden="true">
     <div class="highlight-item">
       <strong id="shopProductCount">0</strong>
       <span>Products</span>
@@ -79,117 +92,246 @@
     </div>
   </section>
 
-  <div class="shop-tabs shop-wow-tabs">
-    <button class="tab-btn active" data-tab="products" type="button">
-      Shop Products
-    </button>
+  <section class="shop-tabs-shell">
+    <div
+      class="shop-tabs shop-wow-tabs premium-shop-tabs"
+      role="tablist"
+      aria-label="Shop sections">
 
-    <button class="tab-btn" data-tab="about" type="button">
-      About Shop
-    </button>
+      <button
+        class="tab-btn active"
+        data-tab="products"
+        type="button"
+        role="tab"
+        aria-selected="true">
+        <span class="shop-tab-icon">🛍</span>
+        Shop Products
+      </button>
 
-    <button class="tab-btn" data-tab="reviews" type="button">
-      Reviews
-    </button>
-  </div>
+      <button
+        class="tab-btn"
+        data-tab="about"
+        type="button"
+        role="tab"
+        aria-selected="false">
+        <span class="shop-tab-icon">🏪</span>
+        About Shop
+      </button>
 
-  <section class="shop-content-layout shop-wow-layout">
+      <button
+        class="tab-btn"
+        data-tab="reviews"
+        type="button"
+        role="tab"
+        aria-selected="false">
+        <span class="shop-tab-icon">★</span>
+        Reviews
+      </button>
 
-    <div>
+    </div>
+  </section>
 
-      <div id="productsTab" class="tab-content active">
+  <section class="shop-content-layout shop-wow-layout premium-shop-layout">
 
-        <div class="shop-section-head shop-wow-section-head">
-          <div>
-            <h2>Shop Products</h2>
-            <p id="shopResultCount" class="muted"></p>
+    <div class="premium-shop-main">
+
+      <section id="productsTab" class="tab-content active" role="tabpanel">
+        <div class="shop-main-panel premium-shop-panel">
+
+          <div class="shop-section-head shop-wow-section-head premium-shop-section-head">
+
+            <div>
+              <span class="section-kicker">Seller Catalogue</span>
+              <h2>Shop Products</h2>
+              <p id="shopResultCount" class="muted">Loading items...</p>
+            </div>
+
+            <div class="shop-filter-row shop-wow-filter-row premium-shop-filter-row">
+
+              <div class="shop-filter-control shop-search-control">
+                <label for="shopProductSearch">Search</label>
+                <input
+                  type="search"
+                  id="shopProductSearch"
+                  placeholder="Search products in this shop"
+                  autocomplete="off">
+              </div>
+
+              <div class="shop-filter-control">
+                <label for="shopSort">Sort</label>
+                <select id="shopSort">
+                  <option value="newest">Newest First</option>
+                  <option value="low-high">Price Low to High</option>
+                  <option value="high-low">Price High to Low</option>
+                  <option value="rating">Highest Rated</option>
+                </select>
+              </div>
+
+            </div>
           </div>
 
-          <div class="shop-filter-row shop-wow-filter-row">
-            <input
-              type="text"
-              id="shopProductSearch"
-              placeholder="Search products in this shop">
-
-            <select id="shopSort">
-              <option value="newest">Newest</option>
-              <option value="low-high">Price Low to High</option>
-              <option value="high-low">Price High to Low</option>
-              <option value="rating">Highest Rated</option>
-            </select>
+          <div
+            id="shopItems"
+            class="pro-product-grid shop-wow-products-grid premium-shop-products-grid"
+            aria-live="polite">
+            Loading items...
           </div>
+
         </div>
+      </section>
 
-        <div id="shopItems" class="pro-product-grid shop-wow-products-grid">
-          Loading items...
-        </div>
+      <section id="aboutTab" class="tab-content" role="tabpanel">
+        <div class="shop-main-panel premium-shop-panel">
 
-      </div>
-
-      <div id="aboutTab" class="tab-content">
-        <div id="aboutShopBox" class="pro-side-card shop-wow-card"></div>
-      </div>
-
-      <div id="reviewsTab" class="tab-content">
-        <div class="review-summary-card shop-wow-card">
-          <div class="review-score">
-            <h2 id="reviewsAverageRating">0.0</h2>
-            <p>Average Rating</p>
+          <div class="shop-section-head premium-shop-section-head">
+            <div>
+              <span class="section-kicker">Seller Profile</span>
+              <h2>About This Shop</h2>
+              <p>Learn more about this MauMarket seller.</p>
+            </div>
           </div>
 
-          <div class="review-stats">
-            <p>
-              Total Reviews:
+          <div
+            id="aboutShopBox"
+            class="pro-side-card shop-wow-card premium-about-shop-box"></div>
+
+        </div>
+      </section>
+
+      <section id="reviewsTab" class="tab-content" role="tabpanel">
+        <div class="shop-main-panel premium-shop-panel">
+
+          <div class="shop-section-head premium-shop-section-head">
+            <div>
+              <span class="section-kicker">Buyer Feedback</span>
+              <h2>Customer Reviews</h2>
+              <p>Ratings and feedback submitted by verified MauMarket buyers.</p>
+            </div>
+          </div>
+
+          <div class="review-summary-card shop-wow-card premium-review-summary">
+
+            <div class="review-score">
+              <span class="review-score-label">Shop Rating</span>
+              <h2 id="reviewsAverageRating">0.0</h2>
+              <div class="premium-review-stars" aria-hidden="true">★★★★★</div>
+              <p>Average rating</p>
+            </div>
+
+            <div class="review-stats">
+              <span>Verified Reviews</span>
               <strong id="reviewsTotalCount">0</strong>
-            </p>
-          </div>
-        </div>
+              <p>Reviews linked to completed orders</p>
+            </div>
 
-        <div id="reviewsBox" class="pro-side-card shop-wow-card">
-          Loading reviews...
+          </div>
+
+          <div
+            id="reviewsBox"
+            class="pro-side-card shop-wow-card premium-reviews-box">
+            Loading reviews...
+          </div>
+
         </div>
-      </div>
+      </section>
 
     </div>
 
-    <aside class="shop-sidebar shop-wow-sidebar">
+    <aside class="shop-sidebar shop-wow-sidebar premium-shop-sidebar">
 
-      <div id="shopAboutCard" class="pro-side-card shop-wow-card"></div>
+      <section
+        id="shopAboutCard"
+        class="pro-side-card shop-wow-card premium-sidebar-card premium-shop-about-card"></section>
 
-      <div id="shopPolicyCard" class="pro-side-card shop-wow-card">
-        <h3>MauMarket Protection</h3>
+      <section
+        id="shopPolicyCard"
+        class="pro-side-card shop-wow-card premium-sidebar-card premium-protection-card">
 
-        <ul class="policy-list shop-policy-list">
-          <li>Verified Seller</li>
-          <li>Secure Checkout</li>
-          <li>Delivery Tracking</li>
-          <li>Verified Reviews</li>
-          <li>Customer Support</li>
+        <div class="premium-sidebar-heading">
+          <div class="premium-sidebar-icon">🛡</div>
+          <h3>MauMarket Protection</h3>
+        </div>
+
+        <ul class="policy-list shop-policy-list premium-policy-list">
+          <li><span>✓</span>Verified Seller</li>
+          <li><span>✓</span>Secure Checkout</li>
+          <li><span>✓</span>Delivery Tracking</li>
+          <li><span>✓</span>Verified Reviews</li>
+          <li><span>✓</span>Customer Support</li>
         </ul>
-      </div>
 
-      <div id="shopRatingCard" class="pro-side-card shop-wow-card"></div>
+      </section>
 
-      <div class="pro-side-card shop-wow-card">
-        <h3>Need Help?</h3>
+      <section
+        id="shopRatingCard"
+        class="pro-side-card shop-wow-card premium-sidebar-card premium-rating-card">
+        <div class="shop-page-loading small">
+          <div class="shop-page-loading-spinner"></div>
+          <p>Loading rating...</p>
+        </div>
+      </section>
+
+      <section class="pro-side-card shop-wow-card premium-sidebar-card premium-support-card">
+
+        <div class="premium-sidebar-heading">
+          <div class="premium-sidebar-icon">💬</div>
+          <h3>Need Help?</h3>
+        </div>
 
         <p>
           Keep your payment, delivery and support safely inside MauMarket.
         </p>
 
-        <a class="btn" href="dashboard.html">
+        <a class="btn premium-sidebar-button" href="dashboard.html">
           Contact Support
         </a>
-      </div>
+
+      </section>
 
     </aside>
 
   </section>
 
+  <section class="premium-shop-bottom-benefits">
+
+    <article>
+      <div>🛡</div>
+      <span>
+        <strong>100% Secure</strong>
+        <small>Safe and trusted shopping</small>
+      </span>
+    </article>
+
+    <article>
+      <div>🚚</div>
+      <span>
+        <strong>Tracked Delivery</strong>
+        <small>Track every order</small>
+      </span>
+    </article>
+
+    <article>
+      <div>✓</div>
+      <span>
+        <strong>Buyer Protection</strong>
+        <small>MauMarket support included</small>
+      </span>
+    </article>
+
+    <article>
+      <div>💬</div>
+      <span>
+        <strong>Customer Support</strong>
+        <small>Help when you need it</small>
+      </span>
+    </article>
+
+  </section>
+
 </main>
 
-<script type="module" src="js/nav.js?v=4.0"></script>
-<script type="module" src="js/shop.js?v=4.3-shared-nav-clean"></script>
+<script type="module" src="js/nav.js?v=5.2"></script>
+<script type="module" src="js/shop.js?v=5.0"></script>
 
 </body>
 </html>
