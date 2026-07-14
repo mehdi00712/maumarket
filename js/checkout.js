@@ -43,7 +43,7 @@ const COMMISSION_RATE = 0.10;
 
 let currentUser = null;
 let cartItems = [];
-let shopPickupCache = {};
+let merchantPickupCache = {};
 
 let checkoutMap = null;
 let checkoutMarker = null;
@@ -246,9 +246,9 @@ async function loadCheckout() {
 
         <div>
           <strong>${escapeHtml(item.title || "Untitled")}</strong>
-          <p>${escapeHtml(item.shopName || "MauMarket Seller")}</p>
+          <p>Verified MauMarket Merchant</p>
           <small class="checkout-pickup-note">
-            Pickup: ${escapeHtml(item.pickupAddress || item.shopLocation || item.shopAddress || "Shop pickup location not set")}
+            Fulfilled by Verified MauMarket Merchant
           </small>
         </div>
       </div>
@@ -431,7 +431,7 @@ placeOrderBtn.addEventListener("click", async () => {
       window.location.href = "my-orders.html";
     }, 1200);
   } catch (error) {
-    showCheckoutMessage(error.message);
+    showCheckoutMessage('Something went wrong while placing your order. Please try again.');
     placeOrderBtn.disabled = false;
   }
 });
