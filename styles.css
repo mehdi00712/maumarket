@@ -12258,3 +12258,372 @@ text-align:center;
     text-align: left;
   }
 }
+
+/* =====================================================
+   SELLER ORDERS - FINAL FIX
+=====================================================*/
+
+.seller-orders-page{
+    width:min(1600px,95%);
+    margin:130px auto 60px;
+}
+
+.seller-orders-hero{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:30px;
+
+    padding:40px;
+
+    border-radius:28px;
+
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+
+    box-shadow:0 18px 45px rgba(0,0,0,.06);
+
+    margin-bottom:28px;
+}
+
+.seller-orders-hero h1{
+    margin:0;
+    font-size:48px;
+    line-height:1.1;
+}
+
+.seller-orders-hero p{
+    margin-top:10px;
+    color:#64748b;
+    max-width:700px;
+}
+
+.seller-orders-hero-card{
+
+    width:320px;
+
+    padding:28px;
+
+    border-radius:24px;
+
+    background:linear-gradient(135deg,#4f35f5,#7557ff);
+
+    color:#fff;
+
+}
+
+.seller-orders-hero-card h2{
+    color:#fff;
+    margin:0 0 12px;
+}
+
+.seller-orders-hero-card p{
+    color:#eef2ff;
+}
+
+.seller-orders-stats{
+
+    display:grid;
+
+    grid-template-columns:repeat(6,1fr);
+
+    gap:18px;
+
+    margin-bottom:30px;
+
+}
+
+.seller-orders-stat{
+
+    background:#fff;
+
+    border-radius:22px;
+
+    padding:24px;
+
+    border:1px solid #ececec;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.05);
+
+}
+
+.seller-orders-stat span{
+
+    display:block;
+
+    color:#64748b;
+
+    margin-bottom:8px;
+
+    font-size:14px;
+
+}
+
+.seller-orders-stat strong{
+
+    display:block;
+
+    font-size:32px;
+
+    color:#111827;
+
+}
+
+.seller-orders-card{
+
+    background:#fff;
+
+    border-radius:26px;
+
+    border:1px solid #ececec;
+
+    box-shadow:0 15px 35px rgba(0,0,0,.05);
+
+    padding:30px;
+
+    margin-bottom:24px;
+
+}
+
+.seller-orders-card h2{
+
+    margin:0;
+
+}
+
+.seller-orders-card-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+}
+
+.order-card{
+
+    padding:25px;
+
+    border-radius:22px;
+
+    border:1px solid #ececec;
+
+    margin-bottom:22px;
+
+    box-shadow:none;
+
+}
+
+.order-card:hover{
+
+    border-color:#4f35f5;
+
+}
+
+.tracking-box{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:8px;
+
+    margin:18px 0;
+
+}
+
+.track-step{
+
+    padding:8px 14px;
+
+    border-radius:999px;
+
+    background:#eef2f7;
+
+    color:#475569;
+
+    font-size:13px;
+
+    font-weight:700;
+
+}
+
+.track-step.done{
+
+    background:#dcfce7;
+
+    color:#166534;
+
+}
+
+.track-step.cancelled{
+
+    background:#fee2e2;
+
+    color:#991b1b;
+
+}
+
+.order-details-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:14px;
+
+    margin:20px 0;
+
+}
+
+.order-details-grid div{
+
+    background:#f8fafc;
+
+    padding:15px;
+
+    border-radius:16px;
+
+}
+
+.order-details-grid span{
+
+    display:block;
+
+    color:#64748b;
+
+    font-size:13px;
+
+}
+
+.order-details-grid strong{
+
+    display:block;
+
+    margin-top:5px;
+
+}
+
+.order-items{
+
+    margin-top:20px;
+
+    border-top:1px solid #ececec;
+
+    padding-top:20px;
+
+}
+
+.order-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    padding:14px 0;
+
+    border-bottom:1px solid #f1f5f9;
+
+}
+
+.order-item:last-child{
+
+    border-bottom:none;
+
+}
+
+.order-actions{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:12px;
+
+    margin-top:25px;
+
+}
+
+.order-actions button{
+
+    min-width:180px;
+
+}
+
+@media(max-width:1400px){
+
+.seller-orders-stats{
+
+grid-template-columns:repeat(3,1fr);
+
+}
+
+}
+
+@media(max-width:900px){
+
+.seller-orders-hero{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+}
+
+.seller-orders-hero-card{
+
+width:100%;
+
+}
+
+.seller-orders-stats{
+
+grid-template-columns:1fr 1fr;
+
+}
+
+.order-details-grid{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+@media(max-width:650px){
+
+.seller-orders-page{
+
+margin-top:110px;
+
+}
+
+.seller-orders-stats{
+
+grid-template-columns:1fr;
+
+}
+
+.seller-orders-hero h1{
+
+font-size:36px;
+
+}
+
+.order-actions{
+
+flex-direction:column;
+
+}
+
+.order-actions button{
+
+width:100%;
+
+}
+
+}
