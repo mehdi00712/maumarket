@@ -19,16 +19,15 @@ import {
 
 /*
   MauMarket products.js
-  Clean marketplace version with personalized shop links
-  - Smaller product cards
-  - No messy emojis in headings
-  - Buyer-facing price only
-  - Categories
-  - Featured shops
-  - Personalized public shop links
-  - Top deals
-  - Trending
-  - Main marketplace filters
+  Private-merchant marketplace version
+  - Product-first buyer experience
+  - No public seller pages or seller identity
+  - Verified MauMarket Merchant labels
+  - Buyer-facing prices only
+  - Dynamic categories and filters
+  - Marketplace advertisements
+  - Trending and deals
+  - Firestore cart support
 */
 
 const COMMISSION_RATE = 0.10;
@@ -61,8 +60,6 @@ const clearSearchTop = document.getElementById("clearSearchTop");
 
 const categoryIconGrid = document.getElementById("categoryIconGrid");
 
-const featuredShops = document.getElementById("featuredShops");
-const featuredShopsSection = document.getElementById("featuredShopsSection");
 
 const topAdBanner = document.getElementById("topAdBanner");
 const searchInput = document.getElementById("searchInput");
@@ -80,7 +77,6 @@ const sideSortFilter = document.getElementById("sideSortFilter");
 
 let allItems = [];
 let allCategories = [];
-let shopCache = {};
 
 let activeSearch = "";
 let activeCategory = "";
@@ -98,6 +94,7 @@ attachSearchEvents();
 attachFilterEvents();
 attachSharedNavSearch();
 attachInstantSearchEvent();
+attachMarketplaceHighlightEvents();
 
 await loadCategories();
 await loadTopBanner();
@@ -280,9 +277,9 @@ async function loadTopBanner() {
 
     if (adSlidesTrack) {
       adSlidesTrack.innerHTML = adBanners.map((banner, index) => {
-        const title = banner.title || banner.shopName || "Featured Seller";
-        const subtitle = banner.subtitle || "Discover this MauMarket seller.";
-        const badge = banner.badge || "Featured Shop";
+        const title = banner.title || "Marketplace Highlight";
+        const subtitle = banner.subtitle || "Discover products protected by MauMarket.";
+        const badge = banner.badge || "Featured";
 
         return `
           <article
@@ -302,7 +299,7 @@ async function loadTopBanner() {
               <span>${escapeHtml(badge)}</span>
               <h2>${escapeHtml(title)}</h2>
               <p>${escapeHtml(subtitle)}</p>
-              <button type="button">Visit Shop</button>
+              <button type="button">View Highlight</button>
             </div>
           </article>
         `;
@@ -323,9 +320,9 @@ async function loadTopBanner() {
 
         <div id="adSlidesTrack" class="market-ad-slides">
           ${adBanners.map((banner, index) => {
-            const title = banner.title || banner.shopName || "Featured Seller";
-            const subtitle = banner.subtitle || "Discover this MauMarket seller.";
-            const badge = banner.badge || "Featured Shop";
+            const title = banner.title || "Marketplace Highlight";
+            const subtitle = banner.subtitle || "Discover products protected by MauMarket.";
+            const badge = banner.badge || "Featured";
 
             return `
               <article
@@ -345,7 +342,7 @@ async function loadTopBanner() {
                   <span>${escapeHtml(badge)}</span>
                   <h2>${escapeHtml(title)}</h2>
                   <p>${escapeHtml(subtitle)}</p>
-                  <button type="button">Visit Shop</button>
+                  <button type="button">View Highlight</button>
                 </div>
               </article>
             `;
@@ -503,42 +500,59 @@ async function openAdBanner(index) {
     console.warn("Could not update banner clicks:", error.message);
   }
 
-  const targetShopId = banner.shopId || banner.sellerId || "";
-  const targetShopSlug = normalizeShopSlug(
-    banner.shopSlug ||
-    banner.slug ||
+  const targetProductId = String(banner.productId || "").trim();
+  const customUrl = getSafeMarketplaceUrl(
+    banner.linkUrl ||
+    banner.url ||
     ""
   );
-  const targetProductId = banner.productId || "";
-  const customUrl = banner.linkUrl || banner.url || "";
+
+  if (targetProductId) {
+    window.location.href =
+      `product-details.html?id=${encodeURIComponent(targetProductId)}`;
+    return;
+  }
 
   if (customUrl) {
     window.location.href = customUrl;
     return;
   }
 
-  if (targetProductId) {
-    window.location.href = `product-details.html?id=${encodeURIComponent(targetProductId)}`;
-    return;
-  }
-
-  if (targetShopSlug) {
-    window.location.href = buildShopUrl({
-      id: targetShopId,
-      slug: targetShopSlug
-    });
-    return;
-  }
-
-  if (targetShopId) {
-    const targetShop = await getShop(targetShopId);
-    window.location.href = buildShopUrl(targetShop);
-    return;
-  }
-
   window.location.href = "products.html";
 }
 
+function getSafeMarketplaceUrl(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw, window.location.href);
+
+    if (url.origin !== window.location.origin) {
+      return "";
+    }
+
+    const fileName =
+      url.pathname.split("/").filter(Boolean).pop() || "";
+
+    const allowedPages = new Set([
+      "products.html",
+      "product-details.html",
+      "cart.html",
+      "checkout.html",
+      "index.html"
+    ]);
+
+    if (!allowedPages.has(fileName)) {
+      return "";
+    }
+
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (error) {
+    return "";
+  }
+}
 
 
 /* =========================================================
@@ -566,36 +580,18 @@ async function loadItems() {
         ...docSnap.data()
       };
 
-      item.shop = await getShop(
-        item.sellerId ||
-        item.shopId ||
-        ""
-      );
-
-      item.shopSlug =
-        normalizeShopSlug(
-          item.shopSlug ||
-          item.shop?.slug ||
-          ""
-        );
-
-      item.shopUrl = buildShopUrl(
-        item.shop || {
-          id: item.sellerId || item.shopId || "",
-          slug: item.shopSlug
-        }
-      );
+      item.publicMerchantLabel =
+        "Verified MauMarket Merchant";
 
       allItems.push(item);
     }
 
     renderItems(false);
-    renderFeaturedShops();
   } catch (error) {
     productsGrid.innerHTML = `
       <div class="empty-market-card">
         <h3>Marketplace could not load</h3>
-        <p>${escapeHtml(error.message)}</p>
+        <p>The marketplace is temporarily unavailable. Please refresh and try again.</p>
       </div>
     `;
   }
@@ -617,57 +613,6 @@ function renderSkeletonGrid() {
   if (productsGrid) productsGrid.innerHTML = skeletonHtml;
   if (productsGridTrending) productsGridTrending.innerHTML = skeletonHtml;
   if (productsGridDeals) productsGridDeals.innerHTML = skeletonHtml;
-}
-
-async function getShop(sellerId) {
-  if (!sellerId) return emptyShop("");
-
-  if (shopCache[sellerId]) return shopCache[sellerId];
-
-  try {
-    const shopSnap = await getDoc(doc(db, "shops", sellerId));
-
-    if (shopSnap.exists()) {
-      const shopData = shopSnap.data();
-
-      shopCache[sellerId] = {
-        id: sellerId,
-        ownerId: shopData.ownerId || sellerId,
-        sellerId: shopData.sellerId || sellerId,
-        verified: true,
-        averageRating: 0,
-        totalReviews: 0,
-        ...shopData,
-        slug:
-          normalizeShopSlug(
-            shopData.slug ||
-            shopData.shopSlug ||
-            ""
-          )
-      };
-    } else {
-      shopCache[sellerId] = emptyShop(sellerId);
-    }
-  } catch (error) {
-    console.warn("Could not load shop:", error.message);
-    shopCache[sellerId] = emptyShop(sellerId);
-  }
-
-  return shopCache[sellerId];
-}
-
-function emptyShop(id) {
-  return {
-    id,
-    ownerId: id,
-    sellerId: id,
-    slug: "",
-    shopName: "MauMarket Seller",
-    verified: false,
-    averageRating: 0,
-    totalReviews: 0,
-    location: "Mauritius"
-  };
 }
 
 /* =========================================================
@@ -741,179 +686,6 @@ function renderProductList(grid, items, emptyState = {}) {
 }
 
 /* =========================================================
-   FEATURED SHOPS
-   ========================================================= */
-
-function renderFeaturedShops() {
-  if (!featuredShops || !featuredShopsSection) return;
-
-  const uniqueShops = {};
-
-  allItems.forEach((item) => {
-    if (!item.sellerId || !item.shop) return;
-
-    if (!uniqueShops[item.sellerId]) {
-      uniqueShops[item.sellerId] = {
-        id: item.sellerId,
-        ...item.shop,
-        listingCount: 0,
-        serviceCount: 0,
-        productImages: []
-      };
-    }
-
-    const shop = uniqueShops[item.sellerId];
-
-    if (item.active !== false) {
-      shop.listingCount += 1;
-    }
-
-    if (item.type === "service") {
-      shop.serviceCount += 1;
-    }
-
-    if (item.imageUrl && shop.productImages.length < 3) {
-      shop.productImages.push(item.imageUrl);
-    }
-  });
-
-  const shops = Object.values(uniqueShops)
-    .sort((a, b) => {
-      const aScore =
-        Number(a.featured === true) * 1000 +
-        Number(a.averageRating || 0) * 100 +
-        Number(a.totalReviews || 0) * 3 +
-        Number(a.listingCount || 0);
-
-      const bScore =
-        Number(b.featured === true) * 1000 +
-        Number(b.averageRating || 0) * 100 +
-        Number(b.totalReviews || 0) * 3 +
-        Number(b.listingCount || 0);
-
-      return bScore - aScore;
-    })
-    .slice(0, 8);
-
-  if (!shops.length) {
-    featuredShopsSection.style.display = "none";
-    return;
-  }
-
-  featuredShopsSection.style.display = "block";
-  featuredShops.innerHTML = "";
-
-  shops.forEach((shop) => {
-    const rating = Number(shop.averageRating || 0);
-    const totalReviews = Number(shop.totalReviews || 0);
-    const location = safeArea(shop.location || "Mauritius");
-    const listingCount = Number(shop.listingCount || 0);
-
-    const ratingText = rating > 0
-      ? `${rating.toFixed(1)} (${totalReviews})`
-      : "New";
-
-    const bannerImage =
-      shop.bannerUrl ||
-      shop.coverUrl ||
-      shop.productImages?.[0] ||
-      "";
-
-    const logoMarkup = shop.logoUrl
-      ? `
-          <img
-            class="compact-shop-logo-img"
-            src="${escapeHtml(shop.logoUrl)}"
-            alt="${escapeHtml(shop.shopName || "Shop")}">
-        `
-      : `
-          <div class="compact-shop-logo-fallback">
-            ${escapeHtml(getShopInitials(shop.shopName || "MauMarket"))}
-          </div>
-        `;
-
-    const bannerMarkup = bannerImage
-      ? `
-          <img
-            class="compact-shop-banner-img"
-            src="${escapeHtml(bannerImage)}"
-            alt="${escapeHtml(shop.shopName || "Shop")} banner">
-        `
-      : `
-          <div class="compact-shop-banner-fallback">
-            ${escapeHtml(getShopInitials(shop.shopName || "MauMarket"))}
-          </div>
-        `;
-
-    const card = document.createElement("article");
-    card.className = "featured-shop-card compact-featured-shop-card";
-
-    card.innerHTML = `
-      <a
-        class="compact-shop-link"
-        href="${escapeHtml(buildShopUrl(shop))}"
-        aria-label="Visit ${escapeHtml(shop.shopName || "Shop")}">
-
-        <div class="compact-shop-banner">
-          ${bannerMarkup}
-
-          <div class="compact-shop-banner-overlay"></div>
-
-          <span class="compact-shop-badge">
-            ${shop.featured === true ? "Featured" : "Verified"}
-          </span>
-        </div>
-
-        <div class="compact-shop-body">
-
-          <div class="compact-shop-logo-wrap">
-            ${logoMarkup}
-          </div>
-
-          <div class="compact-shop-title-row">
-            <div>
-              <h3>${escapeHtml(shop.shopName || "MauMarket Shop")}</h3>
-              <p>${escapeHtml(location)}</p>
-            </div>
-
-            <span class="compact-shop-check">✓</span>
-          </div>
-
-          <div class="compact-shop-meta">
-            <span>${listingCount} ${listingCount === 1 ? "listing" : "listings"}</span>
-            <span>${escapeHtml(ratingText)}</span>
-          </div>
-
-          <div class="compact-shop-footer">
-            <span>MauMarket Seller</span>
-            <strong>Visit Shop →</strong>
-          </div>
-
-        </div>
-      </a>
-    `;
-
-    featuredShops.appendChild(card);
-  });
-}
-
-function getShopInitials(name) {
-  const words = String(name || "M")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
-
-  const initials = words
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("");
-
-  return initials || "M";
-}
-
-
-
-/* =========================================================
    MAIN MARKETPLACE
    ========================================================= */
 
@@ -933,10 +705,7 @@ function renderItems(shouldScroll = false) {
       ${item.description || ""}
       ${item.category || ""}
       ${item.type || ""}
-      ${item.shop?.shopName || ""}
       ${getBuyerPrice(item)}
-      ${item.serviceArea || ""}
-      ${item.shop?.location || ""}
     `.toLowerCase();
 
     const matchesSearch = !search || searchableText.includes(search);
@@ -1023,8 +792,8 @@ function sortItems(items, sort) {
 
   if (sort === "rating") {
     copy.sort((a, b) => {
-      const aRating = Number(a.averageRating || a.shop?.averageRating || 0);
-      const bRating = Number(b.averageRating || b.shop?.averageRating || 0);
+      const aRating = Number(a.averageRating || 0);
+      const bRating = Number(b.averageRating || 0);
 
       return bRating - aRating;
     });
@@ -1041,7 +810,6 @@ function createProductCard(item) {
   const productRating = Number(item.averageRating || 0);
   const productReviews = Number(item.totalReviews || 0);
   const buyerPrice = getBuyerPrice(item);
-  const location = safeArea(item.shop?.location || item.serviceArea || "Mauritius");
 
   const ratingText = productRating > 0
     ? `${productRating.toFixed(1)} (${productReviews})`
@@ -1052,7 +820,9 @@ function createProductCard(item) {
   card.className = "market-product-card compact-market-card";
 
   card.innerHTML = `
-    <a class="market-product-img" href="product-details.html?id=${encodeURIComponent(item.id)}">
+    <a
+      class="market-product-img"
+      href="product-details.html?id=${encodeURIComponent(item.id)}">
       ${
         item.imageUrl
           ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
@@ -1067,54 +837,70 @@ function createProductCard(item) {
       <div class="product-card-top-row">
         <span class="badge">${escapeHtml(item.type || "item")}</span>
 
-        <button class="product-heart" type="button" aria-label="Save product">
+        <button
+          class="product-heart"
+          type="button"
+          aria-label="View product">
           ♡
         </button>
       </div>
 
       <h3>${escapeHtml(item.title || "Untitled")}</h3>
 
-      <a
-        class="seller-line product-shop-link"
-        href="${escapeHtml(buildShopUrl(item.shop || {
-          id: item.sellerId || item.shopId || "",
-          slug: item.shopSlug || ""
-        }))}">
-        <span>Verified</span>
-        ${escapeHtml(item.shop?.shopName || item.shopName || "Shop")}
-      </a>
+      <div class="seller-line verified-merchant-line">
+        <span>✓</span>
 
-      <p class="rating-line-small">${ratingText}</p>
+        <div>
+          <strong>Verified MauMarket Merchant</strong>
+          <small>Fulfilled and protected by MauMarket</small>
+        </div>
+      </div>
 
-      <p class="product-location">${escapeHtml(location)}</p>
+      <p class="rating-line-small">
+        ${escapeHtml(ratingText)}
+      </p>
+
+      <div class="product-protection-line">
+        <span>Secure payment</span>
+        <span>MauMarket delivery</span>
+      </div>
 
       <p class="price">${formatRs(buyerPrice)}</p>
 
       <div class="product-card-actions">
-        <a class="btn product-main-btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
+        <a
+          class="btn product-main-btn"
+          href="product-details.html?id=${encodeURIComponent(item.id)}">
           View Product
         </a>
 
-        <button class="btn product-add-cart-btn" type="button">
+        <button
+          class="btn product-add-cart-btn"
+          type="button">
           Add to Cart
         </button>
       </div>
     </div>
   `;
 
-  card.querySelector(".product-heart")?.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+  card
+    .querySelector(".product-heart")
+    ?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    window.location.href = `product-details.html?id=${encodeURIComponent(item.id)}`;
-  });
+      window.location.href =
+        `product-details.html?id=${encodeURIComponent(item.id)}`;
+    });
 
-  card.querySelector(".product-add-cart-btn")?.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+  card
+    .querySelector(".product-add-cart-btn")
+    ?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    addProductToCart(item, card, event.currentTarget);
-  });
+      addProductToCart(item, card, event.currentTarget);
+    });
 
   return card;
 }
@@ -1193,24 +979,18 @@ async function addProductToCart(item, card, button) {
       type: item.type || "product",
       category: item.category || "",
       imageUrl: item.imageUrl || "",
-      shopName: item.shop?.shopName || item.shopName || "MauMarket Seller",
+      // Private internal fields used by admin, payouts and delivery.
+      shopName:
+        item.shopName ||
+        "MauMarket Seller",
       shopId:
-        item.shop?.id ||
         item.shopId ||
         item.sellerId ||
         "",
-      shopSlug:
-        normalizeShopSlug(
-          item.shop?.slug ||
-          item.shopSlug ||
-          ""
-        ),
-      shopUrl: buildShopUrl(
-        item.shop || {
-          id: item.shopId || item.sellerId || "",
-          slug: item.shopSlug || ""
-        }
-      ),
+
+      // Public buyer-facing merchant label.
+      publicMerchantLabel:
+        "Verified MauMarket Merchant",
 
       price: buyerPrice,
       buyerPrice,
@@ -1241,7 +1021,7 @@ async function addProductToCart(item, card, button) {
     }));
   } catch (error) {
     console.error("Add to cart failed:", error);
-    showCartToast(error.message || "Could not add product to cart.", "error");
+    showCartToast(getFriendlyMarketplaceError(error), "error");
 
     button.disabled = false;
     button.textContent = "Add to Cart";
@@ -1477,6 +1257,30 @@ function scrollToProducts() {
 
 
 
+function attachMarketplaceHighlightEvents() {
+  document
+    .querySelectorAll("[data-market-highlight]")
+    .forEach((link) => {
+      link.addEventListener("click", (event) => {
+        const mode = link.dataset.marketHighlight || "";
+
+        event.preventDefault();
+
+        setSearch("");
+        setCategory("");
+
+        if (mode === "rating") {
+          setSort("rating");
+        } else {
+          setSort("newest");
+        }
+
+        runSearch(true);
+      });
+    });
+}
+
+
 function attachInstantSearchEvent() {
   window.addEventListener("maumarket:search", (event) => {
     const detail = event.detail || {};
@@ -1629,57 +1433,31 @@ function attachFilterEvents() {
 }
 
 /* =========================================================
-   PERSONALIZED SHOP LINKS
-   ========================================================= */
-
-function normalizeShopSlug(value) {
-  return String(value || "")
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/&/g, " and ")
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
-
-function buildShopUrl(shopOrId) {
-  const shop =
-    typeof shopOrId === "string"
-      ? { id: shopOrId }
-      : (shopOrId || {});
-
-  const slug = normalizeShopSlug(
-    shop.slug ||
-    shop.shopSlug ||
-    ""
-  );
-
-  if (slug) {
-    return `shop.html?shop=${encodeURIComponent(slug)}`;
-  }
-
-  const id =
-    shop.id ||
-    shop.ownerId ||
-    shop.sellerId ||
-    shop.shopId ||
-    "";
-
-  if (id) {
-    return `shop.html?id=${encodeURIComponent(id)}`;
-  }
-
-  return "shops.html";
-}
-
-/* =========================================================
    PRICE / FORMAT HELPERS
    ========================================================= */
+
+function getFriendlyMarketplaceError(error) {
+  const code = String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to update the cart.",
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+    "failed-precondition":
+      "The cart could not be updated. Please refresh and try again.",
+    "resource-exhausted":
+      "The service is temporarily busy. Please try again.",
+    "auth/network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return (
+    messages[code] ||
+    "Could not add this product to your cart. Please try again."
+  );
+}
+
 
 function getBuyerPrice(item) {
   const buyerPrice = Number(item.buyerPrice || 0);
@@ -1712,22 +1490,6 @@ function formatRs(value) {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   })}`;
-}
-
-function safeArea(location) {
-  const raw = String(location || "Mauritius").trim();
-
-  if (!raw) return "Mauritius Area";
-
-  const cleaned = raw
-    .replace(/\d+/g, "")
-    .replace(/street|road|avenue|lane|house|building|flat|apartment/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!cleaned) return "Mauritius Area";
-
-  return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
 }
 
 /* =========================================================
