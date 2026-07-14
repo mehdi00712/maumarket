@@ -1,0 +1,5 @@
+User-agent: *
+
+Allow: /
+
+Sitemap: https://mehdi00712.github.io/maumarket/sitemap.xml
