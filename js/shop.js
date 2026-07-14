@@ -6,7 +6,8 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  limit
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const shopHeader = document.getElementById("shopHeader");
@@ -29,37 +30,47 @@ const reviewsAverageRating = document.getElementById("reviewsAverageRating");
 const reviewsTotalCount = document.getElementById("reviewsTotalCount");
 
 const params = new URLSearchParams(window.location.search);
-const sellerId = params.get("id");
+const requestedSellerId = params.get("id") || "";
+const requestedShopSlug = normalizeShopSlug(params.get("shop") || "");
 
+let sellerId = "";
 let currentShop = null;
 let shopProducts = [];
 let shopReviews = [];
 
 async function loadShop() {
-  if (!sellerId) {
-    shopHeader.innerHTML = "<p>Shop not found.</p>";
+  if (!requestedSellerId && !requestedShopSlug) {
+    renderShopNotFound("This shop link is incomplete. Please return to the shops directory.");
     return;
   }
 
   try {
-    const shopSnap = await getDoc(doc(db, "shops", sellerId));
+    const resolvedShop = await resolveRequestedShop();
 
-    if (!shopSnap.exists()) {
-      shopHeader.innerHTML = "<p>Shop not found.</p>";
+    if (!resolvedShop) {
+      renderShopNotFound("The requested shop could not be found or is no longer available.");
       return;
     }
 
-    currentShop = {
-      id: sellerId,
-      ...shopSnap.data()
-    };
+    currentShop = resolvedShop;
+    sellerId = currentShop.ownerId || currentShop.sellerId || currentShop.id;
 
-    if (breadcrumbShop) {
-      breadcrumbShop.textContent = currentShop.shopName || "Shop";
+    if (!sellerId) {
+      renderShopNotFound("This shop is missing its seller information.");
+      return;
     }
 
-    await loadShopItems();
-    await loadReviews();
+    if (currentShop.active === false || currentShop.approved === false) {
+      renderShopNotFound("This shop is currently unavailable.");
+      return;
+    }
+
+    updateCanonicalShopUrl();
+
+    if (breadcrumbShop) breadcrumbShop.textContent = currentShop.shopName || "Shop";
+    document.title = `${currentShop.shopName || "Shop"} | MauMarket`;
+
+    await Promise.all([loadShopItems(), loadReviews()]);
 
     renderShopHeader();
     renderTrustStrip();
@@ -68,32 +79,56 @@ async function loadShop() {
     renderReviews();
     updateHighlightStats();
   } catch (error) {
-    shopHeader.innerHTML = `
-      <div class="order-card">
-        <h3>Shop could not load</h3>
-        <p>${escapeHtml(error.message)}</p>
-      </div>
-    `;
+    console.error("Shop could not load:", error);
+    if (shopHeader) {
+      shopHeader.innerHTML = `<div class="order-card"><h3>Shop could not load</h3><p>${escapeHtml(error.message || "Please try again later.")}</p></div>`;
+    }
   }
 }
 
+async function resolveRequestedShop() {
+  if (requestedShopSlug) {
+    const slugQuery = query(collection(db, "shops"), where("slug", "==", requestedShopSlug), limit(1));
+    const slugSnapshot = await getDocs(slugQuery);
+    if (!slugSnapshot.empty) {
+      const shopDoc = slugSnapshot.docs[0];
+      return { id: shopDoc.id, ...shopDoc.data() };
+    }
+  }
+
+  if (requestedSellerId) {
+    const directSnap = await getDoc(doc(db, "shops", requestedSellerId));
+    if (directSnap.exists()) return { id: directSnap.id, ...directSnap.data() };
+
+    const ownerQuery = query(collection(db, "shops"), where("ownerId", "==", requestedSellerId), limit(1));
+    const ownerSnapshot = await getDocs(ownerQuery);
+    if (!ownerSnapshot.empty) {
+      const shopDoc = ownerSnapshot.docs[0];
+      return { id: shopDoc.id, ...shopDoc.data() };
+    }
+  }
+  return null;
+}
+
+function renderShopNotFound(message) {
+  if (shopHeader) {
+    shopHeader.innerHTML = `<div class="order-card"><h3>Shop not found</h3><p>${escapeHtml(message)}</p><div class="seller-actions"><a class="btn" href="shops.html">Browse Shops</a><a class="secondary-btn" href="products.html">Browse Marketplace</a></div></div>`;
+  }
+  if (shopItems) shopItems.innerHTML = "";
+  if (shopResultCount) shopResultCount.textContent = "0 items";
+}
+
+function updateCanonicalShopUrl() {
+  if (!currentShop?.slug) return;
+  const canonicalUrl = `${window.location.pathname}?shop=${encodeURIComponent(currentShop.slug)}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}`;
+  if (canonicalUrl !== currentUrl) window.history.replaceState({}, "", canonicalUrl);
+}
+
 async function loadShopItems() {
-  const q = query(
-    collection(db, "products"),
-    where("sellerId", "==", sellerId),
-    where("active", "==", true)
-  );
-
-  const snapshot = await getDocs(q);
-
-  shopProducts = [];
-
-  snapshot.forEach((docSnap) => {
-    shopProducts.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
-  });
+  const productsQuery = query(collection(db, "products"), where("sellerId", "==", sellerId));
+  const snapshot = await getDocs(productsQuery);
+  shopProducts = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })).filter((item) => item.active !== false);
 }
 
 async function loadReviews() {
@@ -177,9 +212,52 @@ function renderShopHeader() {
         <span>Reviews</span>
       </div>
 
-      <a class="btn" href="products.html">Continue Shopping</a>
+      <div class="shop-wow-actions">
+        <button id="copyCurrentShopLinkBtn" type="button" class="secondary-btn">Copy Shop Link</button>
+        <button id="shareCurrentShopLinkBtn" type="button" class="secondary-btn">Share Shop</button>
+        <a class="btn" href="products.html">Continue Shopping</a>
+      </div>
     </div>
   `;
+
+  bindShopShareActions();
+}
+
+function getCurrentPublicShopUrl() {
+  if (currentShop?.slug) return `${getProjectBaseUrl()}shop.html?shop=${encodeURIComponent(currentShop.slug)}`;
+  return `${getProjectBaseUrl()}shop.html?id=${encodeURIComponent(sellerId)}`;
+}
+
+function getProjectBaseUrl() {
+  const url = new URL(window.location.href);
+  const parts = url.pathname.split("/");
+  parts.pop();
+  return `${url.origin}${parts.join("/")}/`;
+}
+
+function bindShopShareActions() {
+  document.getElementById("copyCurrentShopLinkBtn")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const originalText = button.textContent;
+    try {
+      await navigator.clipboard.writeText(getCurrentPublicShopUrl());
+      button.textContent = "Copied!";
+      setTimeout(() => { button.textContent = originalText; }, 1600);
+    } catch {
+      window.prompt("Copy this shop link:", getCurrentPublicShopUrl());
+    }
+  });
+
+  document.getElementById("shareCurrentShopLinkBtn")?.addEventListener("click", async () => {
+    const shareData = { title: `${currentShop?.shopName || "MauMarket Shop"} | MauMarket`, text: `Visit ${currentShop?.shopName || "this shop"} on MauMarket.`, url: getCurrentPublicShopUrl() };
+    try {
+      if (navigator.share) { await navigator.share(shareData); return; }
+      await navigator.clipboard.writeText(shareData.url);
+      window.alert("Shop link copied.");
+    } catch (error) {
+      if (error?.name !== "AbortError") window.prompt("Copy this shop link:", shareData.url);
+    }
+  });
 }
 
 function renderTrustStrip() {
@@ -502,6 +580,10 @@ function getShopSinceText() {
   });
 }
 
+function normalizeShopSlug(value) {
+  return String(value || "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/&/g, " and ").replace(/['’]/g, "").replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+}
+
 function safeArea(location) {
   const raw = String(location || "Mauritius").trim();
 
@@ -519,8 +601,8 @@ function safeArea(location) {
 }
 
 function stars(value) {
-  const rating = Math.max(1, Math.min(5, Math.round(Number(value || 0))));
-  return "⭐".repeat(rating);
+  const rating = Math.max(0, Math.min(5, Math.round(Number(value || 0))));
+  return rating > 0 ? "⭐".repeat(rating) : "No rating";
 }
 
 function escapeHtml(value) {
