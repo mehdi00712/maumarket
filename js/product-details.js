@@ -26,9 +26,7 @@ const itemId = params.get("id");
 
 let currentUser = null;
 let currentItem = null;
-let currentShop = null;
 let productReviews = [];
-let shopReviews = [];
 let isWishlisted = false;
 
 onAuthStateChanged(auth, async (user) => {
@@ -38,46 +36,74 @@ onAuthStateChanged(auth, async (user) => {
 
 async function loadDetails() {
   if (!itemId) {
-    detailsBox.innerHTML = "<p>Item not found.</p>";
+    renderProductError(
+      "Product not found",
+      "The product link is incomplete or invalid."
+    );
     return;
   }
 
-  const itemSnap = await getDoc(doc(db, "products", itemId));
+  try {
+    const itemSnap = await getDoc(doc(db, "products", itemId));
 
-  if (!itemSnap.exists()) {
-    detailsBox.innerHTML = "<p>Item not found.</p>";
-    return;
-  }
-
-  currentItem = {
-    id: itemSnap.id,
-    ...itemSnap.data()
-  };
-
-  currentShop = {
-    shopName: "Unknown Shop",
-    averageRating: 0,
-    totalReviews: 0,
-    location: "Mauritius"
-  };
-
-  if (currentItem.sellerId) {
-    const shopSnap = await getDoc(doc(db, "shops", currentItem.sellerId));
-
-    if (shopSnap.exists()) {
-      currentShop = {
-        id: currentItem.sellerId,
-        ...shopSnap.data()
-      };
+    if (!itemSnap.exists()) {
+      renderProductError(
+        "Product not found",
+        "This product may have been removed or is no longer available."
+      );
+      return;
     }
+
+    currentItem = {
+      id: itemSnap.id,
+      ...itemSnap.data(),
+      publicMerchantLabel: "Verified MauMarket Merchant"
+    };
+
+    if (currentItem.active === false) {
+      renderProductError(
+        "Product unavailable",
+        "This product is not currently available on MauMarket."
+      );
+      return;
+    }
+
+    await Promise.all([
+      loadProductReviews(),
+      checkWishlistStatus()
+    ]);
+
+    renderDetails();
+    await loadRelatedItems();
+  } catch (error) {
+    console.error("Product details could not load:", error);
+
+    renderProductError(
+      "Product could not load",
+      getFriendlyProductError(
+        error,
+        "Please refresh the page and try again."
+      )
+    );
+  }
+}
+
+function renderProductError(title, message) {
+  if (detailsBox) {
+    detailsBox.innerHTML = `
+      <div class="empty-market-card">
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(message)}</p>
+        <a class="btn" href="products.html">
+          Back to Marketplace
+        </a>
+      </div>
+    `;
   }
 
-  await loadProductReviews();
-  await loadShopReviews();
-  await checkWishlistStatus();
-
-  renderDetails();
-  await loadRelatedItems();
+  if (relatedItems) {
+    relatedItems.innerHTML = "";
+  }
 }
 
 async function checkWishlistStatus() {
@@ -118,44 +144,18 @@ async function loadProductReviews() {
   });
 }
 
-async function loadShopReviews() {
-  if (!currentItem.sellerId) {
-    shopReviews = [];
-    return;
-  }
-
-  const q = query(
-    collection(db, "reviews"),
-    where("sellerIds", "array-contains", currentItem.sellerId)
-  );
-
-  const snapshot = await getDocs(q);
-
-  shopReviews = [];
-
-  snapshot.forEach((docSnap) => {
-    shopReviews.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
-  });
-}
-
 function renderDetails() {
   const productAverageRating = Number(
-    currentItem.averageRating || getAverageRating(productReviews, "sellerRating") || 0
+    currentItem.averageRating ||
+    getAverageRating(productReviews, "sellerRating") ||
+    getAverageRating(productReviews, "rating") ||
+    0
   );
 
   const productTotalReviews = Number(
-    currentItem.totalReviews || productReviews.length || 0
-  );
-
-  const shopAverageRating = Number(
-    currentShop.averageRating || getAverageRating(shopReviews, "sellerRating") || 0
-  );
-
-  const shopTotalReviews = Number(
-    currentShop.totalReviews || shopReviews.length || 0
+    currentItem.totalReviews ||
+    productReviews.length ||
+    0
   );
 
   const buyerPrice = getBuyerPrice(currentItem);
@@ -163,10 +163,6 @@ function renderDetails() {
   const productRatingText = productAverageRating > 0
     ? `⭐ ${productAverageRating.toFixed(1)} (${productTotalReviews} review${productTotalReviews === 1 ? "" : "s"})`
     : "⭐ No product reviews yet";
-
-  const shopRatingText = shopAverageRating > 0
-    ? `⭐ ${shopAverageRating.toFixed(1)} (${shopTotalReviews} shop review${shopTotalReviews === 1 ? "" : "s"})`
-    : "⭐ No shop reviews yet";
 
   const stockText =
     currentItem.type === "product"
@@ -176,7 +172,7 @@ function renderDetails() {
   const reviewsHtml = renderReviewsList();
 
   detailsBox.innerHTML = `
-    <section class="pro-product-details clean-product-details">
+    <section class="pro-product-details clean-product-details private-merchant-details">
 
       <div class="pro-gallery clean-gallery">
         ${
@@ -199,7 +195,7 @@ function renderDetails() {
 
         <div class="product-trust-mini">
           <span>✓ Secure checkout</span>
-          <span>✓ Verified seller</span>
+          <span>✓ Verified MauMarket Merchant</span>
           <span>✓ Delivery by MauMarket</span>
         </div>
 
@@ -212,13 +208,21 @@ function renderDetails() {
         </p>
 
         <div class="cart-actions clean-cart-actions">
-          <input id="qtyInput" type="number" min="1" value="1">
+          <input
+            id="qtyInput"
+            type="number"
+            min="1"
+            value="1"
+            aria-label="Quantity">
 
           <button id="addToCartBtn" type="button">
             Add to Cart
           </button>
 
-          <button id="wishlistBtn" class="secondary-btn" type="button">
+          <button
+            id="wishlistBtn"
+            class="secondary-btn"
+            type="button">
             ${isWishlisted ? "♥ Saved" : "♡ Save"}
           </button>
         </div>
@@ -227,31 +231,29 @@ function renderDetails() {
         <p id="wishlistMessage"></p>
       </div>
 
-      <aside class="buy-box clean-buy-box">
-        <h3>Seller</h3>
+      <aside class="buy-box clean-buy-box private-merchant-buy-box">
+        <h3>MauMarket Merchant</h3>
 
-        <div class="mini-shop">
-          ${
-            currentShop.logoUrl
-              ? `<img src="${escapeHtml(currentShop.logoUrl)}" alt="${escapeHtml(currentShop.shopName || "Shop")}">`
-              : `<div class="shop-logo-fallback">Shop</div>`
-          }
+        <div class="anonymous-merchant-panel">
+          <div class="anonymous-merchant-icon">
+            ✓
+          </div>
 
           <div>
-            <strong>${escapeHtml(currentShop.shopName || "Shop")}</strong>
-            <p>${shopRatingText}</p>
-            <p class="muted">✓ Verified Seller</p>
+            <strong>Verified MauMarket Merchant</strong>
+            <p>Merchant identity and pickup details remain private.</p>
           </div>
         </div>
 
         <div class="seller-safe-info">
-          <p>📍 ${escapeHtml(safeArea(currentShop.location || "Mauritius"))}</p>
-          <p>🚚 Delivery by MauMarket</p>
-          <p>🛡 Secure checkout</p>
+          <p>🔒 Payment protected by MauMarket</p>
+          <p>🚚 Pickup and delivery managed by MauMarket</p>
+          <p>🛡 Buyer support included</p>
+          <p>⭐ Reviews from verified purchases</p>
         </div>
 
-        <a class="btn" href="shop.html?id=${encodeURIComponent(currentItem.sellerId || "")}">
-          Visit Shop
+        <a class="btn" href="products.html">
+          Browse More Products
         </a>
 
         <a class="secondary-btn" href="wishlist.html">
@@ -270,8 +272,13 @@ function renderDetails() {
     </section>
   `;
 
-  document.getElementById("addToCartBtn")?.addEventListener("click", addToCart);
-  document.getElementById("wishlistBtn")?.addEventListener("click", toggleWishlist);
+  document
+    .getElementById("addToCartBtn")
+    ?.addEventListener("click", addToCart);
+
+  document
+    .getElementById("wishlistBtn")
+    ?.addEventListener("click", toggleWishlist);
 }
 
 function renderReviewsList() {
@@ -293,7 +300,7 @@ function renderReviewsList() {
         <h3>${stars} ${rating ? rating.toFixed(1) : ""}</h3>
         <p><strong>${escapeHtml(review.customerName || "Customer")}</strong></p>
         <p>${escapeHtml(review.reviewText || "")}</p>
-        <p class="muted">Verified Purchase</p>
+        <p class="muted">Verified MauMarket Purchase</p>
       </div>
     `;
   }).join("");
@@ -406,7 +413,7 @@ async function toggleWishlist() {
         imageUrl: currentItem.imageUrl || "",
         category: currentItem.category || "",
         type: currentItem.type || "",
-        shopName: currentShop.shopName || "",
+        publicMerchantLabel: "Verified MauMarket Merchant",
         addedAt: serverTimestamp()
       }, { merge: true });
 
@@ -415,7 +422,10 @@ async function toggleWishlist() {
       wishlistMessage.textContent = "Saved to wishlist.";
     }
   } catch (error) {
-    wishlistMessage.textContent = error.message;
+    wishlistMessage.textContent = getFriendlyProductError(
+      error,
+      "The wishlist could not be updated."
+    );
   }
 
   wishlistBtn.disabled = false;
@@ -423,9 +433,11 @@ async function toggleWishlist() {
 
 async function addToCart() {
   const cartMessage = document.getElementById("cartMessage");
+  const addButton = document.getElementById("addToCartBtn");
 
   if (!currentUser) {
-    cartMessage.textContent = "Please login first.";
+    cartMessage.textContent =
+      "Please sign in before adding products to your cart.";
 
     setTimeout(() => {
       window.location.href = "login.html";
@@ -434,10 +446,22 @@ async function addToCart() {
     return;
   }
 
-  const qty = Number(document.getElementById("qtyInput").value || 1);
+  const qty = Number(
+    document.getElementById("qtyInput")?.value || 1
+  );
 
-  if (qty < 1) {
-    cartMessage.textContent = "Quantity must be at least 1.";
+  if (!Number.isFinite(qty) || qty < 1) {
+    cartMessage.textContent =
+      "Quantity must be at least 1.";
+    return;
+  }
+
+  if (
+    currentItem.type === "product" &&
+    Number(currentItem.stock || 0) <= 0
+  ) {
+    cartMessage.textContent =
+      "This product is currently out of stock.";
     return;
   }
 
@@ -446,49 +470,97 @@ async function addToCart() {
     Number(currentItem.stock || 0) > 0 &&
     qty > Number(currentItem.stock || 0)
   ) {
-    cartMessage.textContent = "Quantity is higher than available stock.";
+    cartMessage.textContent =
+      "Quantity is higher than available stock.";
     return;
   }
 
-  await setDoc(doc(db, "carts", currentUser.uid, "items", currentItem.id), {
-    productId: currentItem.id,
-    sellerId: currentItem.sellerId,
-    title: currentItem.title,
-    type: currentItem.type,
-    category: currentItem.category,
-
-    price: getBuyerPrice(currentItem),
-    buyerPrice: getBuyerPrice(currentItem),
-    sellerPrice: getSellerPrice(currentItem),
-    commissionAmount: getCommissionAmount(currentItem),
-    commissionRate: COMMISSION_RATE,
-
-    quantity: qty,
-    imageUrl: currentItem.imageUrl || "",
-    shopName: currentShop.shopName || "",
-    addedAt: serverTimestamp()
-  }, { merge: true });
-
-  animateToCart();
-  cartMessage.textContent = "Added to cart.";
-
-  const btn=document.getElementById("addToCartBtn");
-  if(btn){
-    btn.disabled=true;
-    const old=btn.textContent;
-    btn.textContent="Added ✓";
-    setTimeout(()=>{
-      btn.disabled=false;
-      btn.textContent=old;
-    },1200);
+  if (addButton) {
+    addButton.disabled = true;
+    addButton.textContent = "Adding...";
   }
 
-  window.dispatchEvent(new CustomEvent("cart-updated", {
-    detail: {
-      productId: currentItem.id,
-      quantity: qty
+  try {
+    await setDoc(
+      doc(
+        db,
+        "carts",
+        currentUser.uid,
+        "items",
+        currentItem.id
+      ),
+      {
+        productId: currentItem.id,
+
+        // Internal fields required by admin, payouts and delivery.
+        sellerId: currentItem.sellerId || "",
+        shopId:
+          currentItem.shopId ||
+          currentItem.sellerId ||
+          "",
+        shopName:
+          currentItem.shopName ||
+          "MauMarket Seller",
+
+        // Buyer-facing anonymous label.
+        publicMerchantLabel:
+          "Verified MauMarket Merchant",
+
+        title: currentItem.title || "",
+        type: currentItem.type || "product",
+        category: currentItem.category || "",
+
+        price: getBuyerPrice(currentItem),
+        buyerPrice: getBuyerPrice(currentItem),
+        sellerPrice: getSellerPrice(currentItem),
+        commissionAmount:
+          getCommissionAmount(currentItem),
+        commissionRate: COMMISSION_RATE,
+
+        quantity: qty,
+        imageUrl: currentItem.imageUrl || "",
+        addedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    animateToCart();
+
+    cartMessage.textContent =
+      "Product added to your cart.";
+
+    if (addButton) {
+      addButton.textContent = "Added ✓";
+
+      setTimeout(() => {
+        addButton.disabled = false;
+        addButton.textContent = "Add to Cart";
+      }, 1200);
     }
-  }));
+
+    window.dispatchEvent(
+      new CustomEvent("cart-updated", {
+        detail: {
+          productId: currentItem.id,
+          quantity: qty
+        }
+      })
+    );
+  } catch (error) {
+    console.error("Add to cart failed:", error);
+
+    cartMessage.textContent =
+      getFriendlyProductError(
+        error,
+        "The product could not be added to your cart."
+      );
+
+    if (addButton) {
+      addButton.disabled = false;
+      addButton.textContent = "Add to Cart";
+    }
+  }
 }
 
 function animateToCart(){
@@ -506,6 +578,25 @@ function animateToCart(){
     clone.style.opacity="0";
   });
   setTimeout(()=>clone.remove(),850);
+}
+
+function getFriendlyProductError(error, fallbackMessage) {
+  const code = String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to perform this action.",
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+    "failed-precondition":
+      "The request could not be completed. Please refresh and try again.",
+    "resource-exhausted":
+      "The service is temporarily busy. Please try again.",
+    "auth/network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return messages[code] || fallbackMessage;
 }
 
 function getBuyerPrice(item) {
@@ -566,22 +657,6 @@ function getStockText(stockValue) {
   if (stock <= 5) return `Only ${stock} left in stock`;
 
   return "In stock";
-}
-
-function safeArea(location) {
-  const raw = String(location || "Mauritius").trim();
-
-  if (!raw) return "Mauritius Area";
-
-  const cleaned = raw
-    .replace(/\d+/g, "")
-    .replace(/street|road|avenue|lane|house|building|flat|apartment/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!cleaned) return "Mauritius Area";
-
-  return cleaned.toLowerCase().includes("area") ? cleaned : `${cleaned} Area`;
 }
 
 function getAverageRating(reviews, fieldName) {
