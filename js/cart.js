@@ -1,9 +1,6 @@
 import { auth, db } from "./firebase-config.js";
 
-import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   collection,
   getDocs,
@@ -12,253 +9,167 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const cartItems = document.getElementById("cartItems");
-const cartTotal = document.getElementById("cartTotal");
-const summaryItems = document.getElementById("summaryItems");
-const productsTotal = document.getElementById("productsTotal");
+const cartItems=document.getElementById("cartItems");
+const cartTotal=document.getElementById("cartTotal");
+const summaryItems=document.getElementById("summaryItems");
+const productsTotal=document.getElementById("productsTotal");
 
-let currentUser = null;
+let currentUser=null;
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  currentUser = user;
-  localStorage.removeItem("cart");
-  await loadCart();
+onAuthStateChanged(auth,async(user)=>{
+ if(!user){location.href="login.html";return;}
+ currentUser=user;
+ localStorage.removeItem("cart");
+ await loadCart();
 });
 
-async function loadCart() {
-  cartItems.innerHTML = "Loading cart...";
+async function loadCart(){
+ cartItems.innerHTML="Loading cart...";
+ const snapshot=await getDocs(collection(db,"carts",currentUser.uid,"items"));
 
-  const snapshot = await getDocs(
-    collection(db, "carts", currentUser.uid, "items")
-  );
+ if(snapshot.empty){
+   renderEmptyCart();
+   updateCartBadge(0);
+   return;
+ }
 
-  if (snapshot.empty) {
-    renderEmptyCart();
-    updateCartBadge(0);
-    return;
-  }
+ let total=0,itemCount=0;
+ const merchantGroups={};
 
-  let total = 0;
-  let itemCount = 0;
-  const sellerGroups = {};
+ snapshot.forEach(d=>{
+   const item={id:d.id,...d.data()};
+   const merchantId=item.sellerId||"unknown";
 
-  snapshot.forEach((docSnap) => {
-    const cartItem = {
-      id: docSnap.id,
-      ...docSnap.data()
-    };
+   if(!merchantGroups[merchantId]){
+     merchantGroups[merchantId]={
+       id:merchantId,
+       label:"Verified MauMarket Merchant",
+       items:[]
+     };
+   }
+   merchantGroups[merchantId].items.push(item);
+ });
 
-    const sellerId = cartItem.sellerId || "unknown";
-    const sellerName = cartItem.shopName || "MauMarket Seller";
+ cartItems.innerHTML="";
 
-    if (!sellerGroups[sellerId]) {
-      sellerGroups[sellerId] = {
-        sellerId,
-        sellerName,
-        items: []
-      };
-    }
+ Object.values(merchantGroups).forEach(group=>{
+   const section=document.createElement("section");
+   section.className="cart-seller-section";
 
-    sellerGroups[sellerId].items.push(cartItem);
-  });
+   let merchantTotal=0;
+   let merchantCount=0;
 
-  cartItems.innerHTML = "";
+   section.innerHTML=`
+   <div class="cart-seller-head">
+      <div>
+         <h2>Verified MauMarket Merchant</h2>
+         <p>Merchant identity is kept private</p>
+      </div>
+      <span>MauMarket Delivery</span>
+   </div>
+   <div class="cart-seller-items"></div>`;
 
-  Object.values(sellerGroups).forEach((group) => {
-    const sellerSection = document.createElement("section");
-    sellerSection.className = "cart-seller-section";
+   const holder=section.querySelector(".cart-seller-items");
 
-    let sellerTotal = 0;
-    let sellerItemCount = 0;
+   group.items.forEach(item=>{
+      const qty=Number(item.quantity||1);
+      const price=getBuyerPrice(item);
+      const line=roundMoney(price*qty);
 
-    sellerSection.innerHTML = `
-      <div class="cart-seller-head">
-        <div>
-          <h2>${escapeHtml(group.sellerName)}</h2>
-          <p>Verified MauMarket seller</p>
-        </div>
+      merchantTotal+=line;
+      merchantCount+=qty;
+      total+=line;
+      itemCount+=qty;
 
-        <span>Delivery by MauMarket</span>
+      const card=document.createElement("div");
+      card.className="cart-item pro-cart-item";
+      card.innerHTML=`
+      <div class="cart-item-img">
+      ${item.imageUrl?`<img src="${escapeHtml(item.imageUrl)}">`:`<div class="no-img">No Image</div>`}
       </div>
 
-      <div class="cart-seller-items"></div>
-    `;
+      <div class="cart-info">
+        <span class="badge">${escapeHtml(item.type||"item")}</span>
+        <h3>${escapeHtml(item.title||"Untitled")}</h3>
+        <p class="muted">${escapeHtml(item.category||"")}</p>
 
-    const sellerItemsBox = sellerSection.querySelector(".cart-seller-items");
-
-    group.items.forEach((item) => {
-      const quantity = Number(item.quantity || 1);
-      const price = getBuyerPrice(item);
-      const lineTotal = roundMoney(price * quantity);
-
-      sellerTotal += lineTotal;
-      sellerItemCount += quantity;
-      total += lineTotal;
-      itemCount += quantity;
-
-      const itemDiv = document.createElement("div");
-      itemDiv.className = "cart-item pro-cart-item";
-
-      itemDiv.innerHTML = `
-        <div class="cart-item-img">
-          ${
-            item.imageUrl
-              ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
-              : `<div class="no-img">No Image</div>`
-          }
+        <div class="merchant-anonymous-badge">
+          ✓ Verified MauMarket Merchant
         </div>
 
-        <div class="cart-info">
-          <span class="badge">${escapeHtml(item.type || "item")}</span>
+        <p><strong>Price:</strong> ${formatRs(price)}</p>
 
-          <h3>${escapeHtml(item.title || "Untitled")}</h3>
-
-          <p class="muted">${escapeHtml(item.category || "")}</p>
-
-          <div class="cart-price-box">
-            <p>
-              <strong>Price:</strong>
-              ${formatRs(price)}
-            </p>
-          </div>
-
-          <div class="cart-qty-row">
-            <label>Qty</label>
-
-            <input
-              class="qty-update"
-              type="number"
-              min="1"
-              value="${quantity}">
-          </div>
-
-          <p class="cart-line-total">
-            Subtotal:
-            <strong>${formatRs(lineTotal)}</strong>
-          </p>
+        <div class="cart-qty-row">
+          <label>Qty</label>
+          <input class="qty-update" type="number" min="1" value="${qty}">
         </div>
 
-        <div class="cart-actions-side">
-          <button class="danger-btn remove-btn" type="button">
-            Remove
-          </button>
-        </div>
-      `;
+        <p class="cart-line-total">
+          Subtotal: <strong>${formatRs(line)}</strong>
+        </p>
+      </div>
 
-      itemDiv.querySelector(".qty-update").addEventListener("change", async (event) => {
-        const newQty = Number(event.target.value || 1);
+      <div class="cart-actions-side">
+         <button class="danger-btn remove-btn">Remove</button>
+      </div>`;
 
-        if (newQty < 1) {
-          event.target.value = quantity;
-          return;
-        }
-
-        await updateDoc(doc(db, "carts", currentUser.uid, "items", item.id), {
-          quantity: newQty
-        });
-
-        await loadCart();
+      card.querySelector(".qty-update").addEventListener("change",async e=>{
+        const n=Number(e.target.value||1);
+        if(n<1){e.target.value=qty;return;}
+        await updateDoc(doc(db,"carts",currentUser.uid,"items",item.id),{quantity:n});
+        loadCart();
       });
 
-      itemDiv.querySelector(".remove-btn").addEventListener("click", async () => {
-        if (!confirm("Remove this item from your cart?")) return;
-
-        await deleteDoc(doc(db, "carts", currentUser.uid, "items", item.id));
-        await loadCart();
+      card.querySelector(".remove-btn").addEventListener("click",async()=>{
+        if(!confirm("Remove this item from your cart?")) return;
+        await deleteDoc(doc(db,"carts",currentUser.uid,"items",item.id));
+        loadCart();
       });
 
-      sellerItemsBox.appendChild(itemDiv);
-    });
+      holder.appendChild(card);
+   });
 
-    const footer = document.createElement("div");
-    footer.className = "cart-seller-footer";
+   const footer=document.createElement("div");
+   footer.className="cart-seller-footer";
+   footer.innerHTML=`<span>${merchantCount} item(s)</span><strong>${formatRs(merchantTotal)}</strong>`;
+   section.appendChild(footer);
+   cartItems.appendChild(section);
+ });
 
-    footer.innerHTML = `
-      <span>${sellerItemCount} item(s) from this seller</span>
-      <strong>${formatRs(sellerTotal)}</strong>
-    `;
-
-    sellerSection.appendChild(footer);
-    cartItems.appendChild(sellerSection);
-  });
-
-  renderSummary({
-    itemCount,
-    total
-  });
-
-  updateCartBadge(itemCount);
+ renderSummary({itemCount,total});
+ updateCartBadge(itemCount);
 }
 
-function renderSummary({ itemCount, total }) {
-  if (summaryItems) summaryItems.textContent = String(itemCount);
-  if (productsTotal) productsTotal.textContent = formatPlainNumber(total);
-  if (cartTotal) cartTotal.textContent = formatPlainNumber(total);
+function renderSummary({itemCount,total}){
+ summaryItems.textContent=String(itemCount);
+ productsTotal.textContent=formatPlainNumber(total);
+ cartTotal.textContent=formatPlainNumber(total);
 }
 
-function renderEmptyCart() {
-  cartItems.innerHTML = `
-    <div class="empty-cart-card">
-      <h2>Your cart is empty</h2>
-      <p>Browse the marketplace and add products or services to your cart.</p>
-
-      <a href="products.html" class="btn">
-        Start Shopping
-      </a>
-    </div>
-  `;
-
-  if (summaryItems) summaryItems.textContent = "0";
-  if (productsTotal) productsTotal.textContent = "0";
-  if (cartTotal) cartTotal.textContent = "0";
+function renderEmptyCart(){
+ cartItems.innerHTML=`<div class="empty-cart-card">
+ <h2>Your cart is empty</h2>
+ <p>Browse MauMarket and discover products from verified merchants.</p>
+ <a class="btn" href="products.html">Browse Products</a>
+ </div>`;
+ summaryItems.textContent="0";
+ productsTotal.textContent="0";
+ cartTotal.textContent="0";
 }
 
-function updateCartBadge(count) {
-  window.dispatchEvent(new CustomEvent("cart-updated", {
-    detail: {
-      count: Number(count || 0)
-    }
-  }));
+function updateCartBadge(count){
+ window.dispatchEvent(new CustomEvent("cart-updated",{detail:{count:Number(count||0)}}));
 }
-
-function getBuyerPrice(item) {
-  const buyerPrice = Number(item.buyerPrice || 0);
-  if (buyerPrice > 0) return roundMoney(buyerPrice);
-
-  const price = Number(item.price || 0);
-  if (price > 0) return roundMoney(price);
-
-  const sellerPrice = Number(item.sellerPrice || 0);
-  if (sellerPrice > 0) return roundMoney(sellerPrice * 1.1);
-
-  return 0;
+function getBuyerPrice(item){
+ const b=Number(item.buyerPrice||0);
+ if(b>0) return roundMoney(b);
+ const p=Number(item.price||0);
+ if(p>0) return roundMoney(p);
+ const s=Number(item.sellerPrice||0);
+ if(s>0) return roundMoney(s*1.1);
+ return 0;
 }
-
-function roundMoney(value) {
-  return Math.round(Number(value || 0) * 100) / 100;
-}
-
-function formatRs(value) {
-  return `Rs ${formatPlainNumber(value)}`;
-}
-
-function formatPlainNumber(value) {
-  return Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
-}
-
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+const roundMoney=v=>Math.round(Number(v||0)*100)/100;
+const formatRs=v=>`Rs ${formatPlainNumber(v)}`;
+function formatPlainNumber(v){return Number(v||0).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2});}
+function escapeHtml(v){return String(v||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");}
