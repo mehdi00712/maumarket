@@ -62,7 +62,7 @@ onAuthStateChanged(auth, async (user) => {
     bindEvents();
     await loadOrders();
   } catch (error) {
-    renderError(error.message);
+    renderError(getFriendlyDeliveryError(error,'The delivery dashboard could not be loaded.'));
   }
 });
 
@@ -108,7 +108,7 @@ async function loadOrders() {
 
     applyFilters();
   } catch (error) {
-    renderError(error.message);
+    renderError(getFriendlyDeliveryError(error,'The delivery dashboard could not be loaded.'));
   } finally {
     setRefreshLoading(false);
   }
@@ -156,7 +156,12 @@ function applyFilters() {
       ${job.orderNotes || ""}
       ${job.orderStatus || ""}
       ${job.deliveryStatus || ""}
-      ${(job.items || []).map((item) => item.title || "").join(" ")} ${(normalizePickupStops(job)).map(s=>`${s.shopName} ${s.pickupAddress}`).join(" ")}
+      ${(job.items || []).map((item) => `
+      ${item.title || ""}
+      ${item.selectedOptionName || item.optionName || ""}
+      ${item.optionType || ""}
+      ${item.selectedOptionSku || item.optionSku || item.sku || ""}
+    `).join(" ")} ${(normalizePickupStops(job)).map(s=>`${s.shopName} ${s.pickupAddress}`).join(" ")}
     `);
 
     const jobDate = getJobDate(job);
@@ -992,6 +997,17 @@ function getDriverName() {
     currentUser.email ||
     "Delivery Driver"
   );
+}
+
+
+function getFriendlyDeliveryError(error,fallback){
+ const code=String(error?.code||"");
+ const map={
+  "permission-denied":"You do not have permission to access these deliveries.",
+  "network-request-failed":"Please check your internet connection and try again.",
+  "unavailable":"MauMarket is temporarily unavailable."
+ };
+ return map[code]||fallback;
 }
 
 function normalize(value) {
