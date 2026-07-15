@@ -143,17 +143,45 @@ function buildResponsiveNav() {
 
   sideMenu.innerHTML = `
     <div class="mm-side-head">
-      <a href="index.html" class="mm-side-logo" aria-label="MauMarket home">
-        <img src="${LOGO_PATH}" alt="MauMarket" decoding="async">
+
+      <a
+        href="index.html"
+        class="mm-side-brand"
+        aria-label="MauMarket home">
+
+        <span class="mm-side-brand-mark">
+          <img
+            src="${LOGO_PATH}"
+            alt=""
+            aria-hidden="true"
+            decoding="async">
+        </span>
+
+        <strong class="mm-side-brand-name">
+          MauMarket
+        </strong>
+
       </a>
-      <button id="mmMenuClose" class="mm-side-close" type="button" aria-label="Close menu">×</button>
+
+      <button
+        id="mmMenuClose"
+        class="mm-side-close"
+        type="button"
+        aria-label="Close menu">
+        ×
+      </button>
+
     </div>
 
     <div id="mmUserBox" class="mm-user-box">
       Loading...
     </div>
 
-    <nav id="mmMobileLinks" class="mm-mobile-links"></nav>
+    <nav
+      id="mmMobileLinks"
+      class="mm-mobile-links"
+      aria-label="Mobile navigation">
+    </nav>
   `;
 
   const bottomNav = document.createElement("nav");
@@ -376,8 +404,8 @@ function injectNavLogoStyles() {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
-      width: min(360px, 88vw) !important;
-      max-width: 88vw !important;
+      width: min(340px, 86vw) !important;
+      max-width: 86vw !important;
       height: 100dvh !important;
       min-height: 100vh !important;
       padding: 20px !important;
@@ -385,6 +413,7 @@ function injectNavLogoStyles() {
       overflow-y: auto !important;
       background: #ffffff !important;
       color: #0f172a !important;
+      border-radius: 0 28px 28px 0 !important;
       z-index: 10002 !important;
       box-shadow: 30px 0 80px rgba(7, 11, 40, 0.28) !important;
       transform: translateX(-110%) !important;
@@ -416,23 +445,43 @@ function injectNavLogoStyles() {
       background: transparent !important;
     }
 
-    #mmSideMenu .mm-side-logo {
-      width: min(210px, calc(100% - 58px)) !important;
-      max-width: calc(100% - 58px) !important;
-      height: 62px !important;
-      display: flex !important;
+    #mmSideMenu .mm-side-brand {
+      min-width: 0 !important;
+      display: inline-flex !important;
       align-items: center !important;
-      overflow: hidden !important;
+      gap: 11px !important;
+      color: #0f172a !important;
+      text-decoration: none !important;
     }
 
-    #mmSideMenu .mm-side-logo img {
-      width: 100% !important;
-      height: 62px !important;
-      max-width: 100% !important;
-      max-height: 62px !important;
+    #mmSideMenu .mm-side-brand-mark {
+      width: 52px !important;
+      height: 52px !important;
+      min-width: 52px !important;
+      display: grid !important;
+      place-items: center !important;
+      overflow: hidden !important;
+      border-radius: 15px !important;
+      background: #ffffff !important;
+    }
+
+    #mmSideMenu .mm-side-brand-mark img {
+      width: 52px !important;
+      height: 52px !important;
+      max-width: 52px !important;
+      max-height: 52px !important;
       object-fit: contain !important;
-      object-position: left center !important;
+      object-position: center !important;
       transform: none !important;
+    }
+
+    #mmSideMenu .mm-side-brand-name {
+      color: #111827 !important;
+      font-size: 27px !important;
+      line-height: 1 !important;
+      font-weight: 950 !important;
+      letter-spacing: -0.8px !important;
+      white-space: nowrap !important;
     }
 
     #mmSideMenu .mm-side-close {
@@ -449,6 +498,117 @@ function injectNavLogoStyles() {
       font-size: 21px !important;
       line-height: 1 !important;
       box-shadow: 0 10px 24px rgba(79, 53, 245, 0.25) !important;
+    }
+
+    #mmSideMenu .mm-user-box {
+      width: 100% !important;
+      min-height: 112px !important;
+      display: grid !important;
+      grid-template-columns: 58px minmax(0, 1fr) !important;
+      align-items: center !important;
+      gap: 16px !important;
+      margin: 0 0 20px !important;
+      padding: 18px !important;
+      border: 1px solid #ddd7ff !important;
+      border-radius: 22px !important;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(79, 53, 245, 0.08),
+          rgba(255, 255, 255, 0.98)
+        ) !important;
+      box-shadow: 0 10px 24px rgba(79, 53, 245, 0.08) !important;
+    }
+
+    #mmSideMenu .mm-user-avatar {
+      width: 58px !important;
+      height: 58px !important;
+      display: grid !important;
+      place-items: center !important;
+      border-radius: 50% !important;
+      background:
+        linear-gradient(
+          135deg,
+          #4f35f5,
+          #8b5cf6
+        ) !important;
+      color: #ffffff !important;
+      font-size: 19px !important;
+      font-weight: 950 !important;
+      box-shadow: 0 10px 22px rgba(79, 53, 245, 0.24) !important;
+    }
+
+    #mmSideMenu .mm-user-copy {
+      min-width: 0 !important;
+    }
+
+    #mmSideMenu .mm-user-copy strong,
+    #mmSideMenu .mm-user-copy span {
+      display: block !important;
+      min-width: 0 !important;
+      overflow-wrap: anywhere !important;
+    }
+
+    #mmSideMenu .mm-user-copy strong {
+      margin-bottom: 4px !important;
+      color: #111827 !important;
+      font-size: 19px !important;
+      line-height: 1.2 !important;
+      font-weight: 950 !important;
+    }
+
+    #mmSideMenu .mm-user-copy span {
+      color: #667085 !important;
+      font-size: 15px !important;
+      line-height: 1.35 !important;
+      font-weight: 750 !important;
+    }
+
+    #mmSideMenu .mm-mobile-links {
+      display: grid !important;
+      gap: 10px !important;
+    }
+
+    #mmSideMenu .mm-mobile-link {
+      width: 100% !important;
+      min-height: 70px !important;
+      display: grid !important;
+      grid-template-columns: 38px minmax(0, 1fr) !important;
+      align-items: center !important;
+      gap: 13px !important;
+      margin: 0 !important;
+      padding: 14px 17px !important;
+      border: 1px solid #e5e7ef !important;
+      border-radius: 20px !important;
+      background: #f8fafc !important;
+      color: #111827 !important;
+      text-align: left !important;
+      text-decoration: none !important;
+      box-shadow: none !important;
+    }
+
+    #mmSideMenu .mm-mobile-link:hover,
+    #mmSideMenu .mm-mobile-link.active {
+      border-color: #d8d1ff !important;
+      background: #f2efff !important;
+      color: #4f35f5 !important;
+      transform: translateX(2px);
+    }
+
+    #mmSideMenu .mm-mobile-link > span {
+      width: 38px !important;
+      height: 38px !important;
+      display: grid !important;
+      place-items: center !important;
+      color: currentColor !important;
+      font-size: 22px !important;
+    }
+
+    #mmSideMenu .mm-mobile-link > strong {
+      min-width: 0 !important;
+      color: currentColor !important;
+      font-size: 17px !important;
+      font-weight: 900 !important;
     }
 
     #mmMobileSearch.mm-mobile-search-wrap {
@@ -784,8 +944,19 @@ function getBottomLinks() {
 function getUserBoxHtml() {
   if (!currentUser) {
     return `
-      <strong>Welcome to MauMarket</strong>
-      <span>Sign in or create an account to shop securely.</span>
+      <div class="mm-user-avatar">
+        MM
+      </div>
+
+      <div class="mm-user-copy">
+        <strong>
+          Welcome to MauMarket
+        </strong>
+
+        <span>
+          Sign in or create an account to shop securely.
+        </span>
+      </div>
     `;
   }
 
@@ -804,8 +975,19 @@ function getUserBoxHtml() {
         : "Buyer Account";
 
   return `
-    <strong>${escapeHtml(name)}</strong>
-    <span>${roleLabel}</span>
+    <div class="mm-user-avatar">
+      ${escapeHtml(getInitials(name))}
+    </div>
+
+    <div class="mm-user-copy">
+      <strong>
+        ${escapeHtml(name)}
+      </strong>
+
+      <span>
+        ${escapeHtml(roleLabel)}
+      </span>
+    </div>
   `;
 }
 
@@ -1085,6 +1267,26 @@ function getFriendlyNavigationError(error, fallbackMessage) {
   };
 
   return messages[code] || fallbackMessage;
+}
+
+function getInitials(value) {
+  const words = String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return "MM";
+  }
+
+  if (words.length === 1) {
+    return words[0]
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  return `${words[0][0]}${words[words.length - 1][0]}`
+    .toUpperCase();
 }
 
 function escapeHtml(value) {
