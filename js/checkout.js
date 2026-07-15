@@ -223,7 +223,49 @@ async function loadCheckout() {
       buyerPrice,
       sellerPrice,
       commissionAmount,
-      commissionRate: COMMISSION_RATE,
+      commissionRate: Number(rawItem.commissionRate ?? COMMISSION_RATE),
+
+      hasOptions: rawItem.hasOptions === true || Boolean(
+        rawItem.selectedOptionId ||
+        rawItem.selectedOptionName ||
+        rawItem.optionId ||
+        rawItem.optionName
+      ),
+
+      optionType: rawItem.optionType || "",
+      selectedOptionId:
+        rawItem.selectedOptionId ||
+        rawItem.optionId ||
+        "",
+
+      selectedOptionName:
+        rawItem.selectedOptionName ||
+        rawItem.optionName ||
+        "",
+
+      selectedOptionSku:
+        rawItem.selectedOptionSku ||
+        rawItem.optionSku ||
+        rawItem.sku ||
+        rawItem.productCode ||
+        "",
+
+      selectedOptionImageIndex:
+        rawItem.selectedOptionImageIndex ??
+        rawItem.optionImageIndex ??
+        null,
+
+      selectedOptionImageUrl:
+        rawItem.selectedOptionImageUrl ||
+        rawItem.optionImageUrl ||
+        rawItem.imageUrl ||
+        "",
+
+      selectedOptionStock:
+        rawItem.selectedOptionStock ??
+        rawItem.optionStock ??
+        null,
+
       quantity,
       subtotal,
       sellerSubtotal,
@@ -236,17 +278,51 @@ async function loadCheckout() {
     const div = document.createElement("div");
     div.className = "checkout-line checkout-pro-line";
 
+    const optionDetails = getItemOptionDetails(item);
+    const checkoutImageUrl =
+      optionDetails.imageUrl ||
+      item.imageUrl ||
+      "";
+
     div.innerHTML = `
       <div class="checkout-line-main">
         ${
-          item.imageUrl
-            ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
+          checkoutImageUrl
+            ? `<img src="${escapeHtml(checkoutImageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
             : `<div class="checkout-no-img">No Image</div>`
         }
 
         <div>
           <strong>${escapeHtml(item.title || "Untitled")}</strong>
           <p>Verified MauMarket Merchant</p>
+
+          ${
+            optionDetails.hasOption
+              ? `
+                <div class="checkout-selected-option">
+                  <span>
+                    Selected ${escapeHtml(optionDetails.optionType)}
+                  </span>
+
+                  <strong>
+                    ${escapeHtml(optionDetails.optionName)}
+                  </strong>
+
+                  ${
+                    optionDetails.optionSku
+                      ? `
+                        <small>
+                          Product Code:
+                          ${escapeHtml(optionDetails.optionSku)}
+                        </small>
+                      `
+                      : ""
+                  }
+                </div>
+              `
+              : ""
+          }
+
           <small class="checkout-pickup-note">
             Fulfilled by Verified MauMarket Merchant
           </small>
@@ -254,7 +330,7 @@ async function loadCheckout() {
       </div>
 
       <div class="checkout-line-price">
-        <span>${formatRs(buyerPrice)} x ${quantity}</span>
+        <span>${formatRs(buyerPrice)} × ${quantity}</span>
         <strong>${formatRs(subtotal)}</strong>
       </div>
     `;
@@ -366,11 +442,58 @@ placeOrderBtn.addEventListener("click", async () => {
       pickupLocation: item.pickupLocation || null,
       quantity: Number(item.quantity || 1),
 
+      hasOptions: item.hasOptions === true || Boolean(
+        item.selectedOptionId ||
+        item.selectedOptionName
+      ),
+
+      optionType: item.optionType || "",
+
+      selectedOptionId:
+        item.selectedOptionId || "",
+
+      selectedOptionName:
+        item.selectedOptionName || "",
+
+      selectedOptionSku:
+        item.selectedOptionSku || "",
+
+      selectedOptionImageIndex:
+        item.selectedOptionImageIndex ?? null,
+
+      selectedOptionImageUrl:
+        item.selectedOptionImageUrl ||
+        item.imageUrl ||
+        "",
+
+      selectedOptionStock:
+        item.selectedOptionStock ?? null,
+
+      optionId:
+        item.selectedOptionId || "",
+
+      optionName:
+        item.selectedOptionName || "",
+
+      optionSku:
+        item.selectedOptionSku || "",
+
+      optionImageIndex:
+        item.selectedOptionImageIndex ?? null,
+
+      optionImageUrl:
+        item.selectedOptionImageUrl ||
+        item.imageUrl ||
+        "",
+
+      optionStock:
+        item.selectedOptionStock ?? null,
+
       price: Number(item.buyerPrice || item.price || 0),
       buyerPrice: Number(item.buyerPrice || item.price || 0),
       sellerPrice: Number(item.sellerPrice || 0),
       commissionAmount: Number(item.commissionAmount || 0),
-      commissionRate: COMMISSION_RATE,
+      commissionRate: Number(item.commissionRate ?? COMMISSION_RATE),
 
       subtotal: Number(item.subtotal || 0),
       sellerSubtotal: Number(item.sellerSubtotal || 0),
@@ -400,6 +523,12 @@ placeOrderBtn.addEventListener("click", async () => {
       pickupStops,
       pickupCount: pickupStops.length,
       hasMultiplePickupLocations: pickupStops.length > 1,
+
+      hasProductOptions:
+        orderItems.some((item) => item.hasOptions === true),
+
+      optionItemCount:
+        orderItems.filter((item) => item.hasOptions === true).length,
 
       itemsTotal,
       deliveryFee,
@@ -431,7 +560,15 @@ placeOrderBtn.addEventListener("click", async () => {
       window.location.href = "my-orders.html";
     }, 1200);
   } catch (error) {
-    showCheckoutMessage('Something went wrong while placing your order. Please try again.');
+    console.error("Checkout order creation failed:", error);
+
+    showCheckoutMessage(
+      getFriendlyCheckoutError(
+        error,
+        "Something went wrong while placing your order. Please try again."
+      )
+    );
+
     placeOrderBtn.disabled = false;
   }
 });
@@ -536,9 +673,38 @@ function buildSellerBreakdown(items) {
     breakdown[sellerId].items.push({
       productId: item.productId || item.cartItemId || "",
       title: item.title || "",
+      imageUrl:
+        item.selectedOptionImageUrl ||
+        item.imageUrl ||
+        "",
+
       quantity: Number(item.quantity || 1),
+
+      hasOptions: item.hasOptions === true || Boolean(
+        item.selectedOptionId ||
+        item.selectedOptionName
+      ),
+
+      optionType: item.optionType || "",
+      selectedOptionId: item.selectedOptionId || "",
+      selectedOptionName: item.selectedOptionName || "",
+      selectedOptionSku: item.selectedOptionSku || "",
+      selectedOptionImageIndex:
+        item.selectedOptionImageIndex ?? null,
+      selectedOptionImageUrl:
+        item.selectedOptionImageUrl ||
+        item.imageUrl ||
+        "",
+      selectedOptionStock:
+        item.selectedOptionStock ?? null,
+
       price: Number(item.buyerPrice || item.price || 0),
-      subtotal: Number(item.subtotal || 0)
+      buyerPrice: Number(item.buyerPrice || item.price || 0),
+      sellerPrice: Number(item.sellerPrice || 0),
+      commissionAmount: Number(item.commissionAmount || 0),
+      subtotal: Number(item.subtotal || 0),
+      sellerSubtotal: Number(item.sellerSubtotal || 0),
+      commissionSubtotal: Number(item.commissionSubtotal || 0)
     });
   });
 
@@ -576,7 +742,31 @@ function buildPickupStops(items) {
     stops[sellerId].items.push({
       productId: item.productId || item.cartItemId || "",
       title: item.title || "",
+      imageUrl:
+        item.selectedOptionImageUrl ||
+        item.imageUrl ||
+        "",
+
       quantity: Number(item.quantity || 1),
+
+      hasOptions: item.hasOptions === true || Boolean(
+        item.selectedOptionId ||
+        item.selectedOptionName
+      ),
+
+      optionType: item.optionType || "",
+      selectedOptionId: item.selectedOptionId || "",
+      selectedOptionName: item.selectedOptionName || "",
+      selectedOptionSku: item.selectedOptionSku || "",
+      selectedOptionImageIndex:
+        item.selectedOptionImageIndex ?? null,
+      selectedOptionImageUrl:
+        item.selectedOptionImageUrl ||
+        item.imageUrl ||
+        "",
+      selectedOptionStock:
+        item.selectedOptionStock ?? null,
+
       price: Number(item.buyerPrice || item.price || 0),
       subtotal: Number(item.subtotal || 0)
     });
@@ -669,6 +859,50 @@ async function getShopPickupInfo(sellerId, fallbackShopName = "") {
   }
 }
 
+function getItemOptionDetails(item) {
+  const optionName =
+    item.selectedOptionName ||
+    item.optionName ||
+    "";
+
+  const optionSku =
+    item.selectedOptionSku ||
+    item.optionSku ||
+    item.sku ||
+    item.productCode ||
+    "";
+
+  const optionType =
+    item.optionType ||
+    "Option";
+
+  const hasOption =
+    item.hasOptions === true ||
+    Boolean(
+      item.selectedOptionId ||
+      item.optionId ||
+      optionName
+    );
+
+  return {
+    hasOption,
+    optionType,
+    optionName,
+    optionSku,
+
+    imageUrl:
+      item.selectedOptionImageUrl ||
+      item.optionImageUrl ||
+      item.imageUrl ||
+      "",
+
+    stock:
+      item.selectedOptionStock ??
+      item.optionStock ??
+      null
+  };
+}
+
 function getBuyerPrice(item) {
   const buyerPrice = Number(item.buyerPrice || 0);
 
@@ -718,6 +952,48 @@ function getCommissionAmount(item) {
   const buyerPrice = getBuyerPrice(item);
 
   return roundMoney(Math.max(0, buyerPrice - sellerPrice));
+}
+
+function getFriendlyCheckoutError(
+  error,
+  fallbackMessage
+) {
+  const code =
+    String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to place this order.",
+
+    "storage/unauthorized":
+      "The payment screenshot could not be uploaded.",
+
+    "storage/canceled":
+      "The payment screenshot upload was cancelled.",
+
+    "storage/unknown":
+      "The payment screenshot could not be uploaded. Please try again.",
+
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+
+    "failed-precondition":
+      "The order could not be created. Please refresh and try again.",
+
+    "resource-exhausted":
+      "The service is temporarily busy. Please try again.",
+
+    "auth/network-request-failed":
+      "Please check your internet connection and try again.",
+
+    "network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return (
+    messages[code] ||
+    fallbackMessage
+  );
 }
 
 function showCheckoutMessage(message) {
