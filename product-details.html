@@ -1,350 +1,606 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-    <title>Item Details | MauMarket</title>
+  <title>Item Details | MauMarket</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-    <meta
-        name="description"
-        content="View product details, buyer reviews, secure payment information and MauMarket delivery protection."
-    >
+  <meta
+    name="description"
+    content="View MauMarket product details, product options, secure payment information, verified reviews and island-wide delivery protection."
+  >
 
-    <link rel="icon" href="favicon.ico" sizes="any">
-    <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
 <!-- Navigation is injected automatically by nav.js -->
 
-<main class="product-page private-merchant-product-page">
+<main class="product-page private-merchant-product-page premium-product-details-page">
 
-    <!-- =====================================================
-         PRODUCT HERO
-    ====================================================== -->
+  <!-- =====================================================
+       COMPACT PAGE INTRO
+  ====================================================== -->
 
-    <section class="product-page-hero private-product-hero">
+  <section class="product-page-hero private-product-hero premium-product-hero">
+
+    <div class="premium-product-hero-copy">
+
+      <span class="hero-badge">
+        MauMarket Product
+      </span>
+
+      <h1>
+        Product Details
+      </h1>
+
+      <p>
+        Review product information, available options, buyer feedback,
+        secure payment details and MauMarket delivery protection.
+      </p>
+
+      <div class="private-product-hero-points">
+
+        <span>✓ Verified MauMarket Merchant</span>
+        <span>✓ Secure payment review</span>
+        <span>✓ MauMarket-managed delivery</span>
+        <span>✓ Buyer support included</span>
+
+      </div>
+
+    </div>
+
+    <div class="premium-product-hero-actions">
+
+      <a
+        href="products.html"
+        class="secondary-btn"
+      >
+        ← Back to Marketplace
+      </a>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       BUYER TRUST
+  ====================================================== -->
+
+  <section class="buyer-trust-strip private-product-trust-strip">
+
+    <article class="trust-card">
+
+      <div class="trust-icon">
+        🛡
+      </div>
+
+      <div>
+
+        <strong>
+          Secure Shopping
+        </strong>
+
+        <span>
+          Every order is protected and processed through MauMarket.
+        </span>
+
+      </div>
+
+    </article>
+
+    <article class="trust-card">
+
+      <div class="trust-icon">
+        ✓
+      </div>
+
+      <div>
+
+        <strong>
+          Verified Merchant
+        </strong>
+
+        <span>
+          Every merchant is reviewed before products can be listed.
+        </span>
+
+      </div>
+
+    </article>
+
+    <article class="trust-card">
+
+      <div class="trust-icon">
+        🚚
+      </div>
+
+      <div>
+
+        <strong>
+          MauMarket Delivery
+        </strong>
+
+        <span>
+          Pickup and customer delivery are coordinated privately.
+        </span>
+
+      </div>
+
+    </article>
+
+    <article class="trust-card">
+
+      <div class="trust-icon">
+        ⭐
+      </div>
+
+      <div>
+
+        <strong>
+          Buyer Protection
+        </strong>
+
+        <span>
+          MauMarket support is available if something goes wrong.
+        </span>
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <!-- =====================================================
+       PRODUCT DETAILS ROOT
+       Fully rendered by product-details.js
+  ====================================================== -->
+
+  <section
+    id="detailsBox"
+    class="pro-details-box private-product-details-box premium-product-details-root"
+    aria-live="polite"
+    aria-busy="true"
+  >
+
+    <div class="product-details-loading">
+
+      <div
+        class="product-details-spinner"
+        aria-hidden="true"
+      ></div>
+
+      <div>
+
+        <strong>
+          Loading product...
+        </strong>
+
+        <p>
+          Please wait while MauMarket retrieves the product information,
+          images, available options and reviews.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       OPTIONAL STATIC SUPPORT HOOKS
+       product-details.js can populate or hide these
+  ====================================================== -->
+
+  <section
+    id="productOptionsFallback"
+    class="homepage-section product-options-fallback"
+    style="display:none;"
+    aria-live="polite"
+  >
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Available Options
+        </span>
+
+        <h2 id="productOptionTypeTitle">
+          Choose an Option
+        </h2>
+
+        <p>
+          Select your preferred colour, size, flavour or variation before
+          adding the item to your cart.
+        </p>
+
+      </div>
+
+    </div>
+
+    <div
+      id="productOptionsList"
+      class="product-options-list"
+    ></div>
+
+  </section>
+
+  <!-- =====================================================
+       DELIVERY AND PURCHASE INFORMATION
+  ====================================================== -->
+
+  <section class="homepage-section premium-product-info-section">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Before You Order
+        </span>
+
+        <h2>
+          Delivery &amp; Purchase Information
+        </h2>
+
+        <p>
+          Your order stays protected from checkout until delivery.
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="premium-product-info-grid">
+
+      <article class="premium-product-info-card">
+
+        <div class="premium-product-info-icon">
+          📍
+        </div>
 
         <div>
 
-            <span class="hero-badge">
-                MauMarket Product
-            </span>
+          <h3>
+            Pin-Based Delivery
+          </h3>
 
-            <h1>
-                Product Details
-            </h1>
-
-            <p>
-                Review product information, verified buyer feedback,
-                secure payment details and MauMarket delivery protection.
-            </p>
-
-            <div class="private-product-hero-points">
-
-                <span>✓ Verified MauMarket Merchant</span>
-                <span>✓ Secure payment review</span>
-                <span>✓ MauMarket-managed delivery</span>
-                <span>✓ Buyer support included</span>
-
-            </div>
+          <p>
+            Choose your exact delivery location during checkout for more
+            accurate delivery handling.
+          </p>
 
         </div>
 
-        <a
-            href="products.html"
-            class="secondary-btn"
-        >
-            ← Back to Marketplace
-        </a>
+      </article>
 
-    </section>
+      <article class="premium-product-info-card">
 
-    <!-- =====================================================
-         BUYER TRUST
-    ====================================================== -->
+        <div class="premium-product-info-icon">
+          💳
+        </div>
 
-    <section class="buyer-trust-strip private-product-trust-strip">
+        <div>
 
-        <article class="trust-card">
+          <h3>
+            Juice Payment
+          </h3>
 
-            <div class="trust-icon">
-                🛡
-            </div>
+          <p>
+            Transfer the final amount and upload a clear payment screenshot
+            during checkout.
+          </p>
 
-            <strong>
-                Secure Shopping
-            </strong>
+        </div>
 
-            <span>
-                Every order is protected and processed through MauMarket.
-            </span>
+      </article>
 
-        </article>
+      <article class="premium-product-info-card">
 
-        <article class="trust-card">
+        <div class="premium-product-info-icon">
+          📦
+        </div>
 
-            <div class="trust-icon">
-                ✓
-            </div>
+        <div>
 
-            <strong>
-                Verified Merchant
-            </strong>
+          <h3>
+            Option-Specific Stock
+          </h3>
 
-            <span>
-                Every merchant is reviewed before products can be listed.
-            </span>
+          <p>
+            Colours, sizes and other product options may each have separate
+            stock and prices.
+          </p>
 
-        </article>
+        </div>
 
-        <article class="trust-card">
+      </article>
 
-            <div class="trust-icon">
-                🚚
-            </div>
+      <article class="premium-product-info-card">
 
-            <strong>
-                MauMarket Delivery
-            </strong>
+        <div class="premium-product-info-icon">
+          💬
+        </div>
 
-            <span>
-                Seller pickup and customer delivery are managed privately.
-            </span>
+        <div>
 
-        </article>
+          <h3>
+            Customer Support
+          </h3>
 
-        <article class="trust-card">
+          <p>
+            MauMarket can assist with payment, delivery and order issues.
+          </p>
 
-            <div class="trust-icon">
-                ⭐
-            </div>
+        </div>
 
-            <strong>
-                Buyer Protection
-            </strong>
+      </article>
 
-            <span>
-                MauMarket support is available if something goes wrong.
-            </span>
+    </div>
 
-        </article>
+  </section>
 
-    </section>
+  <!-- =====================================================
+       MAUMARKET PROTECTION
+  ====================================================== -->
 
-    <!-- =====================================================
-         PRODUCT DETAILS
-         Generated by product-details.js
-    ====================================================== -->
+  <section class="homepage-section product-protection-section">
 
-    <section
-        id="detailsBox"
-        class="pro-details-box private-product-details-box"
-        aria-live="polite"
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Protected Purchase
+        </span>
+
+        <h2>
+          Why Buy Through MauMarket?
+        </h2>
+
+        <p>
+          Your payment, delivery and support stay inside the platform.
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="product-protection-grid">
+
+      <article class="product-protection-card">
+
+        <div class="product-protection-icon">
+          🔒
+        </div>
+
+        <h3>
+          Protected Payment
+        </h3>
+
+        <p>
+          Payment proof is reviewed before the order is processed.
+        </p>
+
+      </article>
+
+      <article class="product-protection-card">
+
+        <div class="product-protection-icon">
+          📦
+        </div>
+
+        <h3>
+          Private Merchant Fulfilment
+        </h3>
+
+        <p>
+          Merchant contact and pickup information remain private.
+        </p>
+
+      </article>
+
+      <article class="product-protection-card">
+
+        <div class="product-protection-icon">
+          🚚
+        </div>
+
+        <h3>
+          Managed Delivery
+        </h3>
+
+        <p>
+          MauMarket coordinates collection and customer delivery.
+        </p>
+
+      </article>
+
+      <article class="product-protection-card">
+
+        <div class="product-protection-icon">
+          ⭐
+        </div>
+
+        <h3>
+          Verified Reviews
+        </h3>
+
+        <p>
+          Reviews are linked to completed MauMarket orders.
+        </p>
+
+      </article>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       REVIEWS
+       product-details.js can populate these containers
+  ====================================================== -->
+
+  <section
+    id="productReviewsSection"
+    class="homepage-section premium-product-reviews-section"
+  >
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Buyer Feedback
+        </span>
+
+        <h2>
+          Product Reviews
+        </h2>
+
+        <p id="productReviewsSummaryText">
+          Verified buyer reviews for this item.
+        </p>
+
+      </div>
+
+      <a href="reviews.html">
+        View All Reviews
+      </a>
+
+    </div>
+
+    <div
+      id="productReviewsSummary"
+      class="product-reviews-summary"
+      style="display:none;"
+    ></div>
+
+    <div
+      id="productReviewsList"
+      class="product-reviews-list"
+      aria-live="polite"
     >
 
-        <div class="product-details-loading">
+      <div class="product-reviews-placeholder">
 
-            <div class="product-details-spinner"></div>
+        <strong>
+          Loading reviews...
+        </strong>
 
-            <p>
-                Loading product...
-            </p>
+        <p>
+          Verified buyer feedback will appear here.
+        </p>
 
-        </div>
+      </div>
 
-    </section>
+    </div>
 
-    <!-- =====================================================
-         MAUMARKET PROTECTION
-    ====================================================== -->
+  </section>
 
-    <section class="homepage-section product-protection-section">
+  <!-- =====================================================
+       RELATED PRODUCTS
+  ====================================================== -->
 
-        <div class="section-row-title">
+  <section class="homepage-section related-section private-related-section">
 
-            <div>
+    <div class="section-row-title">
 
-                <span class="section-kicker">
-                    Protected Purchase
-                </span>
+      <div>
 
-                <h2>
-                    Why Buy Through MauMarket?
-                </h2>
+        <span class="section-kicker">
+          You May Also Like
+        </span>
 
-                <p>
-                    Your payment, delivery and support stay inside the platform.
-                </p>
+        <h2>
+          Related Products
+        </h2>
 
-            </div>
+        <p>
+          Discover similar products available on MauMarket.
+        </p>
 
-        </div>
+      </div>
 
-        <div class="product-protection-grid">
+      <a href="products.html">
+        View All Products
+      </a>
 
-            <article class="product-protection-card">
+    </div>
 
-                <div class="product-protection-icon">
-                    🔒
-                </div>
+    <div
+      id="relatedItems"
+      class="pro-product-grid private-related-products-grid"
+      aria-live="polite"
+    >
 
-                <h3>
-                    Protected Payment
-                </h3>
+      <div class="product-related-loading">
 
-                <p>
-                    Payment proof is reviewed before the order is processed.
-                </p>
+        <strong>
+          Loading related products...
+        </strong>
 
-            </article>
+      </div>
 
-            <article class="product-protection-card">
+    </div>
 
-                <div class="product-protection-icon">
-                    📦
-                </div>
+  </section>
 
-                <h3>
-                    Private Merchant Fulfilment
-                </h3>
+  <!-- =====================================================
+       FINAL TRUST MESSAGE
+  ====================================================== -->
 
-                <p>
-                    Merchant contact and pickup information remain private.
-                </p>
+  <section class="product-final-trust-card">
 
-            </article>
+    <div class="product-final-trust-icon">
+      🛡
+    </div>
 
-            <article class="product-protection-card">
+    <div>
 
-                <div class="product-protection-icon">
-                    🚚
-                </div>
+      <span class="section-kicker">
+        MauMarket Protection
+      </span>
 
-                <h3>
-                    Managed Delivery
-                </h3>
+      <h2>
+        Shop With Confidence
+      </h2>
 
-                <p>
-                    MauMarket coordinates collection and customer delivery.
-                </p>
+      <p>
+        Merchant identity, phone numbers and pickup details stay private.
+        Buyers complete payment, delivery and support through MauMarket.
+      </p>
 
-            </article>
+    </div>
 
-            <article class="product-protection-card">
+    <a
+      href="products.html"
+      class="btn"
+    >
+      Continue Shopping
+    </a>
 
-                <div class="product-protection-icon">
-                    💬
-                </div>
-
-                <h3>
-                    Customer Support
-                </h3>
-
-                <p>
-                    Buyers receive help directly through MauMarket.
-                </p>
-
-            </article>
-
-        </div>
-
-    </section>
-
-    <!-- =====================================================
-         RELATED PRODUCTS
-    ====================================================== -->
-
-    <section class="homepage-section related-section private-related-section">
-
-        <div class="section-row-title">
-
-            <div>
-
-                <span class="section-kicker">
-                    You May Also Like
-                </span>
-
-                <h2>
-                    Related Products
-                </h2>
-
-                <p>
-                    Discover similar products available on MauMarket.
-                </p>
-
-            </div>
-
-            <a href="products.html">
-                View All Products
-            </a>
-
-        </div>
-
-        <div
-            id="relatedItems"
-            class="pro-product-grid private-related-products-grid"
-            aria-live="polite"
-        >
-
-            Loading related products...
-
-        </div>
-
-    </section>
-
-    <!-- =====================================================
-         FINAL TRUST MESSAGE
-    ====================================================== -->
-
-    <section class="product-final-trust-card">
-
-        <div class="product-final-trust-icon">
-            🛡
-        </div>
-
-        <div>
-
-            <span class="section-kicker">
-                MauMarket Protection
-            </span>
-
-            <h2>
-                Shop With Confidence
-            </h2>
-
-            <p>
-                Merchant identity, phone numbers and pickup details stay private.
-                Buyers complete payment, delivery and support through MauMarket.
-            </p>
-
-        </div>
-
-        <a
-            href="products.html"
-            class="btn"
-        >
-            Continue Shopping
-        </a>
-
-    </section>
+  </section>
 
 </main>
 
 <script
-    type="module"
-    src="js/nav.js?v=5.3"
+  type="module"
+  src="js/nav.js?v=5.8-options"
 ></script>
 
 <script
-    type="module"
-    src="js/product-details.js?v=7.0-private-merchant"
+  type="module"
+  src="js/product-details.js?v=8.0-product-options"
 ></script>
 
 </body>
