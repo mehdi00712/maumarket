@@ -44,6 +44,7 @@ const COMMISSION_RATE = 0.10;
 let currentUser = null;
 let cartItems = [];
 let merchantPickupCache = {};
+let productPricingCache = {};
 
 let checkoutMap = null;
 let checkoutMarker = null;
@@ -163,212 +164,386 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
-  await loadCheckout();
+
+  await Promise.allSettled([
+    prefillCustomerInformation(),
+    loadCheckout()
+  ]);
 });
 
 async function loadCheckout() {
   if (!checkoutItems || !currentUser) return;
 
-  checkoutItems.innerHTML = "Loading...";
+  checkoutItems.innerHTML = `
+    <div class="order-card">
+      Loading your checkout...
+    </div>
+  `;
+
   updateTotals(0);
 
-  const snapshot = await getDocs(
-    collection(db, "carts", currentUser.uid, "items")
-  );
+  if (placeOrderBtn) {
+    placeOrderBtn.disabled = true;
+  }
 
-  cartItems = [];
+  try {
+    const snapshot = await getDocs(
+      collection(db, "carts", currentUser.uid, "items")
+    );
 
-  if (snapshot.empty) {
+    cartItems = [];
+
+    if (snapshot.empty) {
+      renderEmptyCheckout();
+      return;
+    }
+
+    checkoutItems.innerHTML = "";
+
+    let itemsTotal = 0;
+    let invalidPriceCount = 0;
+
+    for (const docSnap of snapshot.docs) {
+      const rawItem = {
+        cartItemId: docSnap.id,
+        ...docSnap.data()
+      };
+
+      const hydratedItem =
+        await hydrateCartItemPricing(rawItem);
+
+      const pickupInfo =
+        await getShopPickupInfo(
+          hydratedItem.sellerId,
+          hydratedItem.shopName
+        );
+
+      const quantity = Math.max(
+        1,
+        toFiniteNumber(hydratedItem.quantity, 1)
+      );
+
+      const buyerPrice =
+        getBuyerPrice(hydratedItem);
+
+      const sellerPrice =
+        getSellerPrice(hydratedItem);
+
+      const commissionAmount =
+        getCommissionAmount(hydratedItem);
+
+      const subtotal =
+        roundMoney(buyerPrice * quantity);
+
+      const sellerSubtotal =
+        roundMoney(sellerPrice * quantity);
+
+      const commissionSubtotal =
+        roundMoney(commissionAmount * quantity);
+
+      if (buyerPrice <= 0) {
+        invalidPriceCount += 1;
+      }
+
+      const item = {
+        ...hydratedItem,
+
+        shopName:
+          pickupInfo.shopName ||
+          hydratedItem.shopName ||
+          "MauMarket Seller",
+
+        shopLocation:
+          pickupInfo.shopLocation ||
+          hydratedItem.shopLocation ||
+          "",
+
+        shopAddress:
+          pickupInfo.shopAddress ||
+          hydratedItem.shopAddress ||
+          "",
+
+        pickupAddress:
+          pickupInfo.pickupAddress ||
+          hydratedItem.pickupAddress ||
+          "",
+
+        pickupLatitude:
+          pickupInfo.pickupLatitude ??
+          hydratedItem.pickupLatitude ??
+          null,
+
+        pickupLongitude:
+          pickupInfo.pickupLongitude ??
+          hydratedItem.pickupLongitude ??
+          null,
+
+        pickupLocation:
+          pickupInfo.pickupLocation ||
+          hydratedItem.pickupLocation ||
+          null,
+
+        price: buyerPrice,
+        buyerPrice,
+        sellerPrice,
+        commissionAmount,
+
+        commissionRate:
+          normalizeCommissionRate(
+            hydratedItem.commissionRate
+          ),
+
+        hasOptions:
+          hydratedItem.hasOptions === true ||
+          Boolean(
+            hydratedItem.selectedOptionId ||
+            hydratedItem.selectedOptionName ||
+            hydratedItem.optionId ||
+            hydratedItem.optionName
+          ),
+
+        optionType:
+          hydratedItem.optionType || "",
+
+        selectedOptionId:
+          hydratedItem.selectedOptionId ||
+          hydratedItem.optionId ||
+          "",
+
+        selectedOptionName:
+          hydratedItem.selectedOptionName ||
+          hydratedItem.optionName ||
+          "",
+
+        selectedOptionSku:
+          hydratedItem.selectedOptionSku ||
+          hydratedItem.optionSku ||
+          hydratedItem.sku ||
+          hydratedItem.productCode ||
+          "",
+
+        selectedOptionImageIndex:
+          hydratedItem.selectedOptionImageIndex ??
+          hydratedItem.optionImageIndex ??
+          null,
+
+        selectedOptionImageUrl:
+          hydratedItem.selectedOptionImageUrl ||
+          hydratedItem.optionImageUrl ||
+          hydratedItem.imageUrl ||
+          "",
+
+        selectedOptionStock:
+          hydratedItem.selectedOptionStock ??
+          hydratedItem.optionStock ??
+          null,
+
+        selectedOptionBuyerPrice:
+          buyerPrice,
+
+        selectedOptionSellerPrice:
+          sellerPrice,
+
+        selectedOptionCommissionAmount:
+          commissionAmount,
+
+        quantity,
+        subtotal,
+        sellerSubtotal,
+        commissionSubtotal
+      };
+
+      cartItems.push(item);
+      itemsTotal = roundMoney(itemsTotal + subtotal);
+
+      checkoutItems.appendChild(
+        createCheckoutItemElement(item)
+      );
+    }
+
+    updateTotals(itemsTotal);
+
+    if (invalidPriceCount > 0) {
+      showCheckoutMessage(
+        invalidPriceCount === cartItems.length
+          ? "The prices for your cart could not be loaded. Return to the cart, remove the affected items and add them again."
+          : `${invalidPriceCount} cart item(s) have an invalid price. Please review your cart before placing the order.`
+      );
+
+      if (placeOrderBtn) {
+        placeOrderBtn.disabled = true;
+      }
+
+      return;
+    }
+
+    if (placeOrderBtn) {
+      placeOrderBtn.disabled = false;
+    }
+
+    showCheckoutMessage("");
+  } catch (error) {
+    console.error("Checkout cart loading failed:", error);
+
+    cartItems = [];
+    updateTotals(0);
+
+    if (placeOrderBtn) {
+      placeOrderBtn.disabled = true;
+    }
+
     checkoutItems.innerHTML = `
       <div class="order-card">
-        <h3>Your cart is empty</h3>
-        <p>Add items from the marketplace before checkout.</p>
-        <a class="btn" href="products.html">Go to Marketplace</a>
+        <h3>Could not load your checkout</h3>
+
+        <p>
+          ${escapeHtml(
+            getFriendlyCheckoutError(
+              error,
+              "Your cart could not be loaded. Please refresh the page and try again."
+            )
+          )}
+        </p>
+
+        <button
+          id="retryCheckoutBtn"
+          type="button"
+          class="btn">
+          Try Again
+        </button>
       </div>
     `;
 
-    placeOrderBtn.disabled = true;
-    updateTotals(0);
-    return;
+    document
+      .getElementById("retryCheckoutBtn")
+      ?.addEventListener(
+        "click",
+        loadCheckout
+      );
   }
+}
 
-  let itemsTotal = 0;
-  checkoutItems.innerHTML = "";
+function createCheckoutItemElement(item) {
+  const div =
+    document.createElement("div");
 
-  for (const docSnap of snapshot.docs) {
-    const rawItem = {
-      cartItemId: docSnap.id,
-      ...docSnap.data()
-    };
+  div.className =
+    "checkout-line checkout-pro-line";
 
-    const pickupInfo = await getShopPickupInfo(rawItem.sellerId, rawItem.shopName);
-    const buyerPrice = getBuyerPrice(rawItem);
-    const sellerPrice = getSellerPrice(rawItem);
-    const commissionAmount = getCommissionAmount(rawItem);
-    const quantity = Number(rawItem.quantity || 1);
+  const optionDetails =
+    getItemOptionDetails(item);
 
-    const subtotal = roundMoney(buyerPrice * quantity);
-    const sellerSubtotal = roundMoney(sellerPrice * quantity);
-    const commissionSubtotal = roundMoney(commissionAmount * quantity);
+  const checkoutImageUrl =
+    optionDetails.imageUrl ||
+    item.imageUrl ||
+    "";
 
-    const item = {
-      ...rawItem,
+  div.innerHTML = `
+    <div class="checkout-line-main">
 
-      shopName: pickupInfo.shopName || rawItem.shopName || "MauMarket Seller",
-      shopLocation: pickupInfo.shopLocation || rawItem.shopLocation || "",
-      shopAddress: pickupInfo.shopAddress || rawItem.shopAddress || "",
-      pickupAddress: pickupInfo.pickupAddress || rawItem.pickupAddress || "",
-      pickupLatitude: pickupInfo.pickupLatitude ?? rawItem.pickupLatitude ?? null,
-      pickupLongitude: pickupInfo.pickupLongitude ?? rawItem.pickupLongitude ?? null,
-      pickupLocation: pickupInfo.pickupLocation || rawItem.pickupLocation || null,
+      ${
+        checkoutImageUrl
+          ? `
+            <img
+              src="${escapeHtml(checkoutImageUrl)}"
+              alt="${escapeHtml(item.title || "Product")}">
+          `
+          : `
+            <div class="checkout-no-img">
+              No Image
+            </div>
+          `
+      }
 
-      price: buyerPrice,
-      buyerPrice,
-      sellerPrice,
-      commissionAmount,
-      commissionRate: Number(rawItem.commissionRate ?? COMMISSION_RATE),
+      <div>
 
-      hasOptions: rawItem.hasOptions === true || Boolean(
-        rawItem.selectedOptionId ||
-        rawItem.selectedOptionName ||
-        rawItem.optionId ||
-        rawItem.optionName
-      ),
+        <strong>
+          ${escapeHtml(item.title || "Untitled")}
+        </strong>
 
-      optionType: rawItem.optionType || "",
-      selectedOptionId:
-        rawItem.selectedOptionId ||
-        rawItem.optionId ||
-        "",
+        <p>
+          Verified MauMarket Merchant
+        </p>
 
-      selectedOptionName:
-        rawItem.selectedOptionName ||
-        rawItem.optionName ||
-        "",
-
-      selectedOptionSku:
-        rawItem.selectedOptionSku ||
-        rawItem.optionSku ||
-        rawItem.sku ||
-        rawItem.productCode ||
-        "",
-
-      selectedOptionImageIndex:
-        rawItem.selectedOptionImageIndex ??
-        rawItem.optionImageIndex ??
-        null,
-
-      selectedOptionImageUrl:
-        rawItem.selectedOptionImageUrl ||
-        rawItem.optionImageUrl ||
-        rawItem.imageUrl ||
-        "",
-
-      selectedOptionStock:
-        rawItem.selectedOptionStock ??
-        rawItem.optionStock ??
-        null,
-
-      selectedOptionBuyerPrice:
-        firstPositiveNumber([
-          rawItem.selectedOptionBuyerPrice,
-          rawItem.optionBuyerPrice,
-          rawItem.variantBuyerPrice,
-          rawItem.selectedOptionPrice,
-          rawItem.optionPrice,
-          rawItem.variantPrice,
-          buyerPrice
-        ]),
-
-      selectedOptionSellerPrice:
-        firstPositiveNumber([
-          rawItem.selectedOptionSellerPrice,
-          rawItem.optionSellerPrice,
-          rawItem.variantSellerPrice,
-          sellerPrice
-        ]),
-
-      selectedOptionCommissionAmount:
-        firstPositiveNumber([
-          rawItem.selectedOptionCommissionAmount,
-          rawItem.optionCommissionAmount,
-          rawItem.variantCommissionAmount,
-          commissionAmount
-        ]),
-
-      quantity,
-      subtotal,
-      sellerSubtotal,
-      commissionSubtotal
-    };
-
-    itemsTotal += subtotal;
-    cartItems.push(item);
-
-    const div = document.createElement("div");
-    div.className = "checkout-line checkout-pro-line";
-
-    const optionDetails = getItemOptionDetails(item);
-    const checkoutImageUrl =
-      optionDetails.imageUrl ||
-      item.imageUrl ||
-      "";
-
-    div.innerHTML = `
-      <div class="checkout-line-main">
         ${
-          checkoutImageUrl
-            ? `<img src="${escapeHtml(checkoutImageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
-            : `<div class="checkout-no-img">No Image</div>`
+          optionDetails.hasOption
+            ? `
+              <div class="checkout-selected-option">
+
+                <span>
+                  Selected
+                  ${escapeHtml(optionDetails.optionType)}
+                </span>
+
+                <strong>
+                  ${escapeHtml(optionDetails.optionName)}
+                </strong>
+
+                ${
+                  optionDetails.optionSku
+                    ? `
+                      <small>
+                        Product Code:
+                        ${escapeHtml(optionDetails.optionSku)}
+                      </small>
+                    `
+                    : ""
+                }
+
+              </div>
+            `
+            : ""
         }
 
-        <div>
-          <strong>${escapeHtml(item.title || "Untitled")}</strong>
-          <p>Verified MauMarket Merchant</p>
+        <small class="checkout-pickup-note">
+          Fulfilled by Verified MauMarket Merchant
+        </small>
 
-          ${
-            optionDetails.hasOption
-              ? `
-                <div class="checkout-selected-option">
-                  <span>
-                    Selected ${escapeHtml(optionDetails.optionType)}
-                  </span>
-
-                  <strong>
-                    ${escapeHtml(optionDetails.optionName)}
-                  </strong>
-
-                  ${
-                    optionDetails.optionSku
-                      ? `
-                        <small>
-                          Product Code:
-                          ${escapeHtml(optionDetails.optionSku)}
-                        </small>
-                      `
-                      : ""
-                  }
-                </div>
-              `
-              : ""
-          }
-
-          <small class="checkout-pickup-note">
-            Fulfilled by Verified MauMarket Merchant
-          </small>
-        </div>
       </div>
 
-      <div class="checkout-line-price">
-        <span>${formatRs(buyerPrice)} × ${quantity}</span>
-        <strong>${formatRs(subtotal)}</strong>
-      </div>
-    `;
+    </div>
 
-    checkoutItems.appendChild(div);
+    <div class="checkout-line-price">
+
+      <span>
+        ${formatRs(item.buyerPrice)}
+        ×
+        ${Number(item.quantity || 1)}
+      </span>
+
+      <strong>
+        ${formatRs(item.subtotal)}
+      </strong>
+
+    </div>
+  `;
+
+  return div;
+}
+
+function renderEmptyCheckout() {
+  checkoutItems.innerHTML = `
+    <div class="order-card">
+      <h3>Your cart is empty</h3>
+
+      <p>
+        Add items from the marketplace before checkout.
+      </p>
+
+      <a
+        class="btn"
+        href="products.html">
+        Go to Marketplace
+      </a>
+    </div>
+  `;
+
+  cartItems = [];
+  updateTotals(0);
+
+  if (placeOrderBtn) {
+    placeOrderBtn.disabled = true;
   }
-
-  updateTotals(itemsTotal);
 }
 
 function updateTotals(itemsTotal) {
@@ -445,6 +620,28 @@ placeOrderBtn?.addEventListener("click", async () => {
 
     const sellerBreakdown = buildSellerBreakdown(cartItems);
     const pickupStops = buildPickupStops(cartItems);
+
+    if (
+      itemsTotal <= 0 ||
+      grandTotal <= deliveryFee
+    ) {
+      throw new Error(
+        "checkout/invalid-total"
+      );
+    }
+
+    const invalidItem =
+      cartItems.find(
+        (item) =>
+          Number(item.buyerPrice || 0) <= 0 ||
+          Number(item.subtotal || 0) <= 0
+      );
+
+    if (invalidItem) {
+      throw new Error(
+        `checkout/invalid-item-price:${invalidItem.title || "Item"}`
+      );
+    }
 
     const file = paymentProof.files[0];
     const safeName = file.name.replaceAll(" ", "-");
@@ -566,8 +763,8 @@ placeOrderBtn?.addEventListener("click", async () => {
           0
         ),
 
-      price: Number(item.buyerPrice || item.price || 0),
-      buyerPrice: Number(item.buyerPrice || item.price || 0),
+      price: Number(item.buyerPrice || 0),
+      buyerPrice: Number(item.buyerPrice || 0),
       sellerPrice: Number(item.sellerPrice || 0),
       commissionAmount: Number(item.commissionAmount || 0),
       commissionRate: Number(item.commissionRate ?? COMMISSION_RATE),
@@ -936,6 +1133,428 @@ async function getShopPickupInfo(sellerId, fallbackShopName = "") {
   }
 }
 
+async function prefillCustomerInformation() {
+  if (!currentUser) return;
+
+  if (
+    customerPhone &&
+    !customerPhone.value &&
+    currentUser.phoneNumber
+  ) {
+    customerPhone.value =
+      currentUser.phoneNumber;
+  }
+
+  if (
+    customerName &&
+    !customerName.value &&
+    currentUser.displayName
+  ) {
+    customerName.value =
+      currentUser.displayName;
+  }
+
+  try {
+    const userSnap = await getDoc(
+      doc(db, "users", currentUser.uid)
+    );
+
+    if (!userSnap.exists()) return;
+
+    const userData = userSnap.data();
+
+    if (customerName && !customerName.value) {
+      customerName.value =
+        userData.name ||
+        userData.fullName ||
+        userData.customerName ||
+        "";
+    }
+
+    if (customerPhone && !customerPhone.value) {
+      customerPhone.value =
+        userData.phone ||
+        userData.phoneNumber ||
+        userData.mobile ||
+        "";
+    }
+  } catch (error) {
+    console.warn(
+      "Customer information could not be prefilled:",
+      error
+    );
+  }
+}
+
+async function hydrateCartItemPricing(rawItem) {
+  const localBuyerPrice =
+    getBuyerPrice(rawItem);
+
+  if (localBuyerPrice > 0) {
+    return rawItem;
+  }
+
+  const productId =
+    rawItem.productId ||
+    rawItem.id ||
+    "";
+
+  if (!productId) {
+    return rawItem;
+  }
+
+  let product = productPricingCache[productId];
+
+  if (!product) {
+    try {
+      const productSnap = await getDoc(
+        doc(db, "products", productId)
+      );
+
+      if (!productSnap.exists()) {
+        return rawItem;
+      }
+
+      product = {
+        id: productSnap.id,
+        ...productSnap.data()
+      };
+
+      productPricingCache[productId] = product;
+    } catch (error) {
+      console.warn(
+        `Could not load pricing for product ${productId}:`,
+        error
+      );
+
+      return rawItem;
+    }
+  }
+
+  const option =
+    findSelectedProductOption(
+      product,
+      rawItem
+    );
+
+  const productSellerPrice =
+    firstPositiveNumber([
+      product.sellerPrice,
+      product.baseSellerPrice
+    ]);
+
+  const productBuyerPrice =
+    firstPositiveNumber([
+      product.buyerPrice,
+      product.price,
+      product.baseBuyerPrice,
+      product.basePrice
+    ]);
+
+  const optionSellerPrice =
+    firstPositiveNumber([
+      option?.sellerPrice,
+      option?.optionSellerPrice,
+      option?.variantSellerPrice
+    ]);
+
+  const optionBuyerPrice =
+    firstPositiveNumber([
+      option?.buyerPrice,
+      option?.price,
+      option?.optionPrice,
+      option?.variantPrice
+    ]);
+
+  const commissionRate =
+    normalizeCommissionRate(
+      rawItem.commissionRate ??
+      option?.commissionRate ??
+      product.commissionRate
+    );
+
+  const resolvedSellerPrice =
+    optionSellerPrice ||
+    productSellerPrice ||
+    (
+      optionBuyerPrice > 0
+        ? roundMoney(
+            optionBuyerPrice /
+            (1 + commissionRate)
+          )
+        : productBuyerPrice > 0
+          ? roundMoney(
+              productBuyerPrice /
+              (1 + commissionRate)
+            )
+          : 0
+    );
+
+  const resolvedBuyerPrice =
+    optionBuyerPrice ||
+    productBuyerPrice ||
+    (
+      resolvedSellerPrice > 0
+        ? roundMoney(
+            resolvedSellerPrice *
+            (1 + commissionRate)
+          )
+        : 0
+    );
+
+  const resolvedCommission =
+    roundMoney(
+      Math.max(
+        0,
+        resolvedBuyerPrice -
+        resolvedSellerPrice
+      )
+    );
+
+  return {
+    ...product,
+    ...rawItem,
+
+    sellerId:
+      rawItem.sellerId ||
+      product.sellerId ||
+      product.ownerId ||
+      "",
+
+    title:
+      rawItem.title ||
+      product.title ||
+      product.name ||
+      "",
+
+    type:
+      rawItem.type ||
+      product.type ||
+      "product",
+
+    category:
+      rawItem.category ||
+      product.category ||
+      "",
+
+    imageUrl:
+      rawItem.imageUrl ||
+      option?.imageUrl ||
+      getFirstImageUrl(option) ||
+      product.imageUrl ||
+      getFirstImageUrl(product) ||
+      "",
+
+    commissionRate,
+
+    price: resolvedBuyerPrice,
+    buyerPrice: resolvedBuyerPrice,
+    sellerPrice: resolvedSellerPrice,
+    commissionAmount:
+      resolvedCommission,
+
+    selectedOptionBuyerPrice:
+      resolvedBuyerPrice,
+
+    selectedOptionSellerPrice:
+      resolvedSellerPrice,
+
+    selectedOptionCommissionAmount:
+      resolvedCommission,
+
+    selectedOptionId:
+      rawItem.selectedOptionId ||
+      rawItem.optionId ||
+      option?.id ||
+      option?.optionId ||
+      "",
+
+    selectedOptionName:
+      rawItem.selectedOptionName ||
+      rawItem.optionName ||
+      option?.name ||
+      option?.label ||
+      option?.value ||
+      "",
+
+    selectedOptionSku:
+      rawItem.selectedOptionSku ||
+      rawItem.optionSku ||
+      option?.sku ||
+      option?.productCode ||
+      "",
+
+    selectedOptionStock:
+      rawItem.selectedOptionStock ??
+      rawItem.optionStock ??
+      option?.stock ??
+      null,
+
+    selectedOptionImageUrl:
+      rawItem.selectedOptionImageUrl ||
+      rawItem.optionImageUrl ||
+      option?.imageUrl ||
+      getFirstImageUrl(option) ||
+      rawItem.imageUrl ||
+      product.imageUrl ||
+      getFirstImageUrl(product) ||
+      ""
+  };
+}
+
+function findSelectedProductOption(
+  product,
+  cartItem
+) {
+  const options = getProductOptions(product);
+
+  if (options.length === 0) {
+    return null;
+  }
+
+  const selectedId =
+    String(
+      cartItem.selectedOptionId ||
+      cartItem.optionId ||
+      ""
+    ).trim();
+
+  const selectedName =
+    normalizeText(
+      cartItem.selectedOptionName ||
+      cartItem.optionName ||
+      ""
+    );
+
+  const selectedSku =
+    normalizeText(
+      cartItem.selectedOptionSku ||
+      cartItem.optionSku ||
+      cartItem.sku ||
+      ""
+    );
+
+  return (
+    options.find((option) => {
+      const optionId =
+        String(
+          option.id ||
+          option.optionId ||
+          option.variantId ||
+          ""
+        ).trim();
+
+      return (
+        selectedId &&
+        optionId === selectedId
+      );
+    }) ||
+
+    options.find((option) => {
+      const optionSku =
+        normalizeText(
+          option.sku ||
+          option.productCode ||
+          option.code ||
+          ""
+        );
+
+      return (
+        selectedSku &&
+        optionSku === selectedSku
+      );
+    }) ||
+
+    options.find((option) => {
+      const optionName =
+        normalizeText(
+          option.name ||
+          option.label ||
+          option.value ||
+          option.title ||
+          ""
+        );
+
+      return (
+        selectedName &&
+        optionName === selectedName
+      );
+    }) ||
+
+    null
+  );
+}
+
+function getProductOptions(product) {
+  const possibleOptions = [
+    product?.options,
+    product?.variants,
+    product?.productOptions,
+    product?.itemOptions
+  ];
+
+  for (const value of possibleOptions) {
+    if (Array.isArray(value)) {
+      return value.filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
+function getFirstImageUrl(value) {
+  const imageCollections = [
+    value?.imageUrls,
+    value?.images,
+    value?.optionImages,
+    value?.gallery
+  ];
+
+  for (const collectionValue of imageCollections) {
+    if (!Array.isArray(collectionValue)) {
+      continue;
+    }
+
+    for (const image of collectionValue) {
+      if (typeof image === "string" && image) {
+        return image;
+      }
+
+      if (
+        image &&
+        typeof image === "object"
+      ) {
+        const url =
+          image.url ||
+          image.imageUrl ||
+          image.downloadURL ||
+          "";
+
+        if (url) return url;
+      }
+    }
+  }
+
+  return "";
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function toFiniteNumber(
+  value,
+  fallback = 0
+) {
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+}
+
 function getItemOptionDetails(item) {
   const optionName =
     item.selectedOptionName ||
@@ -1104,7 +1723,11 @@ function getFriendlyCheckoutError(
   fallbackMessage
 ) {
   const code =
-    String(error?.code || "");
+    String(
+      error?.code ||
+      error?.message ||
+      ""
+    );
 
   const messages = {
     "permission-denied":
@@ -1132,8 +1755,22 @@ function getFriendlyCheckoutError(
       "Please check your internet connection and try again.",
 
     "network-request-failed":
-      "Please check your internet connection and try again."
+      "Please check your internet connection and try again.",
+
+    "checkout/invalid-total":
+      "Your order total could not be calculated. Return to the cart and add the affected items again."
   };
+
+  if (
+    code.startsWith(
+      "checkout/invalid-item-price:"
+    )
+  ) {
+    const itemName =
+      code.split(":").slice(1).join(":");
+
+    return `${itemName} has an invalid price. Return to the cart, remove it and add it again.`;
+  }
 
   return (
     messages[code] ||
