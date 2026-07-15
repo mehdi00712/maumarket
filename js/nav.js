@@ -21,7 +21,7 @@ import {
   - Role-based account menus
   - Instant marketplace search
   - Sticky desktop navigation
-  - Mobile side menu and bottom navigation
+  - Clean mobile side menu with cropped bag logo and bottom navigation
   - Firestore cart badge
 */
 
@@ -438,9 +438,10 @@ function injectNavLogoStyles() {
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
-      gap: 12px !important;
-      margin: 0 0 18px !important;
-      padding: 0 0 16px !important;
+      gap: 14px !important;
+      min-height: 76px !important;
+      margin: 0 0 20px !important;
+      padding: 2px 0 18px !important;
       border-bottom: 1px solid #e6e8f0 !important;
       background: transparent !important;
     }
@@ -449,36 +450,46 @@ function injectNavLogoStyles() {
       min-width: 0 !important;
       display: inline-flex !important;
       align-items: center !important;
-      gap: 11px !important;
+      flex: 1 1 auto !important;
+      gap: 13px !important;
       color: #0f172a !important;
       text-decoration: none !important;
     }
 
     #mmSideMenu .mm-side-brand-mark {
-      width: 52px !important;
-      height: 52px !important;
-      min-width: 52px !important;
-      display: grid !important;
-      place-items: center !important;
+      width: 58px !important;
+      height: 58px !important;
+      min-width: 58px !important;
+      display: block !important;
+      position: relative !important;
       overflow: hidden !important;
-      border-radius: 15px !important;
+      border-radius: 16px !important;
       background: #ffffff !important;
     }
 
+    /*
+      LOGO_PATH contains the full horizontal MauMarket logo.
+      The image is intentionally kept wide and clipped so this box shows
+      only the shopping-bag mark instead of shrinking the whole logo.
+    */
     #mmSideMenu .mm-side-brand-mark img {
-      width: 52px !important;
-      height: 52px !important;
-      max-width: 52px !important;
-      max-height: 52px !important;
+      position: absolute !important;
+      top: 50% !important;
+      left: 0 !important;
+      width: 210px !important;
+      height: 72px !important;
+      max-width: none !important;
+      max-height: none !important;
       object-fit: contain !important;
-      object-position: center !important;
-      transform: none !important;
+      object-position: left center !important;
+      transform: translateY(-50%) !important;
+      transform-origin: left center !important;
     }
 
     #mmSideMenu .mm-side-brand-name {
       color: #111827 !important;
-      font-size: 27px !important;
-      line-height: 1 !important;
+      font-size: 25px !important;
+      line-height: 1.05 !important;
       font-weight: 950 !important;
       letter-spacing: -0.8px !important;
       white-space: nowrap !important;
@@ -486,18 +497,22 @@ function injectNavLogoStyles() {
 
     #mmSideMenu .mm-side-close {
       position: static !important;
-      width: 44px !important;
-      height: 44px !important;
-      min-width: 44px !important;
-      min-height: 44px !important;
+      width: 46px !important;
+      height: 46px !important;
+      min-width: 46px !important;
+      min-height: 46px !important;
+      display: grid !important;
+      place-items: center !important;
+      flex: 0 0 46px !important;
       margin: 0 !important;
-      padding: 0 !important;
+      padding: 0 0 3px !important;
+      border: 1px solid #e3e5ee !important;
       border-radius: 50% !important;
-      background: linear-gradient(135deg, #4f35f5, #7557ff) !important;
-      color: #ffffff !important;
-      font-size: 21px !important;
+      background: #f7f8fc !important;
+      color: #182033 !important;
+      font-size: 29px !important;
       line-height: 1 !important;
-      box-shadow: 0 10px 24px rgba(79, 53, 245, 0.25) !important;
+      box-shadow: none !important;
     }
 
     #mmSideMenu .mm-user-box {
