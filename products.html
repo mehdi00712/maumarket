@@ -1,585 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-
-    <title>MauMarket | Marketplace</title>
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="description"
-        content="Shop products and services securely through MauMarket with verified merchants, protected payments and island-wide delivery."
-    >
-
-    <link rel="icon" href="favicon.ico" sizes="any">
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>MauMarket | Marketplace</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse products and services from verified MauMarket merchants with protected payments and island-wide delivery.">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-<main class="marketplace-home">
+<!-- Navigation is injected automatically by nav.js -->
 
-    <!-- Navigation is injected automatically by nav.js -->
+<main class="marketplace-home marketplace-products-page">
 
-    <!-- =====================================================
-         MARKETPLACE HERO
-    ====================================================== -->
+  <section class="marketplace-intro-card">
+    <div>
+      <span class="section-kicker">Mauritius Marketplace</span>
+      <h1>Browse Products &amp; Services</h1>
+      <p>Discover products from verified MauMarket merchants with protected payments, managed delivery and customer support.</p>
+    </div>
+    <a href="#marketProducts" class="btn">Start Shopping</a>
+  </section>
 
-    <section class="market-hero clean-market-hero">
+  <section class="homepage-section compact-category-section">
+    <div class="section-row-title">
+      <div>
+        <span class="section-kicker">Browse</span>
+        <h2>Shop by Category</h2>
+      </div>
+      <a href="#marketProducts">View products</a>
+    </div>
+    <div id="categoryIconGrid" class="category-icon-grid" aria-live="polite">Loading categories...</div>
+  </section>
 
-        <div class="market-hero-bg"></div>
+  <section id="topAdBanner" class="market-ad-carousel compact-market-ad" style="display:none;" aria-label="Marketplace advertisements">
+    <div class="market-ad-carousel-head">
+      <div>
+        <span>Featured</span>
+        <h2>MauMarket Highlights</h2>
+      </div>
+      <div class="market-ad-controls">
+        <button id="adPrevBtn" type="button" aria-label="Previous advertisement">‹</button>
+        <button id="adNextBtn" type="button" aria-label="Next advertisement">›</button>
+      </div>
+    </div>
+    <div id="adSlidesTrack" class="market-ad-slides" aria-live="polite"></div>
+    <div id="adDots" class="market-ad-dots" aria-label="Advertisement navigation"></div>
+  </section>
 
-        <div class="market-hero-content">
-
-            <span class="hero-badge">
-                Mauritius Local Marketplace
-            </span>
-
-            <h1>
-                Welcome to MauMarket
-            </h1>
-
-            <p>
-                Discover products and services from verified MauMarket merchants with
-                protected payments, reliable support and island-wide delivery.
-            </p>
-
-            <div class="hero-buttons">
-
-                <a
-                    href="#marketProducts"
-                    class="btn hero-primary"
-                >
-                    Shop Now
-                </a>
-
-                <a
-                    href="#marketplaceHighlights"
-                    class="btn-outline hero-secondary"
-                >
-                    Explore Highlights
-                </a>
-
-            </div>
-
-            <div class="hero-features clean-hero-features">
-
-                <div>
-                    <span>✓</span>
-
-                    <strong>
-                        Verified Merchants
-                    </strong>
-
-                    <small>
-                        Approved by MauMarket
-                    </small>
-                </div>
-
-                <div>
-                    <span>✓</span>
-
-                    <strong>
-                        Secure Checkout
-                    </strong>
-
-                    <small>
-                        Protected payments
-                    </small>
-                </div>
-
-                <div>
-                    <span>✓</span>
-
-                    <strong>
-                        Delivery
-                    </strong>
-
-                    <small>
-                        Across Mauritius
-                    </small>
-                </div>
-
-                <div>
-                    <span>✓</span>
-
-                    <strong>
-                        MauMarket Protection
-                    </strong>
-
-                    <small>
-                        Buyer-first protection
-                    </small>
-                </div>
-
-            </div>
-
+  <section id="marketProducts" class="market-layout clean-market-layout compact-market-layout">
+    <aside class="market-sidebar">
+      <div class="filter-card">
+        <div class="filter-card-heading">
+          <span class="section-kicker">Refine</span>
+          <h3>Filters</h3>
         </div>
+        <label for="sideCategoryFilter">Category</label>
+        <select id="sideCategoryFilter"><option value="">All Categories</option></select>
+        <label for="sideSortFilter">Sort</label>
+        <select id="sideSortFilter">
+          <option value="newest">Newest</option>
+          <option value="low-high">Lowest Price</option>
+          <option value="high-low">Highest Price</option>
+          <option value="rating">Highest Rated</option>
+        </select>
+      </div>
 
+      <div class="filter-card marketplace-trust-card">
+        <h3>MauMarket Protection</h3>
+        <div class="sidebar-benefit"><span>✓</span><div><strong>Verified Merchants</strong><small>Every merchant is approved.</small></div></div>
+        <div class="sidebar-benefit"><span>✓</span><div><strong>Secure Payments</strong><small>Payments are reviewed by MauMarket.</small></div></div>
+        <div class="sidebar-benefit"><span>✓</span><div><strong>Managed Delivery</strong><small>Pickup and delivery are coordinated by MauMarket.</small></div></div>
+      </div>
+    </aside>
+
+    <section class="market-main">
+      <div class="market-heading compact-market-heading">
+        <div>
+          <span class="section-kicker">Marketplace</span>
+          <h2 id="marketTitle">Products &amp; Services</h2>
+          <p id="resultCount">Loading...</p>
+        </div>
+        <button id="clearSearchTop" class="secondary-btn clear-search-top" type="button" style="display:none;">Clear Search</button>
+      </div>
+
+      <div id="productsGrid" class="market-product-grid" aria-live="polite">Loading marketplace...</div>
     </section>
-
-    <!-- =====================================================
-         CATEGORIES
-    ====================================================== -->
-
-    <section class="homepage-section clean-category-section">
-
-        <div class="section-row-title">
-
-            <div>
-                <span class="section-kicker">
-                    Browse
-                </span>
-
-                <h2>
-                    Shop by Category
-                </h2>
-            </div>
-
-            <a href="#marketProducts">
-                View all categories
-            </a>
-
-        </div>
-
-        <div
-            id="categoryIconGrid"
-            class="category-icon-grid"
-            aria-live="polite"
-        >
-            Loading categories...
-        </div>
-
-    </section>
-    <!-- =====================================================
-         MARKETPLACE HIGHLIGHTS
-    ====================================================== -->
-
-    <section
-        id="marketplaceHighlights"
-        class="homepage-section marketplace-highlights-section"
-    >
-
-        <div class="section-row-title">
-
-            <div>
-                <span class="section-kicker">
-                    Discover More
-                </span>
-
-                <h2>
-                    Marketplace Highlights
-                </h2>
-
-                <p>
-                    Browse trending products, new arrivals, top-rated items
-                    and offers protected by MauMarket.
-                </p>
-            </div>
-
-            <a href="#marketProducts">
-                View All Products
-            </a>
-
-        </div>
-
-        <div class="marketplace-highlight-grid">
-
-            <article class="marketplace-highlight-card">
-                <div class="marketplace-highlight-icon">🔥</div>
-                <h3>Trending Now</h3>
-                <p>Popular products customers are viewing across MauMarket.</p>
-                <a href="#marketProducts" data-market-highlight="trending">
-                    Browse Trending
-                </a>
-            </article>
-
-            <article class="marketplace-highlight-card">
-                <div class="marketplace-highlight-icon">🆕</div>
-                <h3>New Arrivals</h3>
-                <p>Explore recently added products and services.</p>
-                <a href="#marketProducts" data-market-highlight="newest">
-                    See New Items
-                </a>
-            </article>
-
-            <article class="marketplace-highlight-card">
-                <div class="marketplace-highlight-icon">⭐</div>
-                <h3>Top Rated</h3>
-                <p>Discover items with strong verified buyer feedback.</p>
-                <a href="#marketProducts" data-market-highlight="rating">
-                    Browse Top Rated
-                </a>
-            </article>
-
-            <article class="marketplace-highlight-card">
-                <div class="marketplace-highlight-icon">🛡</div>
-                <h3>Protected Shopping</h3>
-                <p>Payments, delivery and support are handled through MauMarket.</p>
-                <a href="#whyMauMarket">
-                    Learn More
-                </a>
-            </article>
-
-        </div>
-
-    </section>
-
-    <!-- =====================================================
-         MARKETPLACE AD SLIDESHOW
-    ====================================================== -->
-
-    <section
-        id="topAdBanner"
-        class="market-ad-carousel"
-        style="display:none;"
-        aria-label="Marketplace advertisements"
-    >
-
-        <div class="market-ad-carousel-head">
-
-            <div>
-                <span>
-                    Featured
-                </span>
-
-                <h2>
-                    Marketplace Highlights
-                </h2>
-            </div>
-
-            <div class="market-ad-controls">
-
-                <button
-                    id="adPrevBtn"
-                    type="button"
-                    aria-label="Previous advertisement"
-                >
-                    ‹
-                </button>
-
-                <button
-                    id="adNextBtn"
-                    type="button"
-                    aria-label="Next advertisement"
-                >
-                    ›
-                </button>
-
-            </div>
-
-        </div>
-
-        <div
-            id="adSlidesTrack"
-            class="market-ad-slides"
-            aria-live="polite"
-        >
-            <!-- Generated by products.js -->
-        </div>
-
-        <div
-            id="adDots"
-            class="market-ad-dots"
-            aria-label="Advertisement navigation"
-        >
-            <!-- Generated by products.js -->
-        </div>
-
-    </section>
-
-    <!-- =====================================================
-         PRODUCTS AND FILTERS
-    ====================================================== -->
-
-    <section
-        id="marketProducts"
-        class="market-layout clean-market-layout"
-    >
-
-        <aside class="market-sidebar">
-
-            <div class="filter-card">
-
-                <div class="filter-card-heading">
-                    <span class="section-kicker">
-                        Refine Results
-                    </span>
-
-                    <h3>
-                        Filters
-                    </h3>
-                </div>
-
-                <label for="sideCategoryFilter">
-                    Category
-                </label>
-
-                <select id="sideCategoryFilter">
-                    <option value="">
-                        All Categories
-                    </option>
-                </select>
-
-                <label for="sideSortFilter">
-                    Sort
-                </label>
-
-                <select id="sideSortFilter">
-                    <option value="newest">
-                        Newest
-                    </option>
-
-                    <option value="low-high">
-                        Lowest Price
-                    </option>
-
-                    <option value="high-low">
-                        Highest Price
-                    </option>
-
-                    <option value="rating">
-                        Highest Rated
-                    </option>
-                </select>
-
-            </div>
-
-            <div class="filter-card marketplace-trust-card">
-
-                <div class="filter-card-heading">
-                    <span class="section-kicker">
-                        Shop Safely
-                    </span>
-
-                    <h3>
-                        Why MauMarket?
-                    </h3>
-                </div>
-
-                <div class="sidebar-benefit">
-                    <span>✓</span>
-
-                    <div>
-                        <strong>
-                            Verified Merchants
-                        </strong>
-
-                        <small>
-                            Every merchant is approved by MauMarket.
-                        </small>
-                    </div>
-                </div>
-
-                <div class="sidebar-benefit">
-                    <span>✓</span>
-
-                    <div>
-                        <strong>
-                            Secure Payments
-                        </strong>
-
-                        <small>
-                            Payments are reviewed and protected.
-                        </small>
-                    </div>
-                </div>
-
-                <div class="sidebar-benefit">
-                    <span>✓</span>
-
-                    <div>
-                        <strong>
-                            MauMarket Delivery
-                        </strong>
-
-                        <small>
-                            Pickup and delivery managed by MauMarket.
-                        </small>
-                    </div>
-                </div>
-
-            </div>
-
-        </aside>
-
-        <section class="market-main">
-
-            <div class="market-heading">
-
-                <div>
-                    <span class="section-kicker">
-                        Marketplace
-                    </span>
-
-                    <h2 id="marketTitle">
-                        Products &amp; Services
-                    </h2>
-
-                    <p id="resultCount">
-                        Loading...
-                    </p>
-                </div>
-
-                <button
-                    id="clearSearchTop"
-                    class="secondary-btn clear-search-top"
-                    type="button"
-                    style="display:none;"
-                >
-                    Clear Search
-                </button>
-
-            </div>
-
-            <div
-                id="productsGrid"
-                class="market-product-grid"
-                aria-live="polite"
-            >
-                Loading marketplace...
-            </div>
-
-        </section>
-
-    </section>
-
-    <!-- =====================================================
-         WHY MAUMARKET
-    ====================================================== -->
-
-    <section id="whyMauMarket" class="homepage-section why-market">
-
-        <div class="section-row-title">
-
-            <div>
-                <span class="section-kicker">
-                    MauMarket Benefits
-                </span>
-
-                <h2>
-                    Why Shop With MauMarket?
-                </h2>
-            </div>
-
-        </div>
-
-        <div class="why-grid">
-
-            <article class="why-card">
-                <div class="why-icon">
-                    ✓
-                </div>
-
-                <h3>
-                    Verified Merchants
-                </h3>
-
-                <p>
-                    Every merchant is reviewed and approved before products can appear.
-                </p>
-            </article>
-
-            <article class="why-card">
-                <div class="why-icon">
-                    ✓
-                </div>
-
-                <h3>
-                    Secure Payments
-                </h3>
-
-                <p>
-                    Checkout and payment verification are handled safely through
-                    MauMarket.
-                </p>
-            </article>
-
-            <article class="why-card">
-                <div class="why-icon">
-                    ✓
-                </div>
-
-                <h3>
-                    Island-wide Delivery
-                </h3>
-
-                <p>
-                    Delivery support is available across Mauritius.
-                </p>
-            </article>
-
-            <article class="why-card">
-                <div class="why-icon">
-                    ✓
-                </div>
-
-                <h3>
-                    Customer Support
-                </h3>
-
-                <p>
-                    Support is available for orders, payments, delivery and
-                    buyer protection.
-                </p>
-            </article>
-
-        </div>
-
-    </section>
-
-    <!-- =====================================================
-         MERCHANT PRIVACY & BUYER TRUST
-    ====================================================== -->
-
-    <section class="homepage-section merchant-privacy-section">
-
-        <div class="merchant-privacy-card">
-
-            <div class="merchant-privacy-icon">
-                🛡
-            </div>
-
-            <div>
-                <span class="section-kicker">
-                    Buyer-First Marketplace
-                </span>
-
-                <h2>
-                    Shop Through MauMarket With Confidence
-                </h2>
-
-                <p>
-                    Buyer communication, payment verification, delivery and support
-                    stay inside MauMarket. Merchant contact details and pickup
-                    information remain private and are used only for administration
-                    and delivery operations.
-                </p>
-            </div>
-
-            <a href="#marketProducts" class="btn">
-                Browse Marketplace
-            </a>
-
-        </div>
-
-    </section>
+  </section>
 
 </main>
 
-<script
-    type="module"
-    src="js/nav.js?v=5.3"
-></script>
-
-<script
-    type="module"
-    src="js/products.js?v=8.0-private-merchants"
-></script>
+<script type="module" src="js/nav.js?v=5.4"></script>
+<script type="module" src="js/products.js?v=8.1-private-merchants"></script>
 
 </body>
 </html>
