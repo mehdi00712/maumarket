@@ -73,15 +73,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function buildResponsiveNav() {
+  removeInjectedNavigation();
   removeOldHeaders();
   injectNavLogoStyles();
 
   const header = document.createElement("header");
+  header.id = "mmSharedNav";
   header.className = "mm-nav premium-mm-nav";
 
   header.innerHTML = `
     <div class="mm-nav-inner">
-      <button id="mmMenuBtn" class="mm-icon-btn premium-menu-btn" type="button" aria-label="Open menu" aria-expanded="false">
+      <button id="mmMenuBtn" class="mm-icon-btn premium-menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mmSideMenu">
         <span></span>
         <span></span>
         <span></span>
@@ -131,17 +133,20 @@ function buildResponsiveNav() {
   const overlay = document.createElement("div");
   overlay.id = "mmMenuOverlay";
   overlay.className = "mm-menu-overlay";
+  overlay.setAttribute("aria-hidden", "true");
 
   const sideMenu = document.createElement("aside");
   sideMenu.id = "mmSideMenu";
   sideMenu.className = "mm-side-menu premium-side-menu";
+  sideMenu.setAttribute("aria-hidden", "true");
+  sideMenu.inert = true;
 
   sideMenu.innerHTML = `
     <div class="mm-side-head">
       <a href="index.html" class="mm-side-logo" aria-label="MauMarket home">
         <img src="${LOGO_PATH}" alt="MauMarket" decoding="async">
       </a>
-      <button id="mmMenuClose" type="button" aria-label="Close menu">×</button>
+      <button id="mmMenuClose" class="mm-side-close" type="button" aria-label="Close menu">×</button>
     </div>
 
     <div id="mmUserBox" class="mm-user-box">
@@ -158,6 +163,13 @@ function buildResponsiveNav() {
   document.body.appendChild(overlay);
   document.body.appendChild(sideMenu);
   document.body.appendChild(bottomNav);
+
+  /*
+    Always reset the drawer to its closed state after injection.
+    This prevents stale browser state or old CSS rules from showing
+    the side-menu logo as a large banner over the page.
+  */
+  closeMenu({ restoreFocus: false });
 
   document.getElementById("mmMenuBtn")?.addEventListener("click", toggleMenu);
   document.getElementById("mmMenuClose")?.addEventListener("click", closeMenu);
@@ -293,90 +305,285 @@ function ensureNavCategoryOption(categoryName) {
 }
 
 function injectNavLogoStyles() {
-  if (document.getElementById("maumarket-nav-logo-size-fix")) return;
+  document
+    .getElementById("maumarket-nav-logo-size-fix")
+    ?.remove();
 
   const style = document.createElement("style");
   style.id = "maumarket-nav-logo-size-fix";
 
   style.textContent = `
-    .mm-nav-inner{
-      grid-template-columns: 56px ${NAV_LOGO_DESKTOP_WIDTH} minmax(360px, 1fr) auto 58px !important;
+    /* Main navigation must remain part of the page flow. */
+    #mmSharedNav.mm-nav {
+      position: relative !important;
+      top: auto !important;
+      width: 100% !important;
+      z-index: 5000 !important;
     }
 
-    .mm-logo.mm-brand-logo{
+    #mmSharedNav .mm-logo.mm-brand-logo {
       width: ${NAV_LOGO_DESKTOP_WIDTH} !important;
-      height: ${NAV_LOGO_DESKTOP_HEIGHT} !important;
       min-width: ${NAV_LOGO_DESKTOP_WIDTH} !important;
+      height: ${NAV_LOGO_DESKTOP_HEIGHT} !important;
       display: flex !important;
       align-items: center !important;
       justify-content: flex-start !important;
-      overflow: visible !important;
+      overflow: hidden !important;
       flex-shrink: 0 !important;
     }
 
-    .mm-logo.mm-brand-logo img,
-    .mm-brand-logo-img{
+    #mmSharedNav .mm-logo.mm-brand-logo img,
+    #mmSharedNav .mm-brand-logo-img {
       width: ${NAV_LOGO_DESKTOP_WIDTH} !important;
       height: ${NAV_LOGO_DESKTOP_HEIGHT} !important;
-      max-width: none !important;
-      max-height: none !important;
+      max-width: 100% !important;
+      max-height: ${NAV_LOGO_DESKTOP_HEIGHT} !important;
       object-fit: contain !important;
       object-position: left center !important;
       display: block !important;
-      transform: scale(1.08);
-      transform-origin: left center;
+      transform: none !important;
     }
 
-    .mm-side-logo{
+    /* Overlay stays mounted but invisible until the menu is opened. */
+    #mmMenuOverlay.mm-menu-overlay {
+      display: block !important;
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 10001 !important;
+      background: rgba(7, 11, 40, 0.62) !important;
+      backdrop-filter: blur(4px);
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease !important;
+    }
+
+    #mmMenuOverlay.mm-menu-overlay.show {
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    /*
+      The drawer uses transform rather than the old left property.
+      This guarantees the whole logo/header stays outside the viewport
+      until the hamburger is pressed.
+    */
+    #mmSideMenu.mm-side-menu {
+      display: block !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: min(360px, 88vw) !important;
+      max-width: 88vw !important;
+      height: 100dvh !important;
+      min-height: 100vh !important;
+      padding: 20px !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      z-index: 10002 !important;
+      box-shadow: 30px 0 80px rgba(7, 11, 40, 0.28) !important;
+      transform: translateX(-110%) !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition:
+        transform 0.25s ease,
+        opacity 0.2s ease,
+        visibility 0.2s ease !important;
+    }
+
+    #mmSideMenu.mm-side-menu.show {
+      transform: translateX(0) !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    #mmSideMenu .mm-side-head {
+      width: 100% !important;
       display: flex !important;
       align-items: center !important;
-      width: 210px !important;
-      max-width: 72% !important;
-      overflow: visible !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      margin: 0 0 18px !important;
+      padding: 0 0 16px !important;
+      border-bottom: 1px solid #e6e8f0 !important;
+      background: transparent !important;
     }
 
-    .mm-side-logo img{
-      width: 210px !important;
-      height: 82px !important;
-      max-width: none !important;
+    #mmSideMenu .mm-side-logo {
+      width: min(210px, calc(100% - 58px)) !important;
+      max-width: calc(100% - 58px) !important;
+      height: 62px !important;
+      display: flex !important;
+      align-items: center !important;
+      overflow: hidden !important;
+    }
+
+    #mmSideMenu .mm-side-logo img {
+      width: 100% !important;
+      height: 62px !important;
+      max-width: 100% !important;
+      max-height: 62px !important;
       object-fit: contain !important;
       object-position: left center !important;
+      transform: none !important;
     }
 
-    @media (max-width: 980px){
-      .mm-nav-inner{
-        grid-template-columns: 58px 1fr 58px !important;
+    #mmSideMenu .mm-side-close {
+      position: static !important;
+      width: 44px !important;
+      height: 44px !important;
+      min-width: 44px !important;
+      min-height: 44px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+      background: linear-gradient(135deg, #4f35f5, #7557ff) !important;
+      color: #ffffff !important;
+      font-size: 21px !important;
+      line-height: 1 !important;
+      box-shadow: 0 10px 24px rgba(79, 53, 245, 0.25) !important;
+    }
+
+    #mmMobileSearch.mm-mobile-search-wrap {
+      width: min(1500px, 94%) !important;
+      margin: 12px auto 8px !important;
+      padding: 0 !important;
+    }
+
+    #mmMobileSearch .mm-mobile-search {
+      width: 100% !important;
+      min-height: 58px !important;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 70px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border: 1px solid #e3e0f8 !important;
+      border-radius: 20px !important;
+      background: #ffffff !important;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    #mmMobileSearch .mm-mobile-search input,
+    #mmMobileSearch .mm-mobile-search button {
+      height: 58px !important;
+      min-height: 58px !important;
+      margin: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    #mmMobileSearch .mm-mobile-search input {
+      padding: 0 17px !important;
+      font-size: 16px !important;
+    }
+
+    #mmMobileSearch .mm-mobile-search button {
+      width: 70px !important;
+      padding: 0 !important;
+      background: linear-gradient(135deg, #4f35f5, #7557ff) !important;
+      color: #ffffff !important;
+      font-size: 23px !important;
+    }
+
+    @media (min-width: 981px) {
+      #mmMobileSearch {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 980px) {
+      #mmSharedNav .mm-nav-inner {
+        width: 100% !important;
+        min-height: 104px !important;
+        display: grid !important;
+        grid-template-columns: 58px minmax(0, 1fr) 58px !important;
+        grid-template-areas: "menu logo cart" !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin: 0 !important;
+        padding: 13px 14px !important;
+        border-radius: 0 !important;
       }
 
-      .mm-logo.mm-brand-logo{
-        width: ${NAV_LOGO_MOBILE_WIDTH} !important;
+      #mmSharedNav .mm-icon-btn {
+        grid-area: menu !important;
+      }
+
+      #mmSharedNav .mm-logo.mm-brand-logo {
+        grid-area: logo !important;
+        width: 100% !important;
         min-width: 0 !important;
         height: ${NAV_LOGO_MOBILE_HEIGHT} !important;
-        justify-content: center !important;
         margin: 0 auto !important;
+        justify-content: center !important;
       }
 
-      .mm-logo.mm-brand-logo img,
-      .mm-brand-logo-img{
-        width: ${NAV_LOGO_MOBILE_WIDTH} !important;
+      #mmSharedNav .mm-logo.mm-brand-logo img,
+      #mmSharedNav .mm-brand-logo-img {
+        width: min(235px, 100%) !important;
         height: ${NAV_LOGO_MOBILE_HEIGHT} !important;
-        object-position: center center !important;
-        transform: scale(1.15);
-        transform-origin: center center;
+        max-width: 100% !important;
+        max-height: ${NAV_LOGO_MOBILE_HEIGHT} !important;
+        object-position: center !important;
+      }
+
+      #mmSharedNav .mm-cart-btn {
+        grid-area: cart !important;
+      }
+
+      #mmSharedNav .mm-icon-btn,
+      #mmSharedNav .mm-cart-btn {
+        width: 54px !important;
+        height: 54px !important;
+        min-height: 54px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 18px !important;
+      }
+
+      #mmSharedNav .mm-search,
+      #mmSharedNav .mm-desktop-links {
+        display: none !important;
+      }
+
+      #mmMobileSearch.mm-mobile-search-wrap {
+        display: block !important;
+        width: calc(100% - 24px) !important;
       }
     }
 
-    @media (max-width: 420px){
-      .mm-logo.mm-brand-logo{
-        width: 118px !important;
-        height: 52px !important;
+    @media (max-width: 420px) {
+      #mmSharedNav .mm-nav-inner {
+        min-height: 98px !important;
+        grid-template-columns: 54px minmax(0, 1fr) 54px !important;
+        padding: 12px !important;
       }
 
-      .mm-logo.mm-brand-logo img,
-      .mm-brand-logo-img{
-        width: 118px !important;
-        height: 52px !important;
-        transform: scale(1.18);
+      #mmSharedNav .mm-logo.mm-brand-logo {
+        height: 54px !important;
+      }
+
+      #mmSharedNav .mm-logo.mm-brand-logo img,
+      #mmSharedNav .mm-brand-logo-img {
+        width: min(205px, 100%) !important;
+        height: 54px !important;
+        max-height: 54px !important;
+      }
+
+      #mmSharedNav .mm-icon-btn,
+      #mmSharedNav .mm-cart-btn {
+        width: 50px !important;
+        height: 50px !important;
+        min-height: 50px !important;
       }
     }
   `;
@@ -384,6 +591,20 @@ function injectNavLogoStyles() {
   document.head.appendChild(style);
 }
 
+
+function removeInjectedNavigation() {
+  [
+    "#mmSharedNav",
+    "#mmMobileSearch",
+    "#mmMenuOverlay",
+    "#mmSideMenu",
+    "#mmBottomNav"
+  ].forEach((selector) => {
+    document.querySelector(selector)?.remove();
+  });
+
+  document.body.classList.remove("menu-open");
+}
 
 function removeOldHeaders() {
   const selectors = [
@@ -599,25 +820,54 @@ function toggleMenu() {
 }
 
 function openMenu() {
-  document.getElementById("mmSideMenu")?.classList.add("show");
-  document.getElementById("mmMenuOverlay")?.classList.add("show");
+  const sideMenu = document.getElementById("mmSideMenu");
+  const overlay = document.getElementById("mmMenuOverlay");
+  const button = document.getElementById("mmMenuBtn");
 
-  const btn = document.getElementById("mmMenuBtn");
-  btn?.classList.add("active");
-  btn?.setAttribute("aria-expanded", "true");
+  if (!sideMenu || !overlay) return;
+
+  sideMenu.inert = false;
+  sideMenu.classList.add("show");
+  sideMenu.setAttribute("aria-hidden", "false");
+
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden", "false");
+
+  button?.classList.add("active");
+  button?.setAttribute("aria-expanded", "true");
 
   document.body.classList.add("menu-open");
+
+  requestAnimationFrame(() => {
+    document.getElementById("mmMenuClose")?.focus();
+  });
 }
 
-function closeMenu() {
-  document.getElementById("mmSideMenu")?.classList.remove("show");
-  document.getElementById("mmMenuOverlay")?.classList.remove("show");
+function closeMenu(options = {}) {
+  const { restoreFocus = true } = options;
 
-  const btn = document.getElementById("mmMenuBtn");
-  btn?.classList.remove("active");
-  btn?.setAttribute("aria-expanded", "false");
+  const sideMenu = document.getElementById("mmSideMenu");
+  const overlay = document.getElementById("mmMenuOverlay");
+  const button = document.getElementById("mmMenuBtn");
+
+  sideMenu?.classList.remove("show");
+  sideMenu?.setAttribute("aria-hidden", "true");
+
+  if (sideMenu) {
+    sideMenu.inert = true;
+  }
+
+  overlay?.classList.remove("show");
+  overlay?.setAttribute("aria-hidden", "true");
+
+  button?.classList.remove("active");
+  button?.setAttribute("aria-expanded", "false");
 
   document.body.classList.remove("menu-open");
+
+  if (restoreFocus) {
+    button?.focus();
+  }
 }
 
 
