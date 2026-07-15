@@ -13432,3 +13432,433 @@ width:100%;
   }
 }
 
+
+/* =========================================================
+   MAUMARKET CLEAN MOBILE SIDE MENU
+   Matches the updated nav.js
+   ========================================================= */
+
+#mmMenuOverlay.mm-menu-overlay {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10001 !important;
+
+  background: rgba(7, 11, 40, 0.62) !important;
+  backdrop-filter: blur(5px);
+
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease !important;
+}
+
+#mmMenuOverlay.mm-menu-overlay.show {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+#mmSideMenu.mm-side-menu {
+  display: block !important;
+  position: fixed !important;
+
+  top: 0 !important;
+  left: 0 !important;
+
+  width: min(340px, 86vw) !important;
+  max-width: 86vw !important;
+
+  height: 100dvh !important;
+  min-height: 100vh !important;
+
+  padding: 20px !important;
+
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+
+  background: #ffffff !important;
+  color: #0f172a !important;
+
+  border-radius: 0 28px 28px 0 !important;
+
+  z-index: 10002 !important;
+
+  box-shadow:
+    30px 0 80px rgba(7, 11, 40, 0.28) !important;
+
+  transform: translateX(-110%) !important;
+
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+  transition:
+    transform 0.25s ease,
+    opacity 0.2s ease,
+    visibility 0.2s ease !important;
+}
+
+#mmSideMenu.mm-side-menu.show {
+  transform: translateX(0) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* =========================================================
+   SIDE MENU HEADER
+   ========================================================= */
+
+#mmSideMenu .mm-side-head {
+  width: 100% !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+
+  gap: 12px !important;
+
+  margin: 0 0 18px !important;
+  padding: 0 0 16px !important;
+
+  border-bottom: 1px solid #e6e8f0 !important;
+
+  background: transparent !important;
+}
+
+#mmSideMenu .mm-side-brand {
+  min-width: 0 !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+
+  gap: 11px !important;
+
+  color: #0f172a !important;
+  text-decoration: none !important;
+}
+
+#mmSideMenu .mm-side-brand-mark {
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  overflow: hidden !important;
+
+  border-radius: 15px !important;
+
+  background: #ffffff !important;
+}
+
+#mmSideMenu .mm-side-brand-mark img {
+  width: 52px !important;
+  height: 52px !important;
+
+  max-width: 52px !important;
+  max-height: 52px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  transform: none !important;
+}
+
+#mmSideMenu .mm-side-brand-name {
+  color: #111827 !important;
+
+  font-size: 27px !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+
+  letter-spacing: -0.8px !important;
+
+  white-space: nowrap !important;
+}
+
+#mmSideMenu .mm-side-close {
+  position: static !important;
+
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  border: 1px solid #e5e7ef !important;
+  border-radius: 50% !important;
+
+  background: #f8fafc !important;
+  color: #111827 !important;
+
+  font-size: 26px !important;
+  line-height: 1 !important;
+
+  box-shadow: none !important;
+}
+
+#mmSideMenu .mm-side-close:hover {
+  background: #f2efff !important;
+  color: #4f35f5 !important;
+  border-color: #d8d1ff !important;
+}
+
+/* =========================================================
+   ACCOUNT CARD
+   ========================================================= */
+
+#mmSideMenu .mm-user-box {
+  width: 100% !important;
+  min-height: 112px !important;
+
+  display: grid !important;
+  grid-template-columns: 58px minmax(0, 1fr) !important;
+  align-items: center !important;
+
+  gap: 16px !important;
+
+  margin: 0 0 20px !important;
+  padding: 18px !important;
+
+  border: 1px solid #ddd7ff !important;
+  border-radius: 22px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(79, 53, 245, 0.08),
+      rgba(255, 255, 255, 0.98)
+    ) !important;
+
+  box-shadow:
+    0 10px 24px rgba(79, 53, 245, 0.08) !important;
+}
+
+#mmSideMenu .mm-user-avatar {
+  width: 58px !important;
+  height: 58px !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  border-radius: 50% !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #4f35f5,
+      #8b5cf6
+    ) !important;
+
+  color: #ffffff !important;
+
+  font-size: 19px !important;
+  font-weight: 950 !important;
+
+  box-shadow:
+    0 10px 22px rgba(79, 53, 245, 0.24) !important;
+}
+
+#mmSideMenu .mm-user-copy {
+  min-width: 0 !important;
+}
+
+#mmSideMenu .mm-user-copy strong,
+#mmSideMenu .mm-user-copy span {
+  display: block !important;
+
+  min-width: 0 !important;
+
+  overflow-wrap: anywhere !important;
+}
+
+#mmSideMenu .mm-user-copy strong {
+  margin-bottom: 4px !important;
+
+  color: #111827 !important;
+
+  font-size: 19px !important;
+  line-height: 1.2 !important;
+  font-weight: 950 !important;
+}
+
+#mmSideMenu .mm-user-copy span {
+  color: #667085 !important;
+
+  font-size: 15px !important;
+  line-height: 1.35 !important;
+  font-weight: 750 !important;
+}
+
+/* =========================================================
+   MENU LINKS
+   ========================================================= */
+
+#mmSideMenu .mm-mobile-links {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+#mmSideMenu .mm-mobile-link {
+  width: 100% !important;
+  min-height: 70px !important;
+
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) !important;
+  align-items: center !important;
+
+  gap: 13px !important;
+
+  margin: 0 !important;
+  padding: 14px 17px !important;
+
+  border: 1px solid #e5e7ef !important;
+  border-radius: 20px !important;
+
+  background: #f8fafc !important;
+  color: #111827 !important;
+
+  text-align: left !important;
+  text-decoration: none !important;
+
+  box-shadow: none !important;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease !important;
+}
+
+#mmSideMenu button.mm-mobile-link {
+  font-family: inherit !important;
+}
+
+#mmSideMenu .mm-mobile-link:hover,
+#mmSideMenu .mm-mobile-link.active {
+  border-color: #d8d1ff !important;
+
+  background: #f2efff !important;
+  color: #4f35f5 !important;
+
+  transform: translateX(2px);
+}
+
+#mmSideMenu .mm-mobile-link > span {
+  width: 38px !important;
+  height: 38px !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  color: currentColor !important;
+
+  font-size: 22px !important;
+}
+
+#mmSideMenu .mm-mobile-link > strong {
+  min-width: 0 !important;
+
+  color: currentColor !important;
+
+  font-size: 17px !important;
+  font-weight: 900 !important;
+}
+
+/* =========================================================
+   BODY LOCK
+   ========================================================= */
+
+body.menu-open {
+  overflow: hidden !important;
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 420px) {
+  #mmSideMenu.mm-side-menu {
+    width: min(326px, 88vw) !important;
+    max-width: 88vw !important;
+
+    padding: 17px !important;
+
+    border-radius: 0 24px 24px 0 !important;
+  }
+
+  #mmSideMenu .mm-side-brand-mark {
+    width: 47px !important;
+    height: 47px !important;
+    min-width: 47px !important;
+  }
+
+  #mmSideMenu .mm-side-brand-mark img {
+    width: 47px !important;
+    height: 47px !important;
+
+    max-width: 47px !important;
+    max-height: 47px !important;
+  }
+
+  #mmSideMenu .mm-side-brand-name {
+    font-size: 24px !important;
+  }
+
+  #mmSideMenu .mm-user-box {
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+
+    min-height: 102px !important;
+
+    gap: 13px !important;
+
+    padding: 15px !important;
+  }
+
+  #mmSideMenu .mm-user-avatar {
+    width: 52px !important;
+    height: 52px !important;
+
+    font-size: 17px !important;
+  }
+
+  #mmSideMenu .mm-user-copy strong {
+    font-size: 17px !important;
+  }
+
+  #mmSideMenu .mm-user-copy span {
+    font-size: 14px !important;
+  }
+
+  #mmSideMenu .mm-mobile-link {
+    min-height: 64px !important;
+
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+
+    padding: 12px 14px !important;
+
+    border-radius: 18px !important;
+  }
+
+  #mmSideMenu .mm-mobile-link > span {
+    width: 34px !important;
+    height: 34px !important;
+
+    font-size: 20px !important;
+  }
+
+  #mmSideMenu .mm-mobile-link > strong {
+    font-size: 16px !important;
+  }
+}
