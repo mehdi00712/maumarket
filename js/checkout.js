@@ -167,7 +167,10 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 async function loadCheckout() {
+  if (!checkoutItems || !currentUser) return;
+
   checkoutItems.innerHTML = "Loading...";
+  updateTotals(0);
 
   const snapshot = await getDocs(
     collection(db, "carts", currentUser.uid, "items")
@@ -266,6 +269,33 @@ async function loadCheckout() {
         rawItem.optionStock ??
         null,
 
+      selectedOptionBuyerPrice:
+        firstPositiveNumber([
+          rawItem.selectedOptionBuyerPrice,
+          rawItem.optionBuyerPrice,
+          rawItem.variantBuyerPrice,
+          rawItem.selectedOptionPrice,
+          rawItem.optionPrice,
+          rawItem.variantPrice,
+          buyerPrice
+        ]),
+
+      selectedOptionSellerPrice:
+        firstPositiveNumber([
+          rawItem.selectedOptionSellerPrice,
+          rawItem.optionSellerPrice,
+          rawItem.variantSellerPrice,
+          sellerPrice
+        ]),
+
+      selectedOptionCommissionAmount:
+        firstPositiveNumber([
+          rawItem.selectedOptionCommissionAmount,
+          rawItem.optionCommissionAmount,
+          rawItem.variantCommissionAmount,
+          commissionAmount
+        ]),
+
       quantity,
       subtotal,
       sellerSubtotal,
@@ -357,7 +387,7 @@ function updateTotals(itemsTotal) {
   }
 }
 
-placeOrderBtn.addEventListener("click", async () => {
+placeOrderBtn?.addEventListener("click", async () => {
   if (!currentUser) return;
 
   const name = customerName.value.trim();
@@ -432,7 +462,10 @@ placeOrderBtn.addEventListener("click", async () => {
       title: item.title || "",
       type: item.type || "",
       category: item.category || "",
-      imageUrl: item.imageUrl || "",
+      imageUrl:
+        item.selectedOptionImageUrl ||
+        item.imageUrl ||
+        "",
       shopName: item.shopName || "",
       shopLocation: item.shopLocation || "",
       shopAddress: item.shopAddress || "",
@@ -469,6 +502,28 @@ placeOrderBtn.addEventListener("click", async () => {
       selectedOptionStock:
         item.selectedOptionStock ?? null,
 
+      selectedOptionBuyerPrice:
+        Number(
+          item.selectedOptionBuyerPrice ||
+          item.buyerPrice ||
+          item.price ||
+          0
+        ),
+
+      selectedOptionSellerPrice:
+        Number(
+          item.selectedOptionSellerPrice ||
+          item.sellerPrice ||
+          0
+        ),
+
+      selectedOptionCommissionAmount:
+        Number(
+          item.selectedOptionCommissionAmount ||
+          item.commissionAmount ||
+          0
+        ),
+
       optionId:
         item.selectedOptionId || "",
 
@@ -488,6 +543,28 @@ placeOrderBtn.addEventListener("click", async () => {
 
       optionStock:
         item.selectedOptionStock ?? null,
+
+      optionBuyerPrice:
+        Number(
+          item.selectedOptionBuyerPrice ||
+          item.buyerPrice ||
+          item.price ||
+          0
+        ),
+
+      optionSellerPrice:
+        Number(
+          item.selectedOptionSellerPrice ||
+          item.sellerPrice ||
+          0
+        ),
+
+      optionCommissionAmount:
+        Number(
+          item.selectedOptionCommissionAmount ||
+          item.commissionAmount ||
+          0
+        ),
 
       price: Number(item.buyerPrice || item.price || 0),
       buyerPrice: Number(item.buyerPrice || item.price || 0),
@@ -904,29 +981,62 @@ function getItemOptionDetails(item) {
 }
 
 function getBuyerPrice(item) {
-  const buyerPrice = Number(item.buyerPrice || 0);
+  const selectedOptionBuyerPrice = firstPositiveNumber([
+    item?.selectedOptionBuyerPrice,
+    item?.optionBuyerPrice,
+    item?.variantBuyerPrice,
+    item?.selectedOptionPrice,
+    item?.optionPrice,
+    item?.variantPrice
+  ]);
+
+  if (selectedOptionBuyerPrice > 0) {
+    return roundMoney(selectedOptionBuyerPrice);
+  }
+
+  const buyerPrice = firstPositiveNumber([
+    item?.buyerPrice,
+    item?.price
+  ]);
 
   if (buyerPrice > 0) {
     return roundMoney(buyerPrice);
   }
 
-  const price = Number(item.price || 0);
-
-  if (price > 0) {
-    return roundMoney(price);
-  }
-
-  const sellerPrice = Number(item.sellerPrice || 0);
+  const sellerPrice = firstPositiveNumber([
+    item?.selectedOptionSellerPrice,
+    item?.optionSellerPrice,
+    item?.variantSellerPrice,
+    item?.sellerPrice
+  ]);
 
   if (sellerPrice > 0) {
-    return roundMoney(sellerPrice * (1 + COMMISSION_RATE));
+    const commissionRate = normalizeCommissionRate(
+      item?.commissionRate
+    );
+
+    return roundMoney(
+      sellerPrice * (1 + commissionRate)
+    );
   }
 
   return 0;
 }
 
 function getSellerPrice(item) {
-  const sellerPrice = Number(item.sellerPrice || 0);
+  const selectedOptionSellerPrice = firstPositiveNumber([
+    item?.selectedOptionSellerPrice,
+    item?.optionSellerPrice,
+    item?.variantSellerPrice
+  ]);
+
+  if (selectedOptionSellerPrice > 0) {
+    return roundMoney(selectedOptionSellerPrice);
+  }
+
+  const sellerPrice = firstPositiveNumber([
+    item?.sellerPrice
+  ]);
 
   if (sellerPrice > 0) {
     return roundMoney(sellerPrice);
@@ -935,23 +1045,58 @@ function getSellerPrice(item) {
   const buyerPrice = getBuyerPrice(item);
 
   if (buyerPrice > 0) {
-    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
+    const commissionRate = normalizeCommissionRate(
+      item?.commissionRate
+    );
+
+    return roundMoney(
+      buyerPrice / (1 + commissionRate)
+    );
   }
 
   return 0;
 }
 
 function getCommissionAmount(item) {
-  const commissionAmount = Number(item.commissionAmount || 0);
+  const explicitCommission = firstPositiveNumber([
+    item?.selectedOptionCommissionAmount,
+    item?.optionCommissionAmount,
+    item?.variantCommissionAmount,
+    item?.commissionAmount
+  ]);
 
-  if (commissionAmount > 0) {
-    return roundMoney(commissionAmount);
+  if (explicitCommission > 0) {
+    return roundMoney(explicitCommission);
   }
 
   const sellerPrice = getSellerPrice(item);
   const buyerPrice = getBuyerPrice(item);
 
-  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
+  return roundMoney(
+    Math.max(0, buyerPrice - sellerPrice)
+  );
+}
+
+function normalizeCommissionRate(value) {
+  const rate = Number(value);
+
+  if (!Number.isFinite(rate) || rate < 0) {
+    return COMMISSION_RATE;
+  }
+
+  return rate;
+}
+
+function firstPositiveNumber(values) {
+  for (const value of values) {
+    const number = Number(value);
+
+    if (Number.isFinite(number) && number > 0) {
+      return number;
+    }
+  }
+
+  return 0;
 }
 
 function getFriendlyCheckoutError(
