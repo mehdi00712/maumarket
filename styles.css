@@ -13199,3 +13199,236 @@ width:100%;
   }
 }
 
+/* =========================================================
+   MAUMARKET MOBILE NAVIGATION — FINAL FIX
+   ========================================================= */
+
+/* Normal header */
+.mm-nav {
+  position: relative !important;
+  top: auto !important;
+  width: 100%;
+  z-index: 5000;
+}
+
+.mm-nav-inner {
+  position: relative;
+  overflow: visible;
+}
+
+/* Side menu must remain outside the screen until opened */
+.mm-side-menu {
+  position: fixed !important;
+  top: 0 !important;
+  left: -390px !important;
+  width: min(360px, 88vw) !important;
+  height: 100dvh !important;
+  padding: 20px !important;
+  overflow-y: auto !important;
+
+  background: #ffffff !important;
+  color: #0f172a !important;
+
+  z-index: 10002 !important;
+
+  box-shadow: 30px 0 80px rgba(7, 11, 40, 0.28) !important;
+
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+  transition:
+    left 0.25s ease,
+    opacity 0.2s ease,
+    visibility 0.2s ease !important;
+}
+
+/* Only display it after pressing the hamburger */
+.mm-side-menu.show {
+  left: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Dark background behind the opened menu */
+.mm-menu-overlay {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10001 !important;
+
+  background: rgba(7, 11, 40, 0.62) !important;
+  backdrop-filter: blur(4px);
+
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease !important;
+}
+
+.mm-menu-overlay.show {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Side-menu logo header */
+.mm-side-head {
+  width: 100%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px;
+
+  margin: 0 0 20px !important;
+  padding: 0 0 17px !important;
+
+  border-bottom: 1px solid #e6e8f0;
+  background: transparent !important;
+}
+
+.mm-side-head img {
+  width: auto !important;
+  max-width: 210px !important;
+  height: 62px !important;
+  max-height: 62px !important;
+
+  object-fit: contain !important;
+  object-position: left center !important;
+}
+
+/* Close button must remain inside side menu */
+.mm-side-head button,
+.mm-side-close {
+  position: static !important;
+
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  border-radius: 50% !important;
+
+  background: linear-gradient(
+    135deg,
+    #4f35f5,
+    #7557ff
+  ) !important;
+
+  color: #ffffff !important;
+  font-size: 21px !important;
+
+  box-shadow: 0 10px 24px rgba(79, 53, 245, 0.25) !important;
+}
+
+/* Stop the menu logo from using normal header logo dimensions */
+.mm-side-menu .mm-logo,
+.mm-side-menu .logo-brand {
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* =========================================================
+   NORMAL MOBILE HEADER
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .mm-nav-inner {
+    width: 100% !important;
+    min-height: 104px !important;
+
+    display: grid !important;
+    grid-template-columns: 58px minmax(0, 1fr) 58px !important;
+    grid-template-areas: "menu logo cart" !important;
+
+    align-items: center !important;
+    gap: 10px !important;
+
+    padding: 13px 14px !important;
+
+    border-radius: 0 !important;
+
+    background:
+      radial-gradient(
+        circle at right,
+        rgba(117, 87, 255, 0.32),
+        transparent 34%
+      ),
+      linear-gradient(
+        135deg,
+        #070b28,
+        #191563
+      ) !important;
+  }
+
+  .mm-icon-btn {
+    grid-area: menu;
+  }
+
+  .mm-logo {
+    grid-area: logo;
+
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 68px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    overflow: hidden !important;
+  }
+
+  .mm-logo img {
+    width: min(235px, 100%) !important;
+    height: 68px !important;
+
+    max-width: 100% !important;
+    max-height: 68px !important;
+
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  .mm-cart-btn {
+    grid-area: cart;
+  }
+
+  .mm-icon-btn,
+  .mm-cart-btn {
+    width: 54px !important;
+    height: 54px !important;
+    min-height: 54px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    border-radius: 18px !important;
+  }
+
+  /* Keep normal menu and cart buttons visible */
+  .mm-nav > .mm-nav-inner > .mm-icon-btn,
+  .mm-nav > .mm-nav-inner > .mm-cart-btn {
+    display: grid !important;
+  }
+
+  /* Search bar spacing beneath header */
+  .mm-mobile-search,
+  .mobile-search-area,
+  .market-mobile-search,
+  .mobile-search-shell {
+    width: calc(100% - 24px) !important;
+    margin: 12px auto 10px !important;
+    padding: 0 !important;
+  }
+}
+
