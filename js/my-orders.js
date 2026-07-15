@@ -172,10 +172,41 @@ function createOrderCard(order) {
           0
         );
 
+        const optionName =
+          item.selectedOptionName ||
+          item.optionName ||
+          "";
+
+        const optionType =
+          item.optionType || "Option";
+
+        const optionSku =
+          item.selectedOptionSku ||
+          item.optionSku ||
+          "";
+
         return `
           <li class="customer-order-item">
             <div>
               <strong>${escapeHtml(item.title || "Item")}</strong>
+
+              ${
+                optionName
+                  ? `
+                    <div class="order-option-badge">
+                      ${escapeHtml(optionType)}:
+                      <strong>${escapeHtml(optionName)}</strong>
+                    </div>
+
+                    ${
+                      optionSku
+                        ? `<small>Product Code: ${escapeHtml(optionSku)}</small>`
+                        : ""
+                    }
+                  `
+                  : ""
+              }
+
               <span>Verified MauMarket Merchant</span>
             </div>
 
@@ -518,6 +549,15 @@ function getFriendlyOrdersError(error, fallbackMessage) {
   };
 
   return messages[code] || fallbackMessage;
+}
+
+function getOrderItemImage(item){
+  return (
+    item.selectedOptionImageUrl ||
+    item.optionImageUrl ||
+    item.imageUrl ||
+    ""
+  );
 }
 
 function formatStatus(value) {
