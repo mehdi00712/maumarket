@@ -58,7 +58,17 @@ onAuthStateChanged(auth, async (user) => {
     bindPaymentEvents();
     await loadPayments();
   } catch (error) {
-    renderError(error.message);
+    console.error(
+      "Admin payment page initialization failed:",
+      error
+    );
+
+    renderError(
+      getFriendlyAdminPaymentError(
+        error,
+        "The payment dashboard could not be loaded."
+      )
+    );
   }
 });
 
@@ -117,7 +127,17 @@ async function loadPayments() {
 
     applyPaymentFilters();
   } catch (error) {
-    renderError(error.message);
+    console.error(
+      "Payment records could not load:",
+      error
+    );
+
+    renderError(
+      getFriendlyAdminPaymentError(
+        error,
+        "Payment records could not be loaded."
+      )
+    );
   }
 }
 
@@ -150,7 +170,13 @@ function applyPaymentFilters() {
       ${order.paymentStatus || ""}
       ${order.orderStatus || ""}
       ${order.paymentRejectReason || ""}
-      ${(order.items || []).map((item) => `${item.title || ""} ${item.shopName || ""}`).join(" ")}
+      ${(order.items || []).map((item) => `
+        ${item.title || ""}
+        ${item.shopName || ""}
+        ${item.optionType || ""}
+        ${item.selectedOptionName || item.optionName || ""}
+        ${item.selectedOptionSku || item.optionSku || item.sku || ""}
+      `).join(" ")}
     `);
 
     const matchesSearch = !search || text.includes(search);
@@ -211,12 +237,76 @@ function paymentCardHtml(order) {
   const statusClass = getPaymentStatusClass(status);
   const dateLabel = getReadablePaymentDate(order);
 
-  const itemsHtml = (order.items || []).map((item) => `
-    <li>
-      <span>${escapeHtml(item.title || "Item")}</span>
-      <strong>Rs ${formatMoney(item.price || 0)} × ${Number(item.quantity || 1)}</strong>
-    </li>
-  `).join("");
+  const itemsHtml = (order.items || []).map((item) => {
+    const option = getItemOptionDetails(item);
+    const imageUrl =
+      option.imageUrl ||
+      item.imageUrl ||
+      "";
+
+    return `
+      <li class="payment-item-row">
+
+        <div class="payment-item-main">
+
+          ${
+            imageUrl
+              ? `
+                <img
+                  class="payment-item-image"
+                  src="${escapeHtml(imageUrl)}"
+                  alt="${escapeHtml(item.title || "Item")}">
+              `
+              : ""
+          }
+
+          <div>
+
+            <span class="payment-item-title">
+              ${escapeHtml(item.title || "Item")}
+            </span>
+
+            ${
+              option.hasOption
+                ? `
+                  <div class="payment-item-option">
+
+                    <span>
+                      ${escapeHtml(option.optionType)}:
+                    </span>
+
+                    <strong>
+                      ${escapeHtml(option.optionName)}
+                    </strong>
+
+                    ${
+                      option.optionSku
+                        ? `
+                          <small>
+                            Product Code:
+                            ${escapeHtml(option.optionSku)}
+                          </small>
+                        `
+                        : ""
+                    }
+
+                  </div>
+                `
+                : ""
+            }
+
+          </div>
+
+        </div>
+
+        <strong>
+          Rs ${formatMoney(getItemBuyerPrice(item))}
+          × ${Number(item.quantity || 1)}
+        </strong>
+
+      </li>
+    `;
+  }).join("");
 
   return `
     <article class="payment-record-card">
@@ -407,16 +497,30 @@ async function approvePayment(order) {
     return;
   }
 
-  await updateDoc(doc(db, "orders", order.id), {
-    paymentStatus: "verified",
-    orderStatus: "Preparing Order",
-    paymentVerifiedAt: serverTimestamp(),
-    paymentVerifiedBy: currentUser.uid,
-    paymentRejectReason: "",
-    updatedAt: serverTimestamp()
-  });
+  try {
+    await updateDoc(doc(db, "orders", order.id), {
+      paymentStatus: "verified",
+      orderStatus: "Preparing Order",
+      paymentVerifiedAt: serverTimestamp(),
+      paymentVerifiedBy: currentUser.uid,
+      paymentRejectReason: "",
+      updatedAt: serverTimestamp()
+    });
 
-  await loadPayments();
+    await loadPayments();
+  } catch (error) {
+    console.error(
+      "Payment approval failed:",
+      error
+    );
+
+    alert(
+      getFriendlyAdminPaymentError(
+        error,
+        "The payment could not be approved."
+      )
+    );
+  }
 }
 
 async function rejectPayment(order) {
@@ -424,16 +528,30 @@ async function rejectPayment(order) {
 
   if (reason === null) return;
 
-  await updateDoc(doc(db, "orders", order.id), {
-    paymentStatus: "rejected",
-    orderStatus: "Payment Rejected",
-    paymentRejectReason: reason || "",
-    paymentRejectedAt: serverTimestamp(),
-    paymentRejectedBy: currentUser.uid,
-    updatedAt: serverTimestamp()
-  });
+  try {
+    await updateDoc(doc(db, "orders", order.id), {
+      paymentStatus: "rejected",
+      orderStatus: "Payment Rejected",
+      paymentRejectReason: reason || "",
+      paymentRejectedAt: serverTimestamp(),
+      paymentRejectedBy: currentUser.uid,
+      updatedAt: serverTimestamp()
+    });
 
-  await loadPayments();
+    await loadPayments();
+  } catch (error) {
+    console.error(
+      "Payment rejection failed:",
+      error
+    );
+
+    alert(
+      getFriendlyAdminPaymentError(
+        error,
+        "The payment could not be rejected."
+      )
+    );
+  }
 }
 
 function paymentTimeline(order) {
@@ -491,6 +609,7 @@ function exportPaymentsCSV(orders) {
       "Grand Total",
       "Commission",
       "Seller Amount",
+      "Product Options",
       "Submitted At",
       "Verified At",
       "Rejected Reason"
@@ -507,6 +626,7 @@ function exportPaymentsCSV(orders) {
       Number(order.grandTotal || 0),
       Number(order.commissionAmount || order.platformCommission || order.commission || 0),
       Number(order.sellerAmount || 0),
+      buildOrderOptionsSummary(order.items || []),
       formatTimestamp(order.paymentSubmittedAt),
       formatTimestamp(order.paymentVerifiedAt),
       order.paymentRejectReason || ""
@@ -575,14 +695,46 @@ function printPaymentsReport(orders) {
 }
 
 function printSinglePayment(order) {
-  const itemsHtml = (order.items || []).map((item) => `
-    <tr>
-      <td>${escapeHtml(item.title || "Item")}</td>
-      <td>${Number(item.quantity || 1)}</td>
-      <td>Rs ${formatMoney(item.price || 0)}</td>
-      <td>Rs ${formatMoney(Number(item.price || 0) * Number(item.quantity || 1))}</td>
-    </tr>
-  `).join("");
+  const itemsHtml = (order.items || []).map((item) => {
+    const option = getItemOptionDetails(item);
+    const quantity = Number(item.quantity || 1);
+    const price = getItemBuyerPrice(item);
+
+    return `
+      <tr>
+        <td>
+          <strong>
+            ${escapeHtml(item.title || "Item")}
+          </strong>
+
+          ${
+            option.hasOption
+              ? `
+                <div class="print-option-line">
+                  ${escapeHtml(option.optionType)}:
+                  <strong>${escapeHtml(option.optionName)}</strong>
+
+                  ${
+                    option.optionSku
+                      ? `
+                        <br>
+                        Product Code:
+                        ${escapeHtml(option.optionSku)}
+                      `
+                      : ""
+                  }
+                </div>
+              `
+              : ""
+          }
+        </td>
+
+        <td>${quantity}</td>
+        <td>Rs ${formatMoney(price)}</td>
+        <td>Rs ${formatMoney(price * quantity)}</td>
+      </tr>
+    `;
+  }).join("");
 
   const html = `
     ${printStyles()}
@@ -711,8 +863,152 @@ function printStyles() {
         margin-top: 25px;
         text-align: right;
       }
+
+      .print-option-line {
+        margin-top: 6px;
+        color: #475569;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .payment-item-row {
+        gap: 14px;
+      }
+
+      .payment-item-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .payment-item-image {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 1px solid #e5e7eb;
+      }
+
+      .payment-item-option {
+        display: grid;
+        gap: 2px;
+        margin-top: 4px;
+        color: #475569;
+        font-size: 12px;
+      }
     </style>
   `;
+}
+
+function getItemOptionDetails(item) {
+  const optionName =
+    item.selectedOptionName ||
+    item.optionName ||
+    "";
+
+  const optionSku =
+    item.selectedOptionSku ||
+    item.optionSku ||
+    item.sku ||
+    item.productCode ||
+    "";
+
+  const optionType =
+    item.optionType ||
+    "Option";
+
+  const hasOption =
+    item.hasOptions === true ||
+    Boolean(
+      item.selectedOptionId ||
+      item.optionId ||
+      optionName
+    );
+
+  return {
+    hasOption,
+    optionType,
+    optionName,
+    optionSku,
+
+    imageUrl:
+      item.selectedOptionImageUrl ||
+      item.optionImageUrl ||
+      item.imageUrl ||
+      "",
+
+    imageIndex:
+      item.selectedOptionImageIndex ??
+      item.optionImageIndex ??
+      null,
+
+    stock:
+      item.selectedOptionStock ??
+      item.optionStock ??
+      null
+  };
+}
+
+function getItemBuyerPrice(item) {
+  const buyerPrice =
+    Number(item?.buyerPrice || 0);
+
+  if (buyerPrice > 0) {
+    return buyerPrice;
+  }
+
+  const price =
+    Number(item?.price || 0);
+
+  if (price > 0) {
+    return price;
+  }
+
+  const sellerPrice =
+    Number(item?.sellerPrice || 0);
+
+  if (sellerPrice > 0) {
+    const rate =
+      Number(
+        item?.commissionRate ??
+        0.10
+      );
+
+    return sellerPrice * (1 + rate);
+  }
+
+  return 0;
+}
+
+function buildOrderOptionsSummary(items) {
+  if (!Array.isArray(items)) {
+    return "";
+  }
+
+  return items
+    .map((item) => {
+      const option =
+        getItemOptionDetails(item);
+
+      if (!option.hasOption) {
+        return "";
+      }
+
+      const parts = [
+        item.title || "Item",
+        `${option.optionType}: ${option.optionName}`
+      ];
+
+      if (option.optionSku) {
+        parts.push(
+          `Code: ${option.optionSku}`
+        );
+      }
+
+      return parts.join(" | ");
+    })
+    .filter(Boolean)
+    .join("; ");
 }
 
 function getPaymentSortTime(order) {
@@ -776,6 +1072,39 @@ function getPaymentStatusClass(status) {
   if (status === "submitted") return "warning";
 
   return "neutral";
+}
+
+function getFriendlyAdminPaymentError(
+  error,
+  fallbackMessage
+) {
+  const code =
+    String(error?.code || "");
+
+  const messages = {
+    "permission-denied":
+      "You do not have permission to manage payments.",
+
+    "unavailable":
+      "MauMarket is temporarily unavailable. Please try again.",
+
+    "failed-precondition":
+      "The payment operation could not be completed. Please refresh and try again.",
+
+    "resource-exhausted":
+      "The service is temporarily busy. Please try again.",
+
+    "auth/network-request-failed":
+      "Please check your internet connection and try again.",
+
+    "network-request-failed":
+      "Please check your internet connection and try again."
+  };
+
+  return (
+    messages[code] ||
+    fallbackMessage
+  );
 }
 
 function normalize(value) {
