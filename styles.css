@@ -12627,3 +12627,220 @@ width:100%;
 }
 
 }
+
+/* =========================================================
+   REGISTER PAGE — MOBILE AGREEMENT FIX
+   ========================================================= */
+
+.register-page,
+.auth-page {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.register-page .auth-card,
+.auth-page .auth-card {
+  width: min(520px, calc(100% - 24px));
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.register-page .form-card,
+.register-page .agreement-card,
+.register-page .buyer-agreement-card,
+.auth-page .agreement-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.register-page .agreement-card,
+.register-page .buyer-agreement-card {
+  padding: 18px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.register-page .agreement-card h2,
+.register-page .agreement-card h3,
+.register-page .buyer-agreement-card h2,
+.register-page .buyer-agreement-card h3 {
+  margin: 0 0 14px;
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+.register-page .agreement-content,
+.register-page .agreement-text,
+.register-page .buyer-agreement-text,
+.register-page .terms-content {
+  width: 100%;
+  max-width: 100%;
+  max-height: 190px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-sizing: border-box;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.register-page .agreement-content p,
+.register-page .agreement-text p,
+.register-page .buyer-agreement-text p,
+.register-page .terms-content p {
+  margin: 0 0 14px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.register-page .agreement-content p:last-child,
+.register-page .agreement-text p:last-child,
+.register-page .buyer-agreement-text p:last-child,
+.register-page .terms-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Checkbox agreement row */
+.register-page .agreement-check-row,
+.register-page .terms-check-row,
+.register-page .checkbox-row,
+.register-page .agreement-checkbox,
+.register-page label:has(input[type="checkbox"]) {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.register-page .agreement-check-row input[type="checkbox"],
+.register-page .terms-check-row input[type="checkbox"],
+.register-page .checkbox-row input[type="checkbox"],
+.register-page .agreement-checkbox input[type="checkbox"],
+.register-page label:has(input[type="checkbox"]) input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  margin: 2px 0 0;
+  padding: 0;
+  appearance: auto;
+  box-shadow: none;
+}
+
+.register-page .agreement-check-row span,
+.register-page .terms-check-row span,
+.register-page .checkbox-row span,
+.register-page .agreement-checkbox span,
+.register-page label:has(input[type="checkbox"]) {
+  min-width: 0;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.register-page .agreement-check-row a,
+.register-page .terms-check-row a,
+.register-page .checkbox-row a,
+.register-page .agreement-checkbox a {
+  color: var(--primary, #4f35f5);
+  font-weight: 900;
+  text-decoration: underline;
+}
+
+/* Keep fields and buttons inside card */
+.register-page input,
+.register-page select,
+.register-page textarea,
+.register-page button,
+.register-page .btn {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.register-page button[type="submit"],
+.register-page #registerBtn,
+.register-page .register-btn {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* Safari/iPhone specific protection */
+@supports (-webkit-touch-callout: none) {
+  .register-page .agreement-check-row,
+  .register-page .terms-check-row,
+  .register-page .checkbox-row,
+  .register-page .agreement-checkbox,
+  .register-page label:has(input[type="checkbox"]) {
+    display: flex;
+  }
+
+  .register-page .agreement-check-row > *:last-child,
+  .register-page .terms-check-row > *:last-child,
+  .register-page .checkbox-row > *:last-child,
+  .register-page .agreement-checkbox > *:last-child {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .register-page,
+  .auth-page {
+    padding: 18px 0 40px;
+  }
+
+  .register-page .auth-card,
+  .auth-page .auth-card {
+    width: calc(100% - 20px);
+    padding: 20px 16px;
+    border-radius: 24px;
+  }
+
+  .register-page .agreement-card,
+  .register-page .buyer-agreement-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .register-page .agreement-content,
+  .register-page .agreement-text,
+  .register-page .buyer-agreement-text,
+  .register-page .terms-content {
+    max-height: 170px;
+    padding: 13px;
+  }
+
+  .register-page .agreement-check-row,
+  .register-page .terms-check-row,
+  .register-page .checkbox-row,
+  .register-page .agreement-checkbox,
+  .register-page label:has(input[type="checkbox"]) {
+    gap: 10px;
+  }
+
+  .register-page .agreement-check-row span,
+  .register-page .terms-check-row span,
+  .register-page .checkbox-row span,
+  .register-page .agreement-checkbox span {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
