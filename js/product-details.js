@@ -16,10 +16,25 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+/* =========================================================
+   MAUMARKET PRODUCT DETAILS
+   - Up to 3 product images
+   - Unlimited product options
+   - Option-specific price, stock, SKU and image
+   - Wishlist, cart, reviews and related products
+   - Backward-compatible with older products
+   ========================================================= */
+
 const COMMISSION_RATE = 0.10;
+const MAX_GALLERY_IMAGES = 3;
 
 const detailsBox = document.getElementById("detailsBox");
 const relatedItems = document.getElementById("relatedItems");
+const productReviewsSection = document.getElementById("productReviewsSection");
+const productReviewsSummary = document.getElementById("productReviewsSummary");
+const productReviewsList = document.getElementById("productReviewsList");
+const productReviewsSummaryText = document.getElementById("productReviewsSummaryText");
+const productOptionsFallback = document.getElementById("productOptionsFallback");
 
 const params = new URLSearchParams(window.location.search);
 const itemId = params.get("id");
@@ -28,6 +43,10 @@ let currentUser = null;
 let currentItem = null;
 let productReviews = [];
 let isWishlisted = false;
+let productImages = [];
+let productOptions = [];
+let selectedOptionId = "";
+let selectedImageIndex = 0;
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
@@ -42,6 +61,8 @@ async function loadDetails() {
     );
     return;
   }
+
+  detailsBox?.setAttribute("aria-busy", "true");
 
   try {
     const itemSnap = await getDoc(doc(db, "products", itemId));
@@ -68,12 +89,18 @@ async function loadDetails() {
       return;
     }
 
+    productImages = normalizeProductImages(currentItem);
+    productOptions = normalizeProductOptions(currentItem);
+    selectedOptionId = productOptions.find((option) => option.active !== false)?.id || "";
+    selectedImageIndex = 0;
+
     await Promise.all([
       loadProductReviews(),
       checkWishlistStatus()
     ]);
 
     renderDetails();
+    renderExternalReviews();
     await loadRelatedItems();
   } catch (error) {
     console.error("Product details could not load:", error);
@@ -85,6 +112,8 @@ async function loadDetails() {
         "Please refresh the page and try again."
       )
     );
+  } finally {
+    detailsBox?.setAttribute("aria-busy", "false");
   }
 }
 
@@ -94,17 +123,202 @@ function renderProductError(title, message) {
       <div class="empty-market-card">
         <h3>${escapeHtml(title)}</h3>
         <p>${escapeHtml(message)}</p>
-        <a class="btn" href="products.html">
-          Back to Marketplace
-        </a>
+        <a class="btn" href="products.html">Back to Marketplace</a>
+      </div>
+    `;
+    detailsBox.setAttribute("aria-busy", "false");
+  }
+
+  if (relatedItems) relatedItems.innerHTML = "";
+  if (productReviewsList) productReviewsList.innerHTML = "";
+  if (productOptionsFallback) productOptionsFallback.style.display = "none";
+}
+
+/* =========================================================
+   NORMALIZATION
+   ========================================================= */
+
+function normalizeProductImages(item) {
+  const candidates = [
+    ...(Array.isArray(item?.images) ? item.images : []),
+    ...(Array.isArray(item?.imageUrls) ? item.imageUrls : []),
+    item?.imageUrl || ""
+  ];
+
+  const unique = [];
+
+  candidates.forEach((url) => {
+    const clean = typeof url === "string" ? url.trim() : "";
+    if (clean && !unique.includes(clean)) unique.push(clean);
+  });
+
+  return unique.slice(0, MAX_GALLERY_IMAGES);
+}
+
+function normalizeProductOptions(item) {
+  const rawOptions = Array.isArray(item?.options)
+    ? item.options
+    : Array.isArray(item?.variants)
+      ? item.variants
+      : [];
+
+  return rawOptions
+    .map((option, index) => {
+      const sellerPrice = getSellerPrice(option);
+      const buyerPrice = getBuyerPrice(option);
+      const imageIndex = option.imageIndex !== undefined && option.imageIndex !== null
+        ? Number(option.imageIndex)
+        : null;
+
+      return {
+        id: option.id || `option-${index + 1}`,
+        name: option.name || option.label || `Option ${index + 1}`,
+        label: option.label || option.name || `Option ${index + 1}`,
+        sellerPrice,
+        buyerPrice,
+        price: Number(option.price || option.buyerPrice || buyerPrice || 0),
+        commissionRate: Number(option.commissionRate ?? COMMISSION_RATE),
+        commissionAmount: Number(option.commissionAmount || 0),
+        stock: Math.max(0, Number(option.stock || 0)),
+        sku: option.sku || option.productCode || "",
+        productCode: option.productCode || option.sku || "",
+        imageIndex: Number.isInteger(imageIndex) ? imageIndex : null,
+        imageUrl: option.imageUrl || "",
+        active: option.active !== false
+      };
+    })
+    .filter((option) => option.active !== false);
+}
+
+function getSelectedOption() {
+  return productOptions.find((option) => option.id === selectedOptionId) || null;
+}
+
+function getSelectedImageUrl() {
+  const selectedOption = getSelectedOption();
+
+  if (selectedOption?.imageUrl) return selectedOption.imageUrl;
+
+  if (
+    selectedOption?.imageIndex !== null &&
+    selectedOption?.imageIndex !== undefined &&
+    productImages[selectedOption.imageIndex]
+  ) {
+    return productImages[selectedOption.imageIndex];
+  }
+
+  return productImages[selectedImageIndex] || productImages[0] || currentItem?.imageUrl || "";
+}
+
+/* =========================================================
+   REVIEWS
+   ========================================================= */
+
+async function loadProductReviews() {
+  try {
+    const reviewsQuery = query(
+      collection(db, "reviews"),
+      where("productIds", "array-contains", itemId)
+    );
+
+    const snapshot = await getDocs(reviewsQuery);
+    productReviews = [];
+
+    snapshot.forEach((docSnap) => {
+      productReviews.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    productReviews.sort((a, b) => {
+      return Number(b.createdAt?.seconds || 0) - Number(a.createdAt?.seconds || 0);
+    });
+  } catch (error) {
+    console.warn("Product reviews could not load:", error.message);
+    productReviews = [];
+  }
+}
+
+function getRatingData() {
+  const calculated =
+    getAverageRating(productReviews, "sellerRating") ||
+    getAverageRating(productReviews, "rating") ||
+    0;
+
+  const averageRating = Number(currentItem?.averageRating || calculated || 0);
+  const totalReviews = Number(currentItem?.totalReviews || productReviews.length || 0);
+
+  return {
+    averageRating,
+    totalReviews,
+    text: averageRating > 0
+      ? `⭐ ${averageRating.toFixed(1)} (${totalReviews} review${totalReviews === 1 ? "" : "s"})`
+      : "⭐ No product reviews yet"
+  };
+}
+
+function renderReviewsHtml(limit = 8) {
+  if (productReviews.length === 0) {
+    return `
+      <div class="order-card">
+        <h3>No reviews yet</h3>
+        <p class="muted">Reviews will appear after verified purchases.</p>
       </div>
     `;
   }
 
-  if (relatedItems) {
-    relatedItems.innerHTML = "";
+  return productReviews.slice(0, limit).map((review) => {
+    const rating = Number(review.sellerRating || review.rating || 0);
+
+    return `
+      <article class="order-card review-card">
+        <div class="review-card-heading">
+          <h3>${renderStars(rating)} ${rating > 0 ? rating.toFixed(1) : ""}</h3>
+          ${review.verifiedPurchase !== false
+            ? `<span class="status-badge active">Verified Purchase</span>`
+            : ""}
+        </div>
+        <p><strong>${escapeHtml(review.customerName || "Customer")}</strong></p>
+        <p>${escapeHtml(review.reviewText || "No written feedback.")}</p>
+        <p class="muted">MauMarket verified order review</p>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderExternalReviews() {
+  if (!productReviewsSection) return;
+
+  const rating = getRatingData();
+
+  if (productReviewsSummaryText) {
+    productReviewsSummaryText.textContent = rating.text;
+  }
+
+  if (productReviewsSummary) {
+    productReviewsSummary.style.display = "grid";
+    productReviewsSummary.innerHTML = `
+      <div class="review-score">
+        <strong>${rating.averageRating.toFixed(1)}</strong>
+        <span>${renderStars(rating.averageRating)}</span>
+        <small>Average Rating</small>
+      </div>
+      <div class="review-summary-details">
+        <p><strong>${rating.totalReviews}</strong> verified review${rating.totalReviews === 1 ? "" : "s"}</p>
+        <p class="muted">Reviews are linked to completed MauMarket orders.</p>
+      </div>
+    `;
+  }
+
+  if (productReviewsList) {
+    productReviewsList.innerHTML = renderReviewsHtml(8);
   }
 }
+
+/* =========================================================
+   WISHLIST
+   ========================================================= */
 
 async function checkWishlistStatus() {
   isWishlisted = false;
@@ -122,80 +336,121 @@ async function checkWishlistStatus() {
   }
 }
 
-async function loadProductReviews() {
-  const q = query(
-    collection(db, "reviews"),
-    where("productIds", "array-contains", itemId)
-  );
+async function toggleWishlist() {
+  const message = document.getElementById("wishlistMessage");
+  const button = document.getElementById("wishlistBtn");
 
-  const snapshot = await getDocs(q);
+  if (!currentUser) {
+    setMessage(message, "Please login first.", "error");
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 800);
+    return;
+  }
 
-  productReviews = [];
+  if (!button) return;
+  button.disabled = true;
 
-  snapshot.forEach((docSnap) => {
-    productReviews.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
-  });
+  try {
+    const wishlistRef = doc(
+      db,
+      "wishlists",
+      currentUser.uid,
+      "items",
+      currentItem.id
+    );
 
-  productReviews.sort((a, b) => {
-    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-  });
+    if (isWishlisted) {
+      await deleteDoc(wishlistRef);
+      isWishlisted = false;
+      button.textContent = "♡ Save";
+      setMessage(message, "Removed from wishlist.", "success");
+    } else {
+      const selectedOption = getSelectedOption();
+      const priceSource = selectedOption || currentItem;
+
+      await setDoc(wishlistRef, {
+        productId: currentItem.id,
+        sellerId: currentItem.sellerId || "",
+        title: currentItem.title || "",
+        price: getBuyerPrice(priceSource),
+        buyerPrice: getBuyerPrice(priceSource),
+        sellerPrice: getSellerPrice(priceSource),
+        commissionAmount: getCommissionAmount(priceSource),
+        commissionRate: Number(priceSource.commissionRate ?? COMMISSION_RATE),
+        imageUrl: getSelectedImageUrl(),
+        category: currentItem.category || "",
+        type: currentItem.type || "",
+        hasOptions: productOptions.length > 0,
+        optionType: currentItem.optionType || "",
+        selectedOptionId: selectedOption?.id || "",
+        selectedOptionName: selectedOption?.name || "",
+        publicMerchantLabel: "Verified MauMarket Merchant",
+        addedAt: serverTimestamp()
+      }, { merge: true });
+
+      isWishlisted = true;
+      button.textContent = "♥ Saved";
+      setMessage(message, "Saved to wishlist.", "success");
+    }
+  } catch (error) {
+    setMessage(
+      message,
+      getFriendlyProductError(error, "The wishlist could not be updated."),
+      "error"
+    );
+  } finally {
+    button.disabled = false;
+  }
 }
 
+/* =========================================================
+   MAIN RENDER
+   ========================================================= */
+
 function renderDetails() {
-  const productAverageRating = Number(
-    currentItem.averageRating ||
-    getAverageRating(productReviews, "sellerRating") ||
-    getAverageRating(productReviews, "rating") ||
-    0
-  );
+  if (!detailsBox || !currentItem) return;
 
-  const productTotalReviews = Number(
-    currentItem.totalReviews ||
-    productReviews.length ||
-    0
-  );
-
-  const buyerPrice = getBuyerPrice(currentItem);
-
-  const productRatingText = productAverageRating > 0
-    ? `⭐ ${productAverageRating.toFixed(1)} (${productTotalReviews} review${productTotalReviews === 1 ? "" : "s"})`
-    : "⭐ No product reviews yet";
-
-  const stockText =
-    currentItem.type === "product"
-      ? getStockText(currentItem.stock)
-      : `Available in ${escapeHtml(currentItem.serviceArea || "selected areas")}`;
-
-  const reviewsHtml = renderReviewsList();
+  const rating = getRatingData();
+  const selectedOption = getSelectedOption();
+  const displaySource = selectedOption || currentItem;
+  const buyerPrice = getBuyerPrice(displaySource);
+  const stock = getStock(displaySource);
+  const stockText = currentItem.type === "product"
+    ? getStockText(stock)
+    : `Available in ${escapeHtml(currentItem.serviceArea || "selected areas")}`;
 
   detailsBox.innerHTML = `
-    <section class="pro-product-details clean-product-details private-merchant-details">
+    <section class="pro-product-details clean-product-details private-merchant-details premium-option-product-details">
 
-      <div class="pro-gallery clean-gallery">
-        ${
-          currentItem.imageUrl
-            ? `<img class="main-product-img" src="${escapeHtml(currentItem.imageUrl)}" alt="${escapeHtml(currentItem.title || "Product")}">`
-            : `<div class="main-product-img no-img">No Image</div>`
-        }
+      <div class="pro-gallery clean-gallery premium-product-gallery">
+        ${renderGalleryHtml()}
       </div>
 
       <div class="pro-product-info clean-product-info">
-        <span class="badge">${escapeHtml(currentItem.type || "item")}</span>
+
+        <div class="product-meta-top">
+          <span class="badge">${escapeHtml(currentItem.type || "item")}</span>
+          <span class="verified-product-label">✓ Verified MauMarket Merchant</span>
+        </div>
 
         <h1>${escapeHtml(currentItem.title || "Untitled")}</h1>
-
         <p class="muted">${escapeHtml(currentItem.category || "Other")}</p>
 
-        <p class="rating-line">${productRatingText}</p>
+        <button id="productRatingButton" type="button" class="rating-line product-rating-button">
+          ${rating.text}
+        </button>
 
-        <h2 class="product-price">${formatRs(buyerPrice)}</h2>
+        <div class="product-price-area">
+          <h2 id="productPrice" class="product-price">${formatRs(buyerPrice)}</h2>
+          ${productOptions.length > 0
+            ? `<small class="muted">Price and stock depend on the selected ${escapeHtml(currentItem.optionType || "option")}.</small>`
+            : ""}
+        </div>
 
         <div class="product-trust-mini">
           <span>✓ Secure checkout</span>
-          <span>✓ Verified MauMarket Merchant</span>
+          <span>✓ Verified merchant</span>
           <span>✓ Delivery by MauMarket</span>
         </div>
 
@@ -203,42 +458,64 @@ function renderDetails() {
           ${escapeHtml(currentItem.description || "No description provided.")}
         </p>
 
-        <p class="stock-line">
+        ${renderOptionsHtml()}
+
+        ${selectedOption
+          ? `
+            <div class="product-selection-summary">
+              <div>
+                <span>Selected ${escapeHtml(currentItem.optionType || "Option")}</span>
+                <strong>${escapeHtml(selectedOption.name)}</strong>
+              </div>
+              ${selectedOption.sku
+                ? `
+                  <div>
+                    <span>Product Code</span>
+                    <strong>${escapeHtml(selectedOption.sku)}</strong>
+                  </div>
+                `
+                : ""}
+            </div>
+          `
+          : ""}
+
+        <p id="productStockText" class="stock-line ${stock <= 0 ? "out-of-stock" : ""}">
           <strong>${stockText}</strong>
         </p>
 
-        <div class="cart-actions clean-cart-actions">
-          <input
-            id="qtyInput"
-            type="number"
-            min="1"
-            value="1"
-            aria-label="Quantity">
-
-          <button id="addToCartBtn" type="button">
-            Add to Cart
-          </button>
+        <div class="cart-actions clean-cart-actions premium-cart-actions">
+          <label class="quantity-field">
+            <span>Quantity</span>
+            <input
+              id="qtyInput"
+              type="number"
+              min="1"
+              max="${currentItem.type === "product" && stock > 0 ? stock : 999}"
+              value="1"
+              aria-label="Quantity">
+          </label>
 
           <button
-            id="wishlistBtn"
-            class="secondary-btn"
-            type="button">
+            id="addToCartBtn"
+            type="button"
+            ${currentItem.type === "product" && stock <= 0 ? "disabled" : ""}>
+            ${currentItem.type === "product" && stock <= 0 ? "Out of Stock" : "Add to Cart"}
+          </button>
+
+          <button id="wishlistBtn" class="secondary-btn" type="button">
             ${isWishlisted ? "♥ Saved" : "♡ Save"}
           </button>
         </div>
 
-        <p id="cartMessage"></p>
-        <p id="wishlistMessage"></p>
+        <p id="cartMessage" class="product-action-message" aria-live="polite"></p>
+        <p id="wishlistMessage" class="product-action-message" aria-live="polite"></p>
       </div>
 
       <aside class="buy-box clean-buy-box private-merchant-buy-box">
         <h3>MauMarket Merchant</h3>
 
         <div class="anonymous-merchant-panel">
-          <div class="anonymous-merchant-icon">
-            ✓
-          </div>
-
+          <div class="anonymous-merchant-icon">✓</div>
           <div>
             <strong>Verified MauMarket Merchant</strong>
             <p>Merchant identity and pickup details remain private.</p>
@@ -252,273 +529,253 @@ function renderDetails() {
           <p>⭐ Reviews from verified purchases</p>
         </div>
 
-        <a class="btn" href="products.html">
-          Browse More Products
-        </a>
+        ${selectedOption
+          ? `
+            <div class="buy-box-option-summary">
+              <span>Selected ${escapeHtml(currentItem.optionType || "Option")}</span>
+              <strong>${escapeHtml(selectedOption.name)}</strong>
+              <small>${getStockText(selectedOption.stock)}</small>
+            </div>
+          `
+          : ""}
 
-        <a class="secondary-btn" href="wishlist.html">
-          View Wishlist
-        </a>
+        <a class="btn" href="products.html">Browse More Products</a>
+        <a class="secondary-btn" href="wishlist.html">View Wishlist</a>
       </aside>
-    </section>
-
-    <section class="form-card product-reviews-section">
-      <div class="section-row-title">
-        <h2>Customer Reviews</h2>
-        <span>${productRatingText}</span>
-      </div>
-
-      ${reviewsHtml}
     </section>
   `;
 
-  document
-    .getElementById("addToCartBtn")
-    ?.addEventListener("click", addToCart);
+  wireRenderedEvents();
 
-  document
-    .getElementById("wishlistBtn")
-    ?.addEventListener("click", toggleWishlist);
+  if (productOptionsFallback) {
+    productOptionsFallback.style.display = "none";
+  }
 }
 
-function renderReviewsList() {
-  if (productReviews.length === 0) {
-    return `
-      <div class="order-card">
-        <h3>No reviews yet</h3>
-        <p class="muted">Reviews will appear after verified purchases.</p>
-      </div>
-    `;
+function renderGalleryHtml() {
+  const mainImage = getSelectedImageUrl();
+
+  if (!mainImage) {
+    return `<div class="main-product-img no-img">No Image</div>`;
   }
 
-  return productReviews.slice(0, 8).map((review) => {
-    const rating = Number(review.sellerRating || review.rating || 0);
-    const stars = "⭐".repeat(Math.max(1, Math.min(5, Math.round(rating))));
+  return `
+    <div class="product-main-image-wrap">
+      <img
+        id="mainProductImage"
+        class="main-product-img"
+        src="${escapeHtml(mainImage)}"
+        alt="${escapeHtml(currentItem.title || "Product")}">
 
-    return `
-      <div class="order-card review-card">
-        <h3>${stars} ${rating ? rating.toFixed(1) : ""}</h3>
-        <p><strong>${escapeHtml(review.customerName || "Customer")}</strong></p>
-        <p>${escapeHtml(review.reviewText || "")}</p>
-        <p class="muted">Verified MauMarket Purchase</p>
-      </div>
-    `;
-  }).join("");
+      ${productImages.length > 1
+        ? `<span class="product-gallery-count">${productImages.length} images</span>`
+        : ""}
+    </div>
+
+    ${productImages.length > 1
+      ? `
+        <div id="productGalleryThumbs" class="product-gallery-thumbs">
+          ${productImages.map((url, index) => `
+            <button
+              type="button"
+              class="product-gallery-thumb ${url === mainImage || index === selectedImageIndex ? "active" : ""}"
+              data-image-index="${index}"
+              aria-label="View product image ${index + 1}">
+              <img src="${escapeHtml(url)}" alt="Product image ${index + 1}">
+            </button>
+          `).join("")}
+        </div>
+      `
+      : ""}
+  `;
 }
 
-async function loadRelatedItems() {
-  if (!currentItem.category || !relatedItems) return;
+function renderOptionsHtml() {
+  if (productOptions.length === 0) return "";
 
-  const q = query(
-    collection(db, "products"),
-    where("category", "==", currentItem.category),
-    where("active", "==", true)
-  );
+  const type = currentItem.optionType || "Option";
 
-  const snapshot = await getDocs(q);
+  return `
+    <section class="product-options-panel">
+      <div class="product-options-panel-head">
+        <div>
+          <span class="section-kicker">Choose ${escapeHtml(type)}</span>
+          <h3>Available ${escapeHtml(type)} Options</h3>
+        </div>
+        <span>${productOptions.length} choice${productOptions.length === 1 ? "" : "s"}</span>
+      </div>
 
-  const items = [];
+      <div id="productOptionChoices" class="product-option-choices">
+        ${productOptions.map((option) => {
+          const active = option.id === selectedOptionId;
+          const outOfStock = Number(option.stock || 0) <= 0;
 
-  snapshot.forEach((docSnap) => {
-    if (docSnap.id !== currentItem.id) {
-      items.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
-    }
+          return `
+            <button
+              type="button"
+              class="product-option-choice ${active ? "active" : ""} ${outOfStock ? "out-of-stock" : ""}"
+              data-option-id="${escapeHtml(option.id)}"
+              ${outOfStock ? "disabled" : ""}>
+              <span class="product-option-choice-name">${escapeHtml(option.name)}</span>
+              <small>${outOfStock ? "Out of stock" : formatRs(getBuyerPrice(option))}</small>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function wireRenderedEvents() {
+  document.getElementById("addToCartBtn")?.addEventListener("click", addToCart);
+  document.getElementById("wishlistBtn")?.addEventListener("click", toggleWishlist);
+  document.getElementById("productRatingButton")?.addEventListener("click", scrollToReviews);
+
+  document.querySelectorAll("[data-image-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectGalleryImage(Number(button.dataset.imageIndex));
+    });
   });
 
-  if (items.length === 0) {
-    relatedItems.innerHTML = "<p>No related items found.</p>";
-    return;
-  }
-
-  relatedItems.innerHTML = "";
-
-  items.slice(0, 8).forEach((item) => {
-    const rating = Number(item.averageRating || 0);
-    const totalReviews = Number(item.totalReviews || 0);
-    const buyerPrice = getBuyerPrice(item);
-
-    const div = document.createElement("div");
-    div.className = "pro-product-card";
-
-    div.innerHTML = `
-      <div class="pro-product-img">
-        ${
-          item.imageUrl
-            ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title || "Product")}">`
-            : `<div class="no-img">No Image</div>`
-        }
-      </div>
-
-      <div class="pro-product-body">
-        <span class="badge">${escapeHtml(item.type || "item")}</span>
-
-        <h3>${escapeHtml(item.title || "Untitled")}</h3>
-
-        <p class="muted">${escapeHtml(item.category || "")}</p>
-
-        <p class="rating-line-small">
-          ${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "⭐ No reviews yet"}
-        </p>
-
-        <p class="pro-price">${formatRs(buyerPrice)}</p>
-
-        <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">
-          View Details
-        </a>
-      </div>
-    `;
-
-    relatedItems.appendChild(div);
+  document.querySelectorAll("[data-option-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectProductOption(button.dataset.optionId || "");
+    });
   });
 }
 
-async function toggleWishlist() {
-  const wishlistMessage = document.getElementById("wishlistMessage");
-  const wishlistBtn = document.getElementById("wishlistBtn");
+function selectProductOption(optionId) {
+  const option = productOptions.find((entry) => entry.id === optionId);
+  if (!option || option.stock <= 0) return;
 
-  if (!currentUser) {
-    wishlistMessage.textContent = "Please login first.";
+  selectedOptionId = option.id;
 
-    setTimeout(() => {
-      window.location.href = "login.html";
-    }, 800);
-
-    return;
+  if (
+    option.imageIndex !== null &&
+    option.imageIndex >= 0 &&
+    option.imageIndex < productImages.length
+  ) {
+    selectedImageIndex = option.imageIndex;
+  } else if (option.imageUrl && productImages.includes(option.imageUrl)) {
+    selectedImageIndex = productImages.indexOf(option.imageUrl);
   }
 
-  wishlistBtn.disabled = true;
+  renderDetails();
+}
 
-  try {
-    const wishlistRef = doc(db, "wishlists", currentUser.uid, "items", currentItem.id);
+function selectGalleryImage(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= productImages.length) return;
 
-    if (isWishlisted) {
-      await deleteDoc(wishlistRef);
+  selectedImageIndex = index;
 
-      isWishlisted = false;
-      wishlistBtn.textContent = "♡ Save";
-      wishlistMessage.textContent = "Removed from wishlist.";
-    } else {
-      await setDoc(wishlistRef, {
-        productId: currentItem.id,
-        sellerId: currentItem.sellerId || "",
-        title: currentItem.title || "",
-        price: getBuyerPrice(currentItem),
-        buyerPrice: getBuyerPrice(currentItem),
-        sellerPrice: getSellerPrice(currentItem),
-        commissionAmount: getCommissionAmount(currentItem),
-        commissionRate: COMMISSION_RATE,
-        imageUrl: currentItem.imageUrl || "",
-        category: currentItem.category || "",
-        type: currentItem.type || "",
-        publicMerchantLabel: "Verified MauMarket Merchant",
-        addedAt: serverTimestamp()
-      }, { merge: true });
+  const image = document.getElementById("mainProductImage");
+  if (image) image.src = productImages[index];
 
-      isWishlisted = true;
-      wishlistBtn.textContent = "♥ Saved";
-      wishlistMessage.textContent = "Saved to wishlist.";
-    }
-  } catch (error) {
-    wishlistMessage.textContent = getFriendlyProductError(
-      error,
-      "The wishlist could not be updated."
+  document.querySelectorAll("[data-image-index]").forEach((button) => {
+    button.classList.toggle(
+      "active",
+      Number(button.dataset.imageIndex) === index
     );
-  }
-
-  wishlistBtn.disabled = false;
+  });
 }
+
+/* =========================================================
+   CART
+   ========================================================= */
 
 async function addToCart() {
-  const cartMessage = document.getElementById("cartMessage");
-  const addButton = document.getElementById("addToCartBtn");
+  const message = document.getElementById("cartMessage");
+  const button = document.getElementById("addToCartBtn");
 
   if (!currentUser) {
-    cartMessage.textContent =
-      "Please sign in before adding products to your cart.";
+    setMessage(
+      message,
+      "Please sign in before adding products to your cart.",
+      "error"
+    );
 
     setTimeout(() => {
       window.location.href = "login.html";
     }, 800);
-
     return;
   }
 
-  const qty = Number(
-    document.getElementById("qtyInput")?.value || 1
-  );
+  const quantity = Number(document.getElementById("qtyInput")?.value || 1);
 
-  if (!Number.isFinite(qty) || qty < 1) {
-    cartMessage.textContent =
-      "Quantity must be at least 1.";
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    setMessage(message, "Quantity must be a whole number of at least 1.", "error");
     return;
   }
 
-  if (
-    currentItem.type === "product" &&
-    Number(currentItem.stock || 0) <= 0
-  ) {
-    cartMessage.textContent =
-      "This product is currently out of stock.";
+  const selectedOption = getSelectedOption();
+
+  if (productOptions.length > 0 && !selectedOption) {
+    setMessage(
+      message,
+      `Please choose a ${currentItem.optionType || "product option"} first.`,
+      "error"
+    );
     return;
   }
 
-  if (
-    currentItem.type === "product" &&
-    Number(currentItem.stock || 0) > 0 &&
-    qty > Number(currentItem.stock || 0)
-  ) {
-    cartMessage.textContent =
-      "Quantity is higher than available stock.";
+  const priceSource = selectedOption || currentItem;
+  const availableStock = getStock(priceSource);
+
+  if (currentItem.type === "product" && availableStock <= 0) {
+    setMessage(message, "This option is currently out of stock.", "error");
     return;
   }
 
-  if (addButton) {
-    addButton.disabled = true;
-    addButton.textContent = "Adding...";
+  if (currentItem.type === "product" && quantity > availableStock) {
+    setMessage(
+      message,
+      `Only ${availableStock} item${availableStock === 1 ? "" : "s"} are available.`,
+      "error"
+    );
+    return;
   }
+
+  if (!button) return;
+
+  button.disabled = true;
+  button.textContent = "Adding...";
 
   try {
+    const buyerPrice = getBuyerPrice(priceSource);
+    const sellerPrice = getSellerPrice(priceSource);
+    const commissionAmount = getCommissionAmount(priceSource);
+    const optionId = selectedOption?.id || "";
+    const cartDocumentId = optionId
+      ? `${currentItem.id}__${sanitizeDocumentId(optionId)}`
+      : currentItem.id;
+
     await setDoc(
-      doc(
-        db,
-        "carts",
-        currentUser.uid,
-        "items",
-        currentItem.id
-      ),
+      doc(db, "carts", currentUser.uid, "items", cartDocumentId),
       {
+        cartItemId: cartDocumentId,
         productId: currentItem.id,
-
-        // Internal fields required by admin, payouts and delivery.
         sellerId: currentItem.sellerId || "",
-        shopId:
-          currentItem.shopId ||
-          currentItem.sellerId ||
-          "",
-        shopName:
-          currentItem.shopName ||
-          "MauMarket Seller",
-
-        // Buyer-facing anonymous label.
-        publicMerchantLabel:
-          "Verified MauMarket Merchant",
-
+        shopId: currentItem.shopId || currentItem.sellerId || "",
+        shopName: currentItem.shopName || "MauMarket Seller",
+        publicMerchantLabel: "Verified MauMarket Merchant",
         title: currentItem.title || "",
         type: currentItem.type || "product",
         category: currentItem.category || "",
-
-        price: getBuyerPrice(currentItem),
-        buyerPrice: getBuyerPrice(currentItem),
-        sellerPrice: getSellerPrice(currentItem),
-        commissionAmount:
-          getCommissionAmount(currentItem),
-        commissionRate: COMMISSION_RATE,
-
-        quantity: qty,
-        imageUrl: currentItem.imageUrl || "",
+        price: buyerPrice,
+        buyerPrice,
+        sellerPrice,
+        commissionAmount,
+        commissionRate: Number(priceSource.commissionRate ?? COMMISSION_RATE),
+        quantity,
+        imageUrl: getSelectedImageUrl(),
+        images: productImages,
+        hasOptions: productOptions.length > 0,
+        optionType: currentItem.optionType || "",
+        selectedOptionId: optionId,
+        selectedOptionName: selectedOption?.name || "",
+        selectedOptionSku: selectedOption?.sku || "",
+        selectedOptionImageIndex: selectedOption?.imageIndex ?? null,
+        selectedOptionStock: selectedOption ? Number(selectedOption.stock || 0) : null,
         addedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       },
@@ -527,146 +784,290 @@ async function addToCart() {
 
     animateToCart();
 
-    cartMessage.textContent =
-      "Product added to your cart.";
-
-    if (addButton) {
-      addButton.textContent = "Added ✓";
-
-      setTimeout(() => {
-        addButton.disabled = false;
-        addButton.textContent = "Add to Cart";
-      }, 1200);
-    }
-
-    window.dispatchEvent(
-      new CustomEvent("cart-updated", {
-        detail: {
-          productId: currentItem.id,
-          quantity: qty
-        }
-      })
+    setMessage(
+      message,
+      selectedOption
+        ? `${selectedOption.name} added to your cart.`
+        : "Product added to your cart.",
+      "success"
     );
+
+    button.textContent = "Added ✓";
+
+    setTimeout(() => {
+      button.disabled = false;
+      button.textContent = "Add to Cart";
+    }, 1200);
+
+    window.dispatchEvent(new CustomEvent("cart-updated", {
+      detail: {
+        productId: currentItem.id,
+        optionId,
+        quantity
+      }
+    }));
   } catch (error) {
     console.error("Add to cart failed:", error);
 
-    cartMessage.textContent =
+    setMessage(
+      message,
       getFriendlyProductError(
         error,
         "The product could not be added to your cart."
-      );
+      ),
+      "error"
+    );
 
-    if (addButton) {
-      addButton.disabled = false;
-      addButton.textContent = "Add to Cart";
-    }
+    button.disabled = false;
+    button.textContent = "Add to Cart";
   }
 }
 
-function animateToCart(){
-  const img=document.querySelector(".main-product-img");
-  const cart=document.querySelector(".mm-cart-btn");
-  if(!img||!cart)return;
-  const a=img.getBoundingClientRect();
-  const b=cart.getBoundingClientRect();
-  const clone=img.cloneNode(true);
-  clone.className="fly-to-cart-img";
-  clone.style.cssText=`position:fixed;left:${a.left}px;top:${a.top}px;width:${a.width}px;height:${a.height}px;z-index:9999;transition:.8s ease;pointer-events:none;border-radius:12px;`;
+function sanitizeDocumentId(value) {
+  return String(value || "")
+    .replaceAll("/", "-")
+    .replaceAll("\\", "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 160);
+}
+
+function animateToCart() {
+  const image = document.querySelector(".main-product-img");
+  const cart = document.querySelector(".mm-cart-btn");
+
+  if (!image || !cart || image.classList.contains("no-img")) return;
+
+  const imageRect = image.getBoundingClientRect();
+  const cartRect = cart.getBoundingClientRect();
+  const clone = image.cloneNode(true);
+
+  clone.className = "fly-to-cart-img";
+  clone.style.cssText = `
+    position: fixed;
+    left: ${imageRect.left}px;
+    top: ${imageRect.top}px;
+    width: ${imageRect.width}px;
+    height: ${imageRect.height}px;
+    z-index: 99999;
+    pointer-events: none;
+    object-fit: cover;
+    border-radius: 16px;
+    transition: transform .75s cubic-bezier(.2,.8,.2,1), opacity .75s ease;
+  `;
+
   document.body.appendChild(clone);
-  requestAnimationFrame(()=>{
-    clone.style.transform=`translate(${b.left-a.left}px,${b.top-a.top}px) scale(.15)`;
-    clone.style.opacity="0";
+
+  requestAnimationFrame(() => {
+    clone.style.transform = `translate(${cartRect.left - imageRect.left}px, ${cartRect.top - imageRect.top}px) scale(.12)`;
+    clone.style.opacity = "0";
   });
-  setTimeout(()=>clone.remove(),850);
+
+  setTimeout(() => clone.remove(), 800);
+}
+
+/* =========================================================
+   RELATED PRODUCTS
+   ========================================================= */
+
+async function loadRelatedItems() {
+  if (!currentItem?.category || !relatedItems) return;
+
+  try {
+    const relatedQuery = query(
+      collection(db, "products"),
+      where("category", "==", currentItem.category),
+      where("active", "==", true)
+    );
+
+    const snapshot = await getDocs(relatedQuery);
+    const items = [];
+
+    snapshot.forEach((docSnap) => {
+      if (docSnap.id !== currentItem.id) {
+        items.push({ id: docSnap.id, ...docSnap.data() });
+      }
+    });
+
+    if (items.length === 0) {
+      relatedItems.innerHTML = `
+        <div class="empty-market-card">
+          <h3>No related items found</h3>
+          <p>Explore the full marketplace for more products.</p>
+        </div>
+      `;
+      return;
+    }
+
+    items.sort((a, b) => {
+      return Number(b.createdAt?.seconds || 0) - Number(a.createdAt?.seconds || 0);
+    });
+
+    relatedItems.innerHTML = "";
+
+    items.slice(0, 8).forEach((item) => {
+      relatedItems.appendChild(createRelatedCard(item));
+    });
+  } catch (error) {
+    console.warn("Related products could not load:", error.message);
+
+    relatedItems.innerHTML = `
+      <div class="empty-market-card">
+        <p>Related products are temporarily unavailable.</p>
+      </div>
+    `;
+  }
+}
+
+function createRelatedCard(item) {
+  const images = normalizeProductImages(item);
+  const options = normalizeProductOptions(item);
+  const rating = Number(item.averageRating || 0);
+  const totalReviews = Number(item.totalReviews || 0);
+  const buyerPrice = options.length > 0
+    ? Number(item.minBuyerPrice || getBuyerPrice(options[0]))
+    : getBuyerPrice(item);
+
+  const card = document.createElement("article");
+  card.className = "pro-product-card";
+
+  card.innerHTML = `
+    <div class="pro-product-img">
+      ${images[0]
+        ? `<img src="${escapeHtml(images[0])}" alt="${escapeHtml(item.title || "Product")}">`
+        : `<div class="no-img">No Image</div>`}
+
+      ${options.length > 0
+        ? `<span class="product-options-count-badge">${options.length} options</span>`
+        : ""}
+    </div>
+
+    <div class="pro-product-body">
+      <span class="badge">${escapeHtml(item.type || "item")}</span>
+      <h3>${escapeHtml(item.title || "Untitled")}</h3>
+      <p class="muted">${escapeHtml(item.category || "")}</p>
+      <p class="rating-line-small">
+        ${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "⭐ No reviews yet"}
+      </p>
+      <p class="pro-price">${options.length > 0 ? `From ${formatRs(buyerPrice)}` : formatRs(buyerPrice)}</p>
+      <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">View Details</a>
+    </div>
+  `;
+
+  return card;
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function getStock(item) {
+  return Math.max(0, Number(item?.stock || 0));
+}
+
+function getBuyerPrice(item) {
+  const buyerPrice = Number(item?.buyerPrice || 0);
+  if (buyerPrice > 0) return roundMoney(buyerPrice);
+
+  const price = Number(item?.price || 0);
+  if (price > 0) return roundMoney(price);
+
+  const sellerPrice = Number(item?.sellerPrice || 0);
+  const rate = Number(item?.commissionRate ?? COMMISSION_RATE);
+
+  return sellerPrice > 0
+    ? roundMoney(sellerPrice * (1 + rate))
+    : 0;
+}
+
+function getSellerPrice(item) {
+  const sellerPrice = Number(item?.sellerPrice || 0);
+  if (sellerPrice > 0) return roundMoney(sellerPrice);
+
+  const buyerPrice = getBuyerPrice(item);
+  const rate = Number(item?.commissionRate ?? COMMISSION_RATE);
+
+  return buyerPrice > 0
+    ? roundMoney(buyerPrice / (1 + rate))
+    : 0;
+}
+
+function getCommissionAmount(item) {
+  const saved = Number(item?.commissionAmount || 0);
+  if (saved > 0) return roundMoney(saved);
+
+  return roundMoney(
+    Math.max(0, getBuyerPrice(item) - getSellerPrice(item))
+  );
+}
+
+function getStockText(stockValue) {
+  const stock = Number(stockValue || 0);
+
+  if (stock <= 0) return "Out of stock";
+  if (stock <= 5) return `Only ${stock} left in stock`;
+  return `${stock} in stock`;
+}
+
+function getAverageRating(reviews, fieldName) {
+  if (!Array.isArray(reviews) || reviews.length === 0) return 0;
+
+  const ratings = reviews
+    .map((review) => Number(review[fieldName] || review.rating || 0))
+    .filter((rating) => rating > 0);
+
+  if (ratings.length === 0) return 0;
+
+  return Number(
+    (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1)
+  );
+}
+
+function renderStars(value) {
+  const rating = Math.max(0, Math.min(5, Math.round(Number(value || 0))));
+  return rating > 0 ? "⭐".repeat(rating) : "☆".repeat(5);
+}
+
+function scrollToReviews() {
+  const target = productReviewsSection || document.querySelector(".product-reviews-section");
+
+  target?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function setMessage(element, message, type = "") {
+  if (!element) return;
+
+  element.textContent = message || "";
+  element.classList.remove(
+    "success",
+    "error",
+    "info",
+    "product-message-success",
+    "product-message-error",
+    "product-message-info"
+  );
+
+  if (!message || !type) return;
+
+  element.classList.add(type);
+  element.classList.add(`product-message-${type}`);
 }
 
 function getFriendlyProductError(error, fallbackMessage) {
   const code = String(error?.code || "");
 
   const messages = {
-    "permission-denied":
-      "You do not have permission to perform this action.",
-    "unavailable":
-      "MauMarket is temporarily unavailable. Please try again.",
-    "failed-precondition":
-      "The request could not be completed. Please refresh and try again.",
-    "resource-exhausted":
-      "The service is temporarily busy. Please try again.",
-    "auth/network-request-failed":
-      "Please check your internet connection and try again."
+    "permission-denied": "You do not have permission to perform this action.",
+    "unavailable": "MauMarket is temporarily unavailable. Please try again.",
+    "failed-precondition": "The request could not be completed. Please refresh and try again.",
+    "resource-exhausted": "The service is temporarily busy. Please try again.",
+    "auth/network-request-failed": "Please check your internet connection and try again.",
+    "network-request-failed": "Please check your internet connection and try again."
   };
 
   return messages[code] || fallbackMessage;
-}
-
-function getBuyerPrice(item) {
-  const buyerPrice = Number(item.buyerPrice || 0);
-
-  if (buyerPrice > 0) {
-    return roundMoney(buyerPrice);
-  }
-
-  const price = Number(item.price || 0);
-
-  if (price > 0) {
-    return roundMoney(price);
-  }
-
-  const sellerPrice = Number(item.sellerPrice || 0);
-
-  if (sellerPrice > 0) {
-    return roundMoney(sellerPrice * (1 + COMMISSION_RATE));
-  }
-
-  return 0;
-}
-
-function getSellerPrice(item) {
-  const sellerPrice = Number(item.sellerPrice || 0);
-
-  if (sellerPrice > 0) {
-    return roundMoney(sellerPrice);
-  }
-
-  const buyerPrice = getBuyerPrice(item);
-
-  if (buyerPrice > 0) {
-    return roundMoney(buyerPrice / (1 + COMMISSION_RATE));
-  }
-
-  return 0;
-}
-
-function getCommissionAmount(item) {
-  const commissionAmount = Number(item.commissionAmount || 0);
-
-  if (commissionAmount > 0) {
-    return roundMoney(commissionAmount);
-  }
-
-  const sellerPrice = getSellerPrice(item);
-  const buyerPrice = getBuyerPrice(item);
-
-  return roundMoney(Math.max(0, buyerPrice - sellerPrice));
-}
-
-function getStockText(stockValue) {
-  const stock = Number(stockValue || 0);
-
-  if (stock <= 0) return "Stock information unavailable";
-  if (stock <= 5) return `Only ${stock} left in stock`;
-
-  return "In stock";
-}
-
-function getAverageRating(reviews, fieldName) {
-  if (!reviews || reviews.length === 0) return 0;
-
-  const total = reviews.reduce((sum, review) => {
-    return sum + Number(review[fieldName] || review.rating || 0);
-  }, 0);
-
-  return Number((total / reviews.length).toFixed(1));
 }
 
 function roundMoney(value) {
