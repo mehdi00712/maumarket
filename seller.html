@@ -583,10 +583,13 @@
 
       </div>
 
-      <div class="form-group">
+      <div
+        id="basePriceGroup"
+        class="form-group"
+      >
 
         <label for="itemPrice">
-          Seller Price
+          Base Seller Price
         </label>
 
         <input
@@ -594,19 +597,22 @@
           type="number"
           min="0"
           step="0.01"
-          placeholder="Price you want to receive"
+          placeholder="Default price you want to receive"
         >
 
         <small class="muted">
-          Buyers only see the final customer price.
+          Used when the listing has no options. When options are enabled, each option can have its own seller price.
         </small>
 
       </div>
 
-      <div class="form-group">
+      <div
+        id="baseStockGroup"
+        class="form-group"
+      >
 
         <label for="itemStock">
-          Stock Quantity
+          Base Stock Quantity
         </label>
 
         <input
@@ -614,11 +620,11 @@
           type="number"
           min="0"
           step="1"
-          placeholder="Stock quantity"
+          placeholder="Default stock quantity"
         >
 
         <small class="muted">
-          For services, use the number of available bookings.
+          Used when the listing has no options. Option stock is tracked separately when options are enabled.
         </small>
 
       </div>
@@ -665,31 +671,298 @@
 
       </div>
 
-      <div class="form-group">
+      <div class="form-group seller-listing-images-field">
 
-        <label for="itemImage">
-          Listing Image
+        <label for="itemImages">
+          Product Images
         </label>
 
+        <input
+          id="itemImages"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          multiple
+        >
+
+        <small class="muted">
+          Upload up to 3 images. The first image is used as the main marketplace image.
+          Do not include phone numbers, addresses, shop names or social-media details.
+        </small>
+
+        <!-- Kept for compatibility while older products are migrated. -->
         <input
           id="itemImage"
           type="file"
           accept="image/png,image/jpeg,image/webp"
+          hidden
+          tabindex="-1"
+          aria-hidden="true"
         >
 
-        <small class="muted">
-          Use a clear image with no phone number, shop name, address or social media details.
-        </small>
+        <div
+          id="itemImagesPreview"
+          class="seller-product-images-preview"
+          aria-live="polite"
+        ></div>
+
+        <div
+          id="existingItemImages"
+          class="seller-existing-images"
+          aria-live="polite"
+        ></div>
 
         <div
           id="itemImagePreview"
           class="seller-media-preview seller-item-image-preview"
           style="display:none;"
+          aria-hidden="true"
         ></div>
 
       </div>
 
     </div>
+
+    <!-- ===================================================
+         PRODUCT OPTIONS / VARIANTS
+    ==================================================== -->
+
+    <section
+      id="itemOptionsBuilder"
+      class="seller-options-builder"
+    >
+
+      <div class="seller-options-heading">
+
+        <div>
+
+          <span class="section-kicker">
+            Product Options
+          </span>
+
+          <h3>
+            Colours, Sizes and Other Choices
+          </h3>
+
+          <p>
+            Add as many options as needed, such as Red, Blue, Green, Small,
+            Medium or Large. Each option can have its own price, stock,
+            product code and image.
+          </p>
+
+        </div>
+
+        <label class="seller-options-toggle">
+
+          <input
+            id="enableItemOptions"
+            type="checkbox"
+          >
+
+          <span>
+            This listing has options
+          </span>
+
+        </label>
+
+      </div>
+
+      <div
+        id="itemOptionsSection"
+        class="seller-options-section"
+        style="display:none;"
+      >
+
+        <div class="seller-option-type-row">
+
+          <div class="form-group">
+
+            <label for="itemOptionType">
+              Option Type
+            </label>
+
+            <input
+              id="itemOptionType"
+              type="text"
+              maxlength="60"
+              placeholder="Example: Colour, Size, Flavour"
+            >
+
+          </div>
+
+          <div class="seller-options-summary">
+
+            <span>
+              Options Added
+            </span>
+
+            <strong id="itemOptionsCount">
+              0
+            </strong>
+
+          </div>
+
+        </div>
+
+        <div class="seller-options-help">
+
+          <strong>
+            Example:
+          </strong>
+
+          <span>
+            Option type “Colour” with choices Red, Blue and Green.
+          </span>
+
+        </div>
+
+        <div
+          id="itemOptionsList"
+          class="seller-options-list"
+          aria-live="polite"
+        ></div>
+
+        <button
+          id="addItemOptionBtn"
+          type="button"
+          class="secondary-btn seller-add-option-btn"
+        >
+          + Add Another Option
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- Template cloned by seller.js for unlimited option rows. -->
+    <template id="itemOptionTemplate">
+
+      <article class="seller-option-row">
+
+        <div class="seller-option-row-head">
+
+          <div>
+
+            <span class="seller-option-number">
+              Option
+            </span>
+
+            <strong class="seller-option-title">
+              New Option
+            </strong>
+
+          </div>
+
+          <button
+            type="button"
+            class="seller-remove-option-btn"
+            aria-label="Remove option"
+          >
+            Remove
+          </button>
+
+        </div>
+
+        <div class="seller-option-fields">
+
+          <div class="form-group">
+
+            <label>
+              Option Name
+            </label>
+
+            <input
+              class="item-option-name"
+              type="text"
+              maxlength="80"
+              placeholder="Example: Red"
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Seller Price
+            </label>
+
+            <input
+              class="item-option-price"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Example: 1100"
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Stock
+            </label>
+
+            <input
+              class="item-option-stock"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="Example: 10"
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Product Code
+            </label>
+
+            <input
+              class="item-option-sku"
+              type="text"
+              maxlength="80"
+              placeholder="Example: SHIRT-RED"
+            >
+
+          </div>
+
+          <div class="form-group seller-option-image-field">
+
+            <label>
+              Option Image
+            </label>
+
+            <select class="item-option-image-index">
+
+              <option value="">
+                Use main image
+              </option>
+
+              <option value="0">
+                Image 1
+              </option>
+
+              <option value="1">
+                Image 2
+              </option>
+
+              <option value="2">
+                Image 3
+              </option>
+
+            </select>
+
+            <small class="muted">
+              Choose one of the maximum 3 uploaded product images.
+            </small>
+
+          </div>
+
+        </div>
+
+      </article>
+
+    </template>
 
     <div class="seller-actions seller-listing-save-actions">
 
@@ -761,12 +1034,12 @@
 
 <script
   type="module"
-  src="js/nav.js?v=5.3"
+  src="js/nav.js?v=5.8-options"
 ></script>
 
 <script
   type="module"
-  src="js/seller.js?v=6.0"
+  src="js/seller.js?v=7.0-product-options"
 ></script>
 
 </body>
