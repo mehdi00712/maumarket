@@ -43,7 +43,7 @@ const COMMISSION_RATE = 0.10;
 
 let currentUser = null;
 let cartItems = [];
-let merchantPickupCache = {};
+let shopPickupCache = {};
 let productPricingCache = {};
 
 let checkoutMap = null;
