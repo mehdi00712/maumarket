@@ -1,7 +1,7 @@
 /*
 =========================================================
 MauMarket Footer
-Injects a shared footer on every page
+Shared Footer for all pages
 =========================================================
 */
 
@@ -14,83 +14,169 @@ document.addEventListener("DOMContentLoaded", () => {
     footer.className = "mm-footer";
 
     footer.innerHTML = `
+
         <div class="mm-footer-top">
+
+            <!-- =======================
+                 BRAND
+            ======================== -->
 
             <div class="mm-footer-brand">
 
                 <img
                     src="images/maumarketlogo.png"
-                    alt="MauMarket Logo"
+                    alt="MauMarket"
                     class="mm-footer-logo">
 
                 <p>
-                    Mauritius' trusted marketplace connecting buyers and sellers
-                    through secure payments, verified merchants and
-                    MauMarket-managed delivery.
+                    Mauritius' trusted online marketplace connecting buyers and
+                    sellers through secure payments, verified merchants and
+                    MauMarket-managed delivery across Mauritius.
                 </p>
 
                 <div class="mm-footer-social">
 
-                    <a href="#" aria-label="Facebook">
+                    <a
+                        href="https://www.facebook.com/"
+                        target="_blank"
+                        aria-label="Facebook">
+
                         <i class="fab fa-facebook-f"></i>
+
                     </a>
 
-                    <a href="#" aria-label="Instagram">
+                    <a
+                        href="https://www.instagram.com/maumarket.mu?igsh=MXhmaGs2b2htb2Rkdw=="
+                        target="_blank"
+                        aria-label="Instagram">
+
                         <i class="fab fa-instagram"></i>
+
                     </a>
 
-                    <a href="#" aria-label="TikTok">
+                    <a
+                        href="https://www.tiktok.com/@maumarket01?lang=en"
+                        target="_blank"
+                        aria-label="TikTok">
+
                         <i class="fab fa-tiktok"></i>
+
                     </a>
 
-                    <a href="#" aria-label="LinkedIn">
-                        <i class="fab fa-linkedin-in"></i>
+                    <a
+                        href="https://wa.me/23057750662"
+                        target="_blank"
+                        aria-label="WhatsApp">
+
+                        <i class="fab fa-whatsapp"></i>
+
+                    </a>
+
+                    <a
+                        href="mailto:maumarket33@gmail.com"
+                        aria-label="Email">
+
+                        <i class="fas fa-envelope"></i>
+
                     </a>
 
                 </div>
 
             </div>
 
+            <!-- =======================
+                 MARKETPLACE
+            ======================== -->
+
             <div class="mm-footer-links">
 
                 <h4>Marketplace</h4>
 
                 <a href="products.html">Browse Products</a>
-                <a href="register.html">Become a Seller</a>
-                <a href="cart.html">Shopping Cart</a>
-                <a href="dashboard.html">My Account</a>
+
+                <a href="register.html">
+                    Become a Seller
+                </a>
+
+                <a href="cart.html">
+                    Shopping Cart
+                </a>
+
+                <a href="dashboard.html">
+                    My Account
+                </a>
 
             </div>
+
+            <!-- =======================
+                 SUPPORT
+            ======================== -->
 
             <div class="mm-footer-links">
 
                 <h4>Support</h4>
 
-                <a href="contact.html">Contact Us</a>
-                <a href="faq.html">FAQ</a>
-                <a href="help.html">Help Centre</a>
-                <a href="delivery-policy.html">Delivery Policy</a>
+                <a href="contact.html">
+                    Contact Us
+                </a>
+
+                <a href="help.html">
+                    Help Centre
+                </a>
 
             </div>
+
+            <!-- =======================
+                 LEGAL
+            ======================== -->
 
             <div class="mm-footer-links">
 
                 <h4>Legal</h4>
 
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="terms.html">Terms & Conditions</a>
-                <a href="buyer-policy.html">Buyer Policy</a>
-                <a href="seller-policy.html">Seller Policy</a>
+                <a href="terms.html">
+                    Terms & Conditions
+                </a>
+
+                <a href="buyer-policy.html">
+                    Buyer Policy
+                </a>
+
+                <a href="seller-policy.html">
+                    Seller Policy
+                </a>
 
             </div>
+
+            <!-- =======================
+                 CONTACT
+            ======================== -->
 
             <div class="mm-footer-links">
 
                 <h4>Contact</h4>
 
                 <p>📍 Mauritius</p>
-                <p>📧 support@maumarket.mu</p>
-                <p>📞 +230 5775 0662</p>
+
+                <p>
+
+                    <a href="mailto:maumarket33@gmail.com">
+
+                        maumarket33@gmail.com
+
+                    </a>
+
+                </p>
+
+                <p>
+
+                    <a href="https://wa.me/23057750662">
+
+                        +230 5775 0662
+
+                    </a>
+
+                </p>
 
                 <div class="mm-payment-icons">
 
@@ -102,18 +188,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
         </div>
 
+        <!-- =======================
+             COPYRIGHT
+        ======================== -->
+
         <div class="mm-footer-bottom">
 
             <div>
 
                 © ${new Date().getFullYear()}
-                <strong>MauMarket</strong>.
+                <strong>MauMarket</strong>
+
                 All Rights Reserved.
 
             </div>
 
+            <div>
+
+                Designed & Developed by
+                <strong>Cube Twist Ltd</strong>
+
+            </div>
 
         </div>
+
     `;
 
     document.body.appendChild(footer);
