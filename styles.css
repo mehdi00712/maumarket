@@ -3949,3 +3949,253 @@ a.mm-footer-contact-item:hover {
     }
 
 }
+
+/* ==========================================================
+   SELLER PICKUP LOCATION MAP
+========================================================== */
+
+.seller-pickup-map-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.seller-location-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid #d9d5f3;
+    border-radius: 13px;
+    color: #5636f5;
+    background: #f8f7ff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.seller-location-btn:hover {
+    color: #ffffff;
+    border-color: #6547f5;
+    background:
+        linear-gradient(
+            135deg,
+            #4f35f5,
+            #7557ff
+        );
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(79, 53, 245, 0.18);
+}
+
+.seller-location-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+    transform: none;
+    box-shadow: none;
+}
+
+.seller-clear-location-btn {
+    color: #b42318;
+    border-color: #f1c7c3;
+    background: #fff7f6;
+}
+
+.seller-clear-location-btn:hover {
+    color: #ffffff;
+    border-color: #d92d20;
+    background: #d92d20;
+    box-shadow: 0 10px 22px rgba(217, 45, 32, 0.18);
+}
+
+.seller-pickup-map-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid #e7e3ff;
+    border-radius: 13px;
+    color: #5d6475;
+    background: #f8f7ff;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.55;
+}
+
+.seller-pickup-map {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    margin-top: 14px;
+    overflow: hidden;
+    border: 1px solid #dfe3ec;
+    border-radius: 20px;
+    background: #eef1f6;
+    box-shadow: 0 14px 32px rgba(31, 41, 55, 0.08);
+    z-index: 1;
+}
+
+.seller-pickup-map .leaflet-control-container {
+    font-family: inherit;
+}
+
+.seller-pickup-map .leaflet-control-zoom {
+    overflow: hidden;
+    border: 1px solid #e0e3eb;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(31, 41, 55, 0.12);
+}
+
+.seller-pickup-map .leaflet-control-zoom a {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    color: #344054;
+    background: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.seller-pickup-map .leaflet-control-zoom a:hover {
+    color: #5636f5;
+    background: #f4f1ff;
+}
+
+.seller-pickup-map .leaflet-control-attribution {
+    padding: 4px 7px;
+    border-radius: 8px 0 0 0;
+    color: #667085;
+    background: rgba(255, 255, 255, 0.92);
+    font-size: 10px;
+}
+
+.seller-pickup-map .leaflet-marker-icon {
+    filter: drop-shadow(0 8px 10px rgba(31, 41, 55, 0.25));
+}
+
+.seller-pickup-coordinate-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.seller-pickup-coordinate-row .form-group {
+    min-width: 0;
+    margin: 0;
+}
+
+.seller-pickup-coordinate-row label {
+    display: block;
+    margin-bottom: 7px;
+    color: #344054;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.seller-pickup-coordinate-row input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid #dfe3ec;
+    border-radius: 12px;
+    color: #475467;
+    background: #f8fafc;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.seller-pickup-coordinate-row input[readonly] {
+    cursor: default;
+}
+
+.seller-pickup-address-field {
+    grid-column: 1 / -1;
+}
+
+.seller-pickup-address-field textarea {
+    min-height: 110px;
+}
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width: 900px) {
+
+    .seller-pickup-map {
+        height: 360px;
+    }
+
+    .seller-pickup-map-tools {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .seller-location-btn {
+        width: 100%;
+    }
+
+    .seller-clear-location-btn {
+        grid-column: 1 / -1;
+    }
+
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+    .seller-pickup-map-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .seller-clear-location-btn {
+        grid-column: auto;
+    }
+
+    .seller-pickup-map {
+        height: 310px;
+        border-radius: 16px;
+    }
+
+    .seller-pickup-coordinate-row {
+        grid-template-columns: 1fr;
+    }
+
+    .seller-location-btn {
+        min-height: 48px;
+        font-size: 13px;
+    }
+
+    .seller-pickup-map-note {
+        font-size: 12px;
+    }
+
+}
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 400px) {
+
+    .seller-pickup-map {
+        height: 280px;
+    }
+
+    .seller-location-btn {
+        padding: 10px 12px;
+    }
+
+}
