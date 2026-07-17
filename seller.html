@@ -12,7 +12,7 @@
 
   <meta
     name="description"
-    content="Manage your MauMarket business information, products, services, pricing and listings."
+    content="Manage your MauMarket business information, products, services, featured shop subscription, pricing and listings."
   >
 
   <link rel="stylesheet" href="styles.css">
@@ -47,7 +47,7 @@
 
       <p>
         Manage your private business information, products, services, pricing,
-        product slots and marketplace listings from one secure dashboard.
+        product slots, Featured Shop subscription and marketplace listings from one secure dashboard.
       </p>
 
       <div class="seller-hero-points">
@@ -56,6 +56,7 @@
         <span>✓ Dynamic product categories</span>
         <span>✓ Automatic customer pricing</span>
         <span>✓ Marketplace visibility controls</span>
+        <span>✓ Featured Shop subscription management</span>
 
       </div>
 
@@ -127,6 +128,19 @@
     >
       <span aria-hidden="true">🏪</span>
       <strong>Business Profile</strong>
+    </button>
+
+    <button
+      id="sellerFeaturedShopTab"
+      type="button"
+      class="seller-dashboard-tab"
+      data-seller-page="featured-shop"
+      role="tab"
+      aria-selected="false"
+      aria-controls="sellerFeaturedShopView"
+    >
+      <span aria-hidden="true">⭐</span>
+      <strong>Featured Shop</strong>
     </button>
 
     <button
@@ -586,6 +600,220 @@
 
   </section>
 
+  </div>
+
+  <div
+    id="sellerFeaturedShopView"
+    class="seller-dashboard-view"
+    data-seller-view="featured-shop"
+    role="tabpanel"
+    aria-labelledby="sellerFeaturedShopTab"
+    hidden
+  >
+    <!-- =====================================================
+         FEATURED SHOP SUBSCRIPTION
+    ====================================================== -->
+
+    <section class="form-card seller-featured-shop-card">
+      <div class="section-row-title">
+        <div>
+          <span class="section-kicker">Seller Marketing</span>
+          <h2>Featured Shop Subscription</h2>
+          <p>
+            Display your business in MauMarket's Explore Shops directory and
+            increase your visibility for Rs 500 per month.
+          </p>
+        </div>
+        <div class="seller-featured-shop-icon" aria-hidden="true">⭐</div>
+      </div>
+
+      <div class="seller-featured-plan-layout">
+        <article class="seller-featured-plan-box">
+          <div class="seller-featured-plan-heading">
+            <div>
+              <span class="seller-featured-plan-label">Monthly Plan</span>
+              <h3>Explore Shops Visibility</h3>
+            </div>
+            <div class="seller-featured-price">
+              <strong>Rs 500</strong>
+              <span>per month</span>
+            </div>
+          </div>
+
+          <ul class="seller-featured-benefits">
+            <li><span aria-hidden="true">✓</span>Display your shop in Explore Shops</li>
+            <li><span aria-hidden="true">✓</span>Receive a Featured Shop badge</li>
+            <li><span aria-hidden="true">✓</span>Improve your shop visibility</li>
+            <li><span aria-hidden="true">✓</span>Help customers discover your products</li>
+            <li><span aria-hidden="true">✓</span>Choose whether your shop is publicly displayed</li>
+          </ul>
+
+          <div class="seller-featured-important-note">
+            <strong>Important</strong>
+            <p>
+              Payment does not activate the subscription automatically.
+              MauMarket will review your payment proof before your shop becomes
+              eligible for Explore Shops.
+            </p>
+          </div>
+        </article>
+
+        <aside class="seller-featured-status-panel">
+          <span class="section-kicker">Subscription Status</span>
+          <div class="seller-featured-status-heading">
+            <span id="featuredShopStatusBadge" class="seller-featured-status-badge inactive">Not Active</span>
+            <strong id="featuredShopStatusTitle">No active subscription</strong>
+          </div>
+          <p id="featuredShopStatusDescription">
+            Subscribe for Rs 500 per month to display your shop in Explore Shops.
+          </p>
+          <div class="seller-featured-status-details">
+            <div><span>Current Plan</span><strong id="featuredShopPlanValue">None</strong></div>
+            <div><span>Start Date</span><strong id="featuredShopStartDate">—</strong></div>
+            <div><span>Expiry Date</span><strong id="featuredShopExpiryDate">—</strong></div>
+            <div><span>Monthly Price</span><strong>Rs 500</strong></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="form-card seller-featured-display-card">
+      <div class="section-row-title">
+        <div>
+          <span class="section-kicker">Public Visibility</span>
+          <h2>Display in Explore Shops</h2>
+          <p>
+            Even with an active subscription, you remain in control of whether
+            your shop is publicly displayed.
+          </p>
+        </div>
+      </div>
+
+      <div class="seller-featured-toggle-row">
+        <div>
+          <strong>Show my shop in Explore Shops</strong>
+          <p>
+            Your shop will only appear when your subscription is active,
+            approved and not expired.
+          </p>
+        </div>
+        <label class="seller-featured-switch">
+          <input id="showInExploreShops" type="checkbox" disabled>
+          <span class="seller-featured-switch-slider"></span>
+          <span class="seller-featured-switch-label">Disabled</span>
+        </label>
+      </div>
+
+      <div class="seller-featured-privacy-note">
+        <div aria-hidden="true">🛡</div>
+        <p>
+          Only your public shop information, logo, banner, business description,
+          general area and products may appear. Your phone number, exact pickup
+          address, coordinates and pickup instructions remain private.
+        </p>
+      </div>
+
+      <p id="featuredShopPreferenceMessage" class="seller-form-message"></p>
+    </section>
+
+    <section class="form-card seller-featured-payment-card">
+      <div class="section-row-title">
+        <div>
+          <span class="section-kicker">Payment Verification</span>
+          <h2>Subscribe or Renew</h2>
+          <p>
+            Pay Rs 500 using the MauMarket payment instructions, then upload
+            a clear screenshot or photo of your payment confirmation.
+          </p>
+        </div>
+      </div>
+
+      <div class="seller-featured-payment-grid">
+        <div class="seller-featured-payment-instructions">
+          <h3>Payment Instructions</h3>
+          <ol>
+            <li>Send Rs 500 using the payment details provided by MauMarket.</li>
+            <li>Keep the payment confirmation or transaction screenshot.</li>
+            <li>Upload the payment proof below.</li>
+            <li>Submit your request for admin verification.</li>
+          </ol>
+          <div class="seller-featured-payment-summary">
+            <div><span>Amount</span><strong>Rs 500</strong></div>
+            <div><span>Billing Period</span><strong>30 days</strong></div>
+            <div><span>Verification</span><strong>Manual approval</strong></div>
+          </div>
+        </div>
+
+        <div class="seller-featured-payment-form">
+          <div class="form-group">
+            <label for="featuredShopPaymentReference">Payment Reference</label>
+            <input
+              id="featuredShopPaymentReference"
+              type="text"
+              maxlength="120"
+              placeholder="Enter the transaction or payment reference"
+              autocomplete="off"
+            >
+            <small class="muted">Enter the reference exactly as shown on your payment confirmation.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="featuredShopPaymentProof">Payment Proof</label>
+            <input
+              id="featuredShopPaymentProof"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,application/pdf"
+            >
+            <small class="muted">Upload a clear PNG, JPG, WEBP or PDF showing the Rs 500 payment.</small>
+            <div
+              id="featuredShopPaymentPreview"
+              class="seller-featured-payment-preview"
+              style="display:none;"
+              aria-live="polite"
+            ></div>
+          </div>
+
+          <div class="form-group">
+            <label for="featuredShopRequestNote">Note to MauMarket</label>
+            <textarea
+              id="featuredShopRequestNote"
+              maxlength="500"
+              placeholder="Optional note about your payment or subscription request"
+            ></textarea>
+          </div>
+
+          <label class="seller-featured-confirmation">
+            <input id="featuredShopTermsConfirm" type="checkbox">
+            <span>
+              I confirm that the payment information is correct and understand
+              that MauMarket must verify the payment before activation.
+            </span>
+          </label>
+
+          <div class="seller-actions seller-featured-actions">
+            <button id="submitFeaturedShopRequestBtn" type="button" class="btn">
+              Submit Subscription Request
+            </button>
+            <button id="clearFeaturedShopRequestBtn" type="button" class="secondary-btn">Clear</button>
+          </div>
+
+          <p id="featuredShopRequestMessage" class="seller-form-message"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="seller-items-section seller-featured-history-section">
+      <div class="section-row-title">
+        <div>
+          <span class="section-kicker">Subscription History</span>
+          <h2>Featured Shop Requests</h2>
+          <p>Track pending, approved, rejected and renewal requests.</p>
+        </div>
+      </div>
+      <div id="featuredShopRequestsList" class="seller-featured-requests-list" aria-live="polite">
+        Loading subscription requests...
+      </div>
+    </section>
   </div>
 
   <div
@@ -1372,7 +1600,7 @@
 
 <script
   type="module"
-  src="js/nav.js?v=5.8-options"
+  src="js/nav.js?v=5.9-featured-shop"
 ></script>
 
 
@@ -1382,7 +1610,7 @@
 
 <script
   type="module"
-  src="js/seller.js?v=8.0-pickup-map"
+  src="js/seller.js?v=8.1-featured-shop"
 ></script>
 <script src="js/footer.js"></script>
 
