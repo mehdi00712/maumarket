@@ -16,6 +16,13 @@
   >
 
   <link rel="stylesheet" href="styles.css">
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIINfQ3ynhHdVfL4YB8wG5p7K7YVJYqP3aA="
+    crossorigin=""
+  >
 </head>
 
 <body>
@@ -418,8 +425,77 @@
         ></textarea>
 
         <small class="muted">
-          This exact address is never shown publicly to buyers.
+          This exact address and pin are never shown publicly to buyers.
         </small>
+
+        <div class="seller-pickup-map-tools">
+
+          <button
+            id="useCurrentPickupLocationBtn"
+            type="button"
+            class="secondary-btn seller-location-btn"
+          >
+            📍 Use My Current Location
+          </button>
+
+          <button
+            id="findPickupAddressBtn"
+            type="button"
+            class="secondary-btn seller-location-btn"
+          >
+            🔎 Find Typed Address
+          </button>
+
+          <button
+            id="clearPickupPinBtn"
+            type="button"
+            class="secondary-btn seller-location-btn seller-clear-location-btn"
+          >
+            Clear Pin
+          </button>
+
+        </div>
+
+        <div class="seller-pickup-map-note">
+          Click anywhere on the map or drag the pin to set the exact pickup point.
+        </div>
+
+        <div
+          id="shopPickupMap"
+          class="seller-pickup-map"
+          role="application"
+          aria-label="Select exact merchant pickup location"
+        ></div>
+
+        <div class="seller-pickup-coordinate-row">
+
+          <div class="form-group">
+            <label for="shopPickupLatitude">
+              Latitude
+            </label>
+
+            <input
+              id="shopPickupLatitude"
+              type="text"
+              placeholder="Set automatically"
+              readonly
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="shopPickupLongitude">
+              Longitude
+            </label>
+
+            <input
+              id="shopPickupLongitude"
+              type="text"
+              placeholder="Set automatically"
+              readonly
+            >
+          </div>
+
+        </div>
 
       </div>
 
@@ -1301,9 +1377,16 @@
   src="js/nav.js?v=5.8-options"
 ></script>
 
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+
 <script
   type="module"
-  src="js/seller.js?v=7.0-product-options"
+  src="js/seller.js?v=8.0-pickup-map"
 ></script>
 <script src="js/footer.js"></script>
 
