@@ -1600,7 +1600,7 @@ saveItemBtn?.addEventListener("click", async () => {
     return;
   }
 
-  const productLimit = Number(currentUserData?.productLimit || 50);
+  const productLimit = Number(currentUserData?.productLimit || 25);
 
   if (!editingItemId && currentProductCount >= productLimit) {
     setMessage(
@@ -1886,7 +1886,7 @@ async function loadMyItems() {
 
     currentProductCount = snapshot.size;
 
-    const productLimit = Number(currentUserData?.productLimit || 50);
+    const productLimit = Number(currentUserData?.productLimit || 25);
 
     if (slotInfo) {
       slotInfo.textContent =
@@ -2141,7 +2141,7 @@ requestSlotsBtn?.addEventListener("click", async () => {
         currentUserData?.email ||
         currentUser.email ||
         "",
-      currentLimit: Number(currentUserData?.productLimit || 50),
+      currentLimit: Number(currentUserData?.productLimit || 25),
       requestedExtra: Math.floor(amount),
       status: "pending",
       createdAt: serverTimestamp()
