@@ -160,19 +160,22 @@ async function loadShopsDirectory() {
         };
       })
       .filter((shop) => {
+        const expiry = timestampToDate(shop.featuredExpiry);
+
         return (
           shop.active !== false &&
           shop.approved !== false &&
-          shop.shopName
+          Boolean(shop.shopName) &&
+          shop.featuredShop === true &&
+          shop.featuredStatus === "active" &&
+          shop.featuredPaymentVerified === true &&
+          shop.showInExploreShops === true &&
+          expiry &&
+          expiry.getTime() > Date.now()
         );
       });
 
-    featuredShops = allShops.filter(shop =>
-        shop.featuredShop === true &&
-        shop.featuredStatus === "active" &&
-        shop.featuredPaymentVerified === true &&
-        shop.showInExploreShops === true
-      );
+    featuredShops = [...allShops];
 
       updateHeroStats();
     renderShops();
@@ -821,6 +824,19 @@ function escapeHtml(value) {
 /* =========================================================
    FEATURED SHOP HELPERS
    ========================================================= */
+
+
+
+function timestampToDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate();
+  if (value instanceof Date) return value;
+  if (typeof value === "object" && typeof value.seconds === "number") {
+    return new Date(value.seconds * 1000);
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 function isFeaturedShop(shop) {
   return (
