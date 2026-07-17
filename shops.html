@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
 
-    <title>All Shops | MauMarket</title>
+    <title>
+        Explore Featured Shops | MauMarket
+    </title>
 
     <meta
         name="viewport"
@@ -12,10 +16,14 @@
 
     <meta
         name="description"
-        content="Browse verified MauMarket shops and discover trusted Mauritian sellers."
+        content="Browse Featured Shops and verified MauMarket sellers across Mauritius."
     >
 
-    <link rel="stylesheet" href="styles.css">
+    <link
+        rel="stylesheet"
+        href="styles.css"
+    >
+
 </head>
 
 <body>
@@ -23,6 +31,7 @@
 <main class="shops-directory-page">
 
     <!-- Navigation is injected automatically by nav.js -->
+
 
     <!-- =====================================================
          SHOPS HERO
@@ -33,38 +42,73 @@
         <div class="shops-directory-hero-content">
 
             <span class="section-kicker shops-hero-kicker">
-                Verified MauMarket Sellers
+                Explore Featured Shops
             </span>
 
             <h1>
-                Browse All Shops
+                Discover Mauritius' Best Sellers
             </h1>
 
             <p>
-                Discover trusted Mauritian sellers, compare shops and explore
-                products and services from across the island.
+                Browse MauMarket Featured Shops, discover trusted verified
+                sellers, explore products, compare businesses and support
+                local Mauritian entrepreneurs.
             </p>
 
             <div class="shops-hero-stats">
 
                 <div>
-                    <strong id="shopsTotalCount">0</strong>
-                    <span>Verified Shops</span>
+
+                    <strong id="featuredShopsCount">
+                        0
+                    </strong>
+
+                    <span>
+                        Featured Shops
+                    </span>
+
                 </div>
 
                 <div>
-                    <strong id="shopsListingsCount">0</strong>
-                    <span>Active Listings</span>
+
+                    <strong id="shopsTotalCount">
+                        0
+                    </strong>
+
+                    <span>
+                        Verified Shops
+                    </span>
+
                 </div>
 
                 <div>
-                    <strong>100%</strong>
-                    <span>Local Marketplace</span>
+
+                    <strong id="shopsListingsCount">
+                        0
+                    </strong>
+
+                    <span>
+                        Active Listings
+                    </span>
+
+                </div>
+
+                <div>
+
+                    <strong>
+                        100%
+                    </strong>
+
+                    <span>
+                        Local Marketplace
+                    </span>
+
                 </div>
 
             </div>
 
         </div>
+
 
         <aside class="shops-directory-hero-card">
 
@@ -73,23 +117,113 @@
             </div>
 
             <h2>
-                Shop with confidence
+                Featured by MauMarket
             </h2>
 
             <p>
-                Every active seller is reviewed before appearing on MauMarket.
+                Featured Shops are verified MauMarket businesses that have
+                chosen to promote their shop through our Explore Shops
+                directory.
             </p>
 
             <ul>
-                <li>Verified seller accounts</li>
-                <li>Secure MauMarket checkout</li>
-                <li>Island-wide delivery support</li>
-                <li>Customer assistance</li>
+
+                <li>
+                    ⭐ Featured Shops
+                </li>
+
+                <li>
+                    ✓ Verified seller accounts
+                </li>
+
+                <li>
+                    ✓ Secure MauMarket checkout
+                </li>
+
+                <li>
+                    ✓ Island-wide delivery support
+                </li>
+
+                <li>
+                    ✓ Customer assistance
+                </li>
+
             </ul>
 
         </aside>
 
     </section>
+
+
+    <!-- =====================================================
+         FEATURED SHOPS INFORMATION
+    ====================================================== -->
+
+    <section
+        id="featuredShopsBanner"
+        class="featured-shops-banner"
+    >
+
+        <div class="featured-banner-text">
+
+            <span class="section-kicker">
+                Featured Shops
+            </span>
+
+            <h2>
+                Businesses promoted through Explore Shops
+            </h2>
+
+            <p>
+                Featured Shops have an active MauMarket promotional
+                subscription and have chosen to display their business
+                publicly in the Explore Shops directory.
+            </p>
+
+        </div>
+
+        <div class="featured-banner-benefits">
+
+            <div>
+
+                <span aria-hidden="true">
+                    ✓
+                </span>
+
+                <p>
+                    Verified seller
+                </p>
+
+            </div>
+
+            <div>
+
+                <span aria-hidden="true">
+                    ✓
+                </span>
+
+                <p>
+                    Active MauMarket shop
+                </p>
+
+            </div>
+
+            <div>
+
+                <span aria-hidden="true">
+                    ✓
+                </span>
+
+                <p>
+                    Featured subscription
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
 
     <!-- =====================================================
          SEARCH AND FILTERS
@@ -124,6 +258,7 @@
 
         </div>
 
+
         <div class="shops-filter-group">
 
             <label for="shopsCategoryFilter">
@@ -131,12 +266,15 @@
             </label>
 
             <select id="shopsCategoryFilter">
+
                 <option value="">
                     All Categories
                 </option>
+
             </select>
 
         </div>
+
 
         <div class="shops-filter-group">
 
@@ -145,8 +283,9 @@
             </label>
 
             <select id="shopsSortFilter">
+
                 <option value="featured">
-                    Featured
+                    Featured Shops First
                 </option>
 
                 <option value="rating">
@@ -164,9 +303,11 @@
                 <option value="alphabetical">
                     A to Z
                 </option>
+
             </select>
 
         </div>
+
 
         <button
             id="clearShopFiltersBtn"
@@ -178,11 +319,16 @@
 
     </section>
 
+
     <!-- =====================================================
          DIRECTORY CONTENT
     ====================================================== -->
 
     <section class="shops-directory-layout">
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
 
         <aside class="shops-directory-sidebar">
 
@@ -203,11 +349,13 @@
                 <div
                     id="shopsCategoryList"
                     class="shops-category-list"
+                    aria-live="polite"
                 >
                     Loading categories...
                 </div>
 
             </div>
+
 
             <div class="filter-card shops-directory-trust-card">
 
@@ -223,35 +371,86 @@
 
                 </div>
 
+
                 <div class="sidebar-benefit">
 
-                    <span>✓</span>
+                    <span aria-hidden="true">
+                        ✓
+                    </span>
 
                     <div>
-                        <strong>Approved Shops</strong>
-                        <small>Only approved sellers appear here.</small>
+
+                        <strong>
+                            Approved Shops
+                        </strong>
+
+                        <small>
+                            Featured Shops belong to approved MauMarket sellers.
+                        </small>
+
                     </div>
 
                 </div>
 
+
                 <div class="sidebar-benefit">
 
-                    <span>✓</span>
+                    <span aria-hidden="true">
+                        ✓
+                    </span>
 
                     <div>
-                        <strong>Secure Checkout</strong>
-                        <small>Payments are handled through MauMarket.</small>
+
+                        <strong>
+                            Secure Checkout
+                        </strong>
+
+                        <small>
+                            Customer payments are handled through MauMarket.
+                        </small>
+
                     </div>
 
                 </div>
 
+
                 <div class="sidebar-benefit">
 
-                    <span>✓</span>
+                    <span aria-hidden="true">
+                        ✓
+                    </span>
 
                     <div>
-                        <strong>Delivery Support</strong>
-                        <small>MauMarket manages delivery support.</small>
+
+                        <strong>
+                            Delivery Support
+                        </strong>
+
+                        <small>
+                            MauMarket manages platform delivery support.
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sidebar-benefit">
+
+                    <span aria-hidden="true">
+                        ✓
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Featured Visibility
+                        </strong>
+
+                        <small>
+                            Shops shown here have opted into public promotion.
+                        </small>
+
                     </div>
 
                 </div>
@@ -260,6 +459,11 @@
 
         </aside>
 
+
+        <!-- =================================================
+             MAIN DIRECTORY
+        ================================================== -->
+
         <section class="shops-directory-main">
 
             <div class="shops-directory-heading">
@@ -267,15 +471,15 @@
                 <div>
 
                     <span class="section-kicker">
-                        Seller Directory
+                        Explore Shops
                     </span>
 
                     <h2 id="shopsDirectoryTitle">
-                        All Shops
+                        Featured Shops
                     </h2>
 
                     <p id="shopsResultCount">
-                        Loading shops...
+                        Loading Featured Shops...
                     </p>
 
                 </div>
@@ -289,13 +493,29 @@
 
             </div>
 
+
+            <div
+                id="shopsLoadingState"
+                class="shops-loading-state"
+                aria-live="polite"
+            >
+
+                <div class="shops-loading-spinner"></div>
+
+                <p>
+                    Loading Featured Shops...
+                </p>
+
+            </div>
+
+
             <div
                 id="shopsGrid"
                 class="shops-directory-grid"
                 aria-live="polite"
             >
-                Loading shops...
             </div>
+
 
             <div
                 id="shopsEmptyState"
@@ -303,8 +523,15 @@
                 style="display:none;"
             >
 
+                <div
+                    class="shops-empty-icon"
+                    aria-hidden="true"
+                >
+                    🏪
+                </div>
+
                 <h3>
-                    No shops found
+                    No Featured Shops found
                 </h3>
 
                 <p>
@@ -316,7 +543,39 @@
                     class="btn"
                     type="button"
                 >
-                    Show All Shops
+                    Show All Featured Shops
+                </button>
+
+            </div>
+
+
+            <div
+                id="shopsErrorState"
+                class="shops-empty-state shops-error-state"
+                style="display:none;"
+            >
+
+                <div
+                    class="shops-empty-icon"
+                    aria-hidden="true"
+                >
+                    ⚠
+                </div>
+
+                <h3>
+                    Shops could not be loaded
+                </h3>
+
+                <p id="shopsErrorMessage">
+                    Refresh the page and try again.
+                </p>
+
+                <button
+                    id="retryShopsBtn"
+                    class="btn"
+                    type="button"
+                >
+                    Try Again
                 </button>
 
             </div>
@@ -324,6 +583,90 @@
         </section>
 
     </section>
+
+
+    <!-- =====================================================
+         FEATURED SHOP EXPLANATION
+    ====================================================== -->
+
+    <section class="shops-featured-explanation">
+
+        <div>
+
+            <span class="section-kicker">
+                What is a Featured Shop?
+            </span>
+
+            <h2>
+                Greater visibility for local businesses
+            </h2>
+
+            <p>
+                Featured Shop is MauMarket's optional promotional
+                subscription. Sellers with an approved and active
+                subscription may choose to display their shop publicly
+                in Explore Shops.
+            </p>
+
+        </div>
+
+        <div class="shops-featured-explanation-grid">
+
+            <article>
+
+                <span aria-hidden="true">
+                    01
+                </span>
+
+                <h3>
+                    Verified Seller
+                </h3>
+
+                <p>
+                    The business must first have an approved MauMarket
+                    seller account.
+                </p>
+
+            </article>
+
+            <article>
+
+                <span aria-hidden="true">
+                    02
+                </span>
+
+                <h3>
+                    Active Subscription
+                </h3>
+
+                <p>
+                    The shop must have an active Featured Shop
+                    subscription verified by MauMarket.
+                </p>
+
+            </article>
+
+            <article>
+
+                <span aria-hidden="true">
+                    03
+                </span>
+
+                <h3>
+                    Public Visibility
+                </h3>
+
+                <p>
+                    The seller must enable the option to display the
+                    shop in Explore Shops.
+                </p>
+
+            </article>
+
+        </div>
+
+    </section>
+
 
     <!-- =====================================================
          SELLER CTA
@@ -338,36 +681,50 @@
             </span>
 
             <h2>
-                Want to open your own MauMarket shop?
+                Want your business to appear in Explore Shops?
             </h2>
 
             <p>
-                Register as a seller, submit your shop for approval and start
-                selling products or services across Mauritius.
+                Register as a MauMarket seller, get your business
+                approved and subscribe to the Featured Shop plan for
+                Rs 500 per month to promote your shop.
             </p>
 
         </div>
 
-        <a
-            href="register.html"
-            class="btn"
-        >
-            Start Selling
-        </a>
+        <div class="shops-directory-cta-actions">
+
+            <a
+                href="register.html"
+                class="btn"
+            >
+                Start Selling
+            </a>
+
+            <a
+                href="seller.html#featured-shop"
+                class="secondary-btn"
+            >
+                Featured Shop Plan
+            </a>
+
+        </div>
 
     </section>
 
 </main>
 
+
 <script
     type="module"
-    src="js/nav.js?v=5.1"
+    src="js/nav.js?v=5.9-featured-shop"
 ></script>
 
 <script
     type="module"
-    src="js/shops.js?v=1.0"
+    src="js/shops.js?v=2.0-featured-shop"
 ></script>
 
 </body>
+
 </html>
