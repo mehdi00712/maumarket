@@ -87,6 +87,78 @@
 
   </section>
 
+
+  <!-- =====================================================
+       SELLER DASHBOARD PAGE SWITCHER
+  ====================================================== -->
+
+  <section
+    class="seller-dashboard-tabs"
+    role="tablist"
+    aria-label="Seller dashboard sections"
+  >
+
+    <button
+      id="sellerOverviewTab"
+      type="button"
+      class="seller-dashboard-tab active"
+      data-seller-page="overview"
+      role="tab"
+      aria-selected="true"
+      aria-controls="sellerOverviewView"
+    >
+      <span aria-hidden="true">⌂</span>
+      <strong>Overview</strong>
+    </button>
+
+    <button
+      id="sellerBusinessTab"
+      type="button"
+      class="seller-dashboard-tab"
+      data-seller-page="business"
+      role="tab"
+      aria-selected="false"
+      aria-controls="sellerBusinessView"
+    >
+      <span aria-hidden="true">🏪</span>
+      <strong>Business Profile</strong>
+    </button>
+
+    <button
+      id="sellerAddProductTab"
+      type="button"
+      class="seller-dashboard-tab"
+      data-seller-page="add-product"
+      role="tab"
+      aria-selected="false"
+      aria-controls="sellerAddProductView"
+    >
+      <span aria-hidden="true">＋</span>
+      <strong>Add Product</strong>
+    </button>
+
+    <button
+      id="sellerProductsTab"
+      type="button"
+      class="seller-dashboard-tab"
+      data-seller-page="products"
+      role="tab"
+      aria-selected="false"
+      aria-controls="sellerProductsView"
+    >
+      <span aria-hidden="true">📦</span>
+      <strong>My Products</strong>
+    </button>
+
+  </section>
+
+  <div
+    id="sellerOverviewView"
+    class="seller-dashboard-view active"
+    data-seller-view="overview"
+    role="tabpanel"
+    aria-labelledby="sellerOverviewTab"
+  >
   <!-- =====================================================
        SELLER BENEFITS
   ====================================================== -->
@@ -159,6 +231,79 @@
 
   </section>
 
+
+  <!-- =====================================================
+       PRODUCT SLOTS
+  ====================================================== -->
+
+  <section class="form-card seller-slots-card">
+
+    <div class="section-row-title">
+
+      <div>
+
+        <span class="section-kicker">
+          Listing Capacity
+        </span>
+
+        <h2>
+          Product Slots
+        </h2>
+
+        <p>
+          Request more slots when you need to publish additional products
+          or services.
+        </p>
+
+      </div>
+
+      <div class="seller-slot-icon">
+        📊
+      </div>
+
+    </div>
+
+    <div class="seller-slot-status-box">
+
+      <div>
+
+        <span>
+          Current Slot Usage
+        </span>
+
+        <strong id="slotInfo">
+          Loading slots...
+        </strong>
+
+      </div>
+
+      <button
+        id="requestSlotsBtn"
+        type="button"
+        class="secondary-btn"
+      >
+        Request More Slots
+      </button>
+
+    </div>
+
+    <p
+      id="slotMessage"
+      class="seller-form-message"
+    ></p>
+
+  </section>
+
+  </div>
+
+  <div
+    id="sellerBusinessView"
+    class="seller-dashboard-view"
+    data-seller-view="business"
+    role="tabpanel"
+    aria-labelledby="sellerBusinessTab"
+    hidden
+  >
   <!-- =====================================================
        SHOP PROFILE
   ====================================================== -->
@@ -367,68 +512,16 @@
 
   </section>
 
-  <!-- =====================================================
-       PRODUCT SLOTS
-  ====================================================== -->
+  </div>
 
-  <section class="form-card seller-slots-card">
-
-    <div class="section-row-title">
-
-      <div>
-
-        <span class="section-kicker">
-          Listing Capacity
-        </span>
-
-        <h2>
-          Product Slots
-        </h2>
-
-        <p>
-          Request more slots when you need to publish additional products
-          or services.
-        </p>
-
-      </div>
-
-      <div class="seller-slot-icon">
-        📊
-      </div>
-
-    </div>
-
-    <div class="seller-slot-status-box">
-
-      <div>
-
-        <span>
-          Current Slot Usage
-        </span>
-
-        <strong id="slotInfo">
-          Loading slots...
-        </strong>
-
-      </div>
-
-      <button
-        id="requestSlotsBtn"
-        type="button"
-        class="secondary-btn"
-      >
-        Request More Slots
-      </button>
-
-    </div>
-
-    <p
-      id="slotMessage"
-      class="seller-form-message"
-    ></p>
-
-  </section>
-
+  <div
+    id="sellerAddProductView"
+    class="seller-dashboard-view"
+    data-seller-view="add-product"
+    role="tabpanel"
+    aria-labelledby="sellerAddProductTab"
+    hidden
+  >
   <!-- =====================================================
        PRODUCT / SERVICE FORM
   ====================================================== -->
@@ -992,6 +1085,16 @@
 
   </section>
 
+  </div>
+
+  <div
+    id="sellerProductsView"
+    class="seller-dashboard-view"
+    data-seller-view="products"
+    role="tabpanel"
+    aria-labelledby="sellerProductsTab"
+    hidden
+  >
   <!-- =====================================================
        SELLER ITEMS
   ====================================================== -->
@@ -1030,7 +1133,168 @@
 
   </section>
 
+  </div>
+
 </main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const sellerTabs = Array.from(
+      document.querySelectorAll("[data-seller-page]")
+    );
+
+    const sellerViews = Array.from(
+      document.querySelectorAll("[data-seller-view]")
+    );
+
+    if (sellerTabs.length === 0 || sellerViews.length === 0) {
+      return;
+    }
+
+    function showSellerView(viewName, options = {}) {
+      const { scroll = false, updateHash = true } = options;
+
+      const requestedViewExists = sellerViews.some(
+        (view) => view.dataset.sellerView === viewName
+      );
+
+      const safeViewName = requestedViewExists
+        ? viewName
+        : "overview";
+
+      sellerTabs.forEach((tab) => {
+        const isActive =
+          tab.dataset.sellerPage === safeViewName;
+
+        tab.classList.toggle("active", isActive);
+        tab.setAttribute(
+          "aria-selected",
+          String(isActive)
+        );
+
+        tab.tabIndex = isActive ? 0 : -1;
+      });
+
+      sellerViews.forEach((view) => {
+        const isActive =
+          view.dataset.sellerView === safeViewName;
+
+        view.classList.toggle("active", isActive);
+        view.hidden = !isActive;
+      });
+
+      sessionStorage.setItem(
+        "maumarketSellerDashboardView",
+        safeViewName
+      );
+
+      if (updateHash) {
+        history.replaceState(
+          null,
+          "",
+          `#${safeViewName}`
+        );
+      }
+
+      if (scroll) {
+        document
+          .querySelector(".seller-dashboard-tabs")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+      }
+    }
+
+    sellerTabs.forEach((tab, tabIndex) => {
+      tab.addEventListener("click", () => {
+        showSellerView(
+          tab.dataset.sellerPage,
+          {
+            scroll: true
+          }
+        );
+      });
+
+      tab.addEventListener("keydown", (event) => {
+        if (
+          event.key !== "ArrowLeft" &&
+          event.key !== "ArrowRight" &&
+          event.key !== "Home" &&
+          event.key !== "End"
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+
+        let nextIndex = tabIndex;
+
+        if (event.key === "ArrowRight") {
+          nextIndex =
+            (tabIndex + 1) % sellerTabs.length;
+        }
+
+        if (event.key === "ArrowLeft") {
+          nextIndex =
+            (tabIndex - 1 + sellerTabs.length) %
+            sellerTabs.length;
+        }
+
+        if (event.key === "Home") {
+          nextIndex = 0;
+        }
+
+        if (event.key === "End") {
+          nextIndex = sellerTabs.length - 1;
+        }
+
+        const nextTab = sellerTabs[nextIndex];
+
+        showSellerView(
+          nextTab.dataset.sellerPage,
+          {
+            scroll: false
+          }
+        );
+
+        nextTab.focus();
+      });
+    });
+
+    document.addEventListener(
+      "maumarket:seller-view",
+      (event) => {
+        const requestedView =
+          event.detail?.view || "overview";
+
+        showSellerView(
+          requestedView,
+          {
+            scroll: event.detail?.scroll !== false
+          }
+        );
+      }
+    );
+
+    const hashView =
+      window.location.hash.replace("#", "");
+
+    const savedView =
+      sessionStorage.getItem(
+        "maumarketSellerDashboardView"
+      );
+
+    showSellerView(
+      hashView || savedView || "overview",
+      {
+        scroll: false,
+        updateHash: false
+      }
+    );
+  });
+</script>
+
 
 <script
   type="module"
