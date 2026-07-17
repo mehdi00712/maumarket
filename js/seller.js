@@ -2802,17 +2802,6 @@ async function submitFeaturedShopRequest() {
       requestData
     );
 
-    await setDoc(
-      doc(db, "shops", currentUser.uid),
-      {
-        featuredStatus: "pending",
-        featuredPaymentVerified: false,
-        featuredLastRequestAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      },
-      { merge: true }
-    );
-
     clearFeaturedShopRequestForm({
       preserveMessage: true
     });
