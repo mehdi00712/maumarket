@@ -67,16 +67,52 @@ async function loadShop() {
 
     updateCanonicalShopUrl();
 
-    if (breadcrumbShop) breadcrumbShop.textContent = currentShop.shopName || "Shop";
+    if (breadcrumbShop) {
+      breadcrumbShop.textContent = currentShop.shopName || "Shop";
+    }
+
     document.title = `${currentShop.shopName || "Shop"} | MauMarket`;
 
-    await Promise.all([loadShopItems(), loadReviews()]);
-
+    /*
+      Render the shop immediately.
+      Products and reviews are secondary data, so a permission/index issue in
+      either collection must never leave the whole public shop page blank.
+    */
     renderShopHeader();
     renderTrustStrip();
+    renderFeaturedShopElements();
     renderSidebar();
-    renderProducts();
-    renderReviews();
+    renderProductsLoading();
+    renderReviewsLoading();
+    updateHighlightStats();
+
+    const [productsResult, reviewsResult] = await Promise.allSettled([
+      loadShopItems(),
+      loadReviews()
+    ]);
+
+    if (productsResult.status === "rejected") {
+      console.warn("Shop products could not load:", productsResult.reason);
+      shopProducts = [];
+      renderProductsError(productsResult.reason);
+    } else {
+      renderProducts();
+    }
+
+    if (reviewsResult.status === "rejected") {
+      console.warn("Shop reviews could not load:", reviewsResult.reason);
+      shopReviews = [];
+      renderReviewsError(reviewsResult.reason);
+    } else {
+      renderReviews();
+    }
+
+    /*
+      Refresh elements that depend on product/review totals.
+    */
+    renderShopHeader();
+    renderFeaturedShopElements();
+    renderSidebar();
     updateHighlightStats();
   } catch (error) {
     console.error("Shop could not load:", error);
@@ -88,39 +124,155 @@ async function loadShop() {
 
 async function resolveRequestedShop() {
   if (requestedShopSlug) {
-    const slugQuery = query(collection(db, "shops"), where("slug", "==", requestedShopSlug), limit(1));
+    /*
+      Preferred lookup using the current slug field.
+    */
+    const slugQuery = query(
+      collection(db, "shops"),
+      where("slug", "==", requestedShopSlug),
+      limit(1)
+    );
+
     const slugSnapshot = await getDocs(slugQuery);
+
     if (!slugSnapshot.empty) {
       const shopDoc = slugSnapshot.docs[0];
       return { id: shopDoc.id, ...shopDoc.data() };
+    }
+
+    /*
+      Backward compatibility for older shop documents.
+    */
+    const legacySlugQuery = query(
+      collection(db, "shops"),
+      where("shopSlug", "==", requestedShopSlug),
+      limit(1)
+    );
+
+    const legacySlugSnapshot = await getDocs(legacySlugQuery);
+
+    if (!legacySlugSnapshot.empty) {
+      const shopDoc = legacySlugSnapshot.docs[0];
+      return { id: shopDoc.id, ...shopDoc.data() };
+    }
+
+    /*
+      Final fallback: read available shops and compare normalized values.
+      This helps when a historical slug contains uppercase letters or spaces.
+    */
+    const shopsSnapshot = await getDocs(collection(db, "shops"));
+
+    const matchingShop = shopsSnapshot.docs.find((shopDoc) => {
+      const data = shopDoc.data();
+
+      return normalizeShopSlug(
+        data.slug ||
+        data.shopSlug ||
+        data.shopName ||
+        ""
+      ) === requestedShopSlug;
+    });
+
+    if (matchingShop) {
+      return {
+        id: matchingShop.id,
+        ...matchingShop.data()
+      };
     }
   }
 
   if (requestedSellerId) {
     const directSnap = await getDoc(doc(db, "shops", requestedSellerId));
-    if (directSnap.exists()) return { id: directSnap.id, ...directSnap.data() };
 
-    const ownerQuery = query(collection(db, "shops"), where("ownerId", "==", requestedSellerId), limit(1));
+    if (directSnap.exists()) {
+      return {
+        id: directSnap.id,
+        ...directSnap.data()
+      };
+    }
+
+    const ownerQuery = query(
+      collection(db, "shops"),
+      where("ownerId", "==", requestedSellerId),
+      limit(1)
+    );
+
     const ownerSnapshot = await getDocs(ownerQuery);
+
     if (!ownerSnapshot.empty) {
       const shopDoc = ownerSnapshot.docs[0];
-      return { id: shopDoc.id, ...shopDoc.data() };
+
+      return {
+        id: shopDoc.id,
+        ...shopDoc.data()
+      };
+    }
+
+    const sellerQuery = query(
+      collection(db, "shops"),
+      where("sellerId", "==", requestedSellerId),
+      limit(1)
+    );
+
+    const sellerSnapshot = await getDocs(sellerQuery);
+
+    if (!sellerSnapshot.empty) {
+      const shopDoc = sellerSnapshot.docs[0];
+
+      return {
+        id: shopDoc.id,
+        ...shopDoc.data()
+      };
     }
   }
+
   return null;
 }
 
 function renderShopNotFound(message) {
   if (shopHeader) {
-    shopHeader.innerHTML = `<div class="order-card"><h3>Shop not found</h3><p>${escapeHtml(message)}</p><div class="seller-actions"><a class="btn" href="shops.html">Browse Shops</a><a class="secondary-btn" href="products.html">Browse Marketplace</a></div></div>`;
+    shopHeader.innerHTML = `
+      <div class="order-card">
+        <h3>Shop not found</h3>
+        <p>${escapeHtml(message)}</p>
+
+        <div class="seller-actions">
+          <a class="btn" href="shops.html">Browse Shops</a>
+          <a class="secondary-btn" href="products.html">Browse Marketplace</a>
+        </div>
+      </div>
+    `;
   }
-  if (shopItems) shopItems.innerHTML = "";
-  if (shopResultCount) shopResultCount.textContent = "0 items";
+
+  if (shopItems) {
+    shopItems.innerHTML = "";
+  }
+
+  if (shopResultCount) {
+    shopResultCount.textContent = "0 items";
+  }
+
+  document.getElementById("featuredShopHeroBadge")?.replaceChildren();
+
+  const featuredCard = document.getElementById("featuredShopCard");
+
+  if (featuredCard) {
+    featuredCard.style.display = "none";
+  }
 }
 
 function updateCanonicalShopUrl() {
-  if (!currentShop?.slug) return;
-  const canonicalUrl = `${window.location.pathname}?shop=${encodeURIComponent(currentShop.slug)}`;
+  const slug = normalizeShopSlug(
+    currentShop?.slug ||
+    currentShop?.shopSlug ||
+    currentShop?.shopName ||
+    ""
+  );
+
+  if (!slug) return;
+
+  const canonicalUrl =
+    `${window.location.pathname}?shop=${encodeURIComponent(slug)}`;
   const currentUrl = `${window.location.pathname}${window.location.search}`;
   if (canonicalUrl !== currentUrl) window.history.replaceState({}, "", canonicalUrl);
 }
@@ -224,7 +376,17 @@ function renderShopHeader() {
 }
 
 function getCurrentPublicShopUrl() {
-  if (currentShop?.slug) return `${getProjectBaseUrl()}shop.html?shop=${encodeURIComponent(currentShop.slug)}`;
+  const slug = normalizeShopSlug(
+    currentShop?.slug ||
+    currentShop?.shopSlug ||
+    currentShop?.shopName ||
+    ""
+  );
+
+  if (slug) {
+    return `${getProjectBaseUrl()}shop.html?shop=${encodeURIComponent(slug)}`;
+  }
+
   return `${getProjectBaseUrl()}shop.html?id=${encodeURIComponent(sellerId)}`;
 }
 
@@ -306,7 +468,164 @@ function renderTrustStrip() {
   `;
 }
 
+
+function renderProductsLoading() {
+  if (!shopItems) return;
+
+  shopItems.innerHTML = `
+    <div class="order-card">
+      <h3>Loading products...</h3>
+      <p class="muted">Please wait while this shop catalogue loads.</p>
+    </div>
+  `;
+
+  if (shopResultCount) {
+    shopResultCount.textContent = "Loading items...";
+  }
+}
+
+function renderReviewsLoading() {
+  if (!reviewsBox) return;
+
+  reviewsBox.innerHTML = `
+    <div class="order-card">
+      <h3>Loading reviews...</h3>
+      <p class="muted">Please wait while verified buyer feedback loads.</p>
+    </div>
+  `;
+}
+
+function renderProductsError(error) {
+  if (!shopItems) return;
+
+  shopItems.innerHTML = `
+    <div class="order-card">
+      <h3>Products temporarily unavailable</h3>
+      <p>
+        The shop loaded successfully, but its products could not be displayed
+        right now. Please refresh the page shortly.
+      </p>
+    </div>
+  `;
+
+  if (shopResultCount) {
+    shopResultCount.textContent = "Products unavailable";
+  }
+}
+
+function renderReviewsError(error) {
+  if (!reviewsBox) return;
+
+  reviewsBox.innerHTML = `
+    <div class="order-card">
+      <h3>Reviews temporarily unavailable</h3>
+      <p class="muted">
+        This shop is available, but its reviews could not be loaded right now.
+      </p>
+    </div>
+  `;
+
+  if (reviewsAverageRating) {
+    reviewsAverageRating.textContent = "0.0";
+  }
+
+  if (reviewsTotalCount) {
+    reviewsTotalCount.textContent = "0";
+  }
+}
+
+function renderFeaturedShopElements() {
+  const heroBadge = document.getElementById("featuredShopHeroBadge");
+  const featuredCard = document.getElementById("featuredShopCard");
+  const featured = isActiveFeaturedShop(currentShop);
+
+  if (heroBadge) {
+    heroBadge.innerHTML = featured
+      ? `
+          <div class="featured-shop-hero-badge">
+            <span>★</span>
+            Featured MauMarket Shop
+          </div>
+        `
+      : "";
+  }
+
+  if (!featuredCard) return;
+
+  if (!featured) {
+    featuredCard.style.display = "none";
+    featuredCard.innerHTML = "";
+    return;
+  }
+
+  featuredCard.style.display = "";
+
+  const expiry = timestampToDate(currentShop?.featuredExpiry);
+  const expiryText = expiry
+    ? expiry.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      })
+    : "Active";
+
+  featuredCard.innerHTML = `
+    <div class="premium-sidebar-heading">
+      <div class="premium-sidebar-icon">★</div>
+      <h3>Featured Shop</h3>
+    </div>
+
+    <p>
+      This seller has an active Featured Shop subscription verified by
+      MauMarket.
+    </p>
+
+    <div class="verified-box">
+      <strong>Featured until ${escapeHtml(expiryText)}</strong>
+      <p>Priority visibility in the MauMarket shop directory.</p>
+    </div>
+  `;
+}
+
+function isActiveFeaturedShop(shop) {
+  if (!shop) return false;
+
+  const expiry = timestampToDate(shop.featuredExpiry);
+
+  return (
+    shop.featuredShop === true &&
+    String(shop.featuredStatus || "").toLowerCase() === "active" &&
+    shop.featuredPaymentVerified === true &&
+    shop.showInExploreShops === true &&
+    expiry instanceof Date &&
+    !Number.isNaN(expiry.getTime()) &&
+    expiry.getTime() > Date.now()
+  );
+}
+
+function timestampToDate(value) {
+  if (!value) return null;
+
+  if (typeof value.toDate === "function") {
+    return value.toDate();
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === "object" && Number.isFinite(value.seconds)) {
+    return new Date(value.seconds * 1000);
+  }
+
+  const parsed = new Date(value);
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function renderProducts() {
+  if (!shopItems) return;
+
   let products = [...shopProducts];
 
   const sort = shopSort?.value || "newest";
@@ -409,7 +728,8 @@ function renderSidebar() {
   const deliveryRating = getAverageDeliveryRating();
   const area = safeArea(currentShop.location);
 
-  shopAboutCard.innerHTML = `
+  if (shopAboutCard) {
+    shopAboutCard.innerHTML = `
     <h3>About this shop</h3>
     <p>${escapeHtml(currentShop.description || "This seller has not added a description yet.")}</p>
 
@@ -426,7 +746,8 @@ function renderSidebar() {
     <p class="muted">
       Contact is handled safely through MauMarket after checkout.
     </p>
-  `;
+    `;
+  }
 
   if (shopPolicyCard) {
     shopPolicyCard.innerHTML = `
@@ -441,7 +762,8 @@ function renderSidebar() {
     `;
   }
 
-  shopRatingCard.innerHTML = `
+  if (shopRatingCard) {
+    shopRatingCard.innerHTML = `
     <h3>Shop Rating</h3>
     <h2>${rating} ⭐</h2>
     <p>Based on ${shopReviews.length} review(s)</p>
@@ -457,9 +779,11 @@ function renderSidebar() {
     <hr>
     <p><strong>Delivery:</strong> ${deliveryRating} ⭐</p>
     <p><strong>Products:</strong> ${shopProducts.length}</p>
-  `;
+    `;
+  }
 
-  aboutShopBox.innerHTML = `
+  if (aboutShopBox) {
+    aboutShopBox.innerHTML = `
     <h3>${escapeHtml(currentShop.shopName || "Shop")}</h3>
     <p>${escapeHtml(currentShop.description || "This seller has not added a description yet.")}</p>
     <p>📍 ${escapeHtml(area)}</p>
@@ -467,10 +791,13 @@ function renderSidebar() {
     <p>🚚 Delivery Rating: ${deliveryRating}</p>
     <p>✅ Verified MauMarket Seller</p>
     <p>🛡️ Payment and delivery protected by MauMarket.</p>
-  `;
+    `;
+  }
 }
 
 function renderReviews() {
+  if (!reviewsBox) return;
+
   const rating = getAverageSellerRating();
 
   if (reviewsAverageRating) reviewsAverageRating.textContent = rating;
