@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Featured Shop Requests | MauMarket</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main class="admin-page">
+
+<header class="admin-page-header">
+<h1>Featured Shop Management</h1>
+<p>Review, approve and manage Featured Shop subscriptions.</p>
+</header>
+
+<section class="admin-stats-grid">
+
+<div class="admin-stat-card">
+<h3 id="pendingFeaturedCount">0</h3>
+<p>Pending Requests</p>
+</div>
+
+<div class="admin-stat-card">
+<h3 id="activeFeaturedCount">0</h3>
+<p>Active Featured Shops</p>
+</div>
+
+<div class="admin-stat-card">
+<h3 id="expiringFeaturedCount">0</h3>
+<p>Expiring Soon</p>
+</div>
+
+<div class="admin-stat-card">
+<h3 id="featuredRevenue">Rs 0</h3>
+<p>Revenue</p>
+</div>
+
+</section>
+
+<section class="admin-toolbar">
+
+<input
+id="featuredSearch"
+type="search"
+placeholder="Search seller or shop">
+
+<select id="featuredStatusFilter">
+<option value="">All Status</option>
+<option value="pending">Pending</option>
+<option value="approved">Approved</option>
+<option value="rejected">Rejected</option>
+<option value="expired">Expired</option>
+</select>
+
+<button id="refreshFeaturedBtn" class="btn">
+Refresh
+</button>
+
+</section>
+
+<section>
+
+<div id="featuredRequestsContainer">
+Loading Featured Shop requests...
+</div>
+
+<div
+id="featuredEmptyState"
+style="display:none"
+class="empty-market-card">
+
+<h2>No requests found</h2>
+
+<p>
+There are currently no Featured Shop requests matching
+the selected filters.
+</p>
+
+</div>
+
+</section>
+
+<dialog id="featuredRequestModal">
+
+<h2>Featured Shop Request</h2>
+
+<div id="featuredRequestDetails"></div>
+
+<div class="dialog-actions">
+
+<button
+id="approveFeaturedBtn"
+class="btn">
+
+Approve
+
+</button>
+
+<button
+id="rejectFeaturedBtn"
+class="danger-btn">
+
+Reject
+
+</button>
+
+<button
+id="closeFeaturedModal"
+class="secondary-btn">
+
+Close
+
+</button>
+
+</div>
+
+</dialog>
+
+<script
+type="module"
+src="js/nav.js?v=5.9-featured-shop"></script>
+
+<script
+type="module"
+src="js/admin-featured-shops.js?v=1.0"></script>
+
+</main>
+
+</body>
+</html>
