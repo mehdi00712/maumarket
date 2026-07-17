@@ -52,6 +52,12 @@ const shopPhone = document.getElementById("shopPhone");
 const shopLocation = document.getElementById("shopLocation");
 const shopPickupAddress = document.getElementById("shopPickupAddress");
 const shopPickupInstructions = document.getElementById("shopPickupInstructions");
+const shopPickupMap = document.getElementById("shopPickupMap");
+const shopPickupLatitude = document.getElementById("shopPickupLatitude");
+const shopPickupLongitude = document.getElementById("shopPickupLongitude");
+const useCurrentPickupLocationBtn = document.getElementById("useCurrentPickupLocationBtn");
+const findPickupAddressBtn = document.getElementById("findPickupAddressBtn");
+const clearPickupPinBtn = document.getElementById("clearPickupPinBtn");
 const shopLogo = document.getElementById("shopLogo");
 const shopBanner = document.getElementById("shopBanner");
 const saveShopBtn = document.getElementById("saveShopBtn");
@@ -116,6 +122,15 @@ let removedExistingImageUrls = new Set();
 
 let optionRows = [];
 
+let pickupMap = null;
+let pickupMarker = null;
+let pickupMapInitialized = false;
+
+const DEFAULT_PICKUP_COORDINATES = {
+  latitude: -20.3484,
+  longitude: 57.5522
+};
+
 /* =========================================================
    INITIALIZATION
    ========================================================= */
@@ -170,6 +185,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function wireFormEvents() {
+  initializePickupLocationEvents();
   initializeSellerDashboardTabs();
   itemPrice?.addEventListener("input", updatePricePreview);
 
@@ -224,6 +240,366 @@ function wireFormEvents() {
   itemOptionType?.addEventListener("input", refreshOptionRowTitles);
 
   cancelEditBtn?.addEventListener("click", resetItemForm);
+}
+
+
+/* =========================================================
+   PICKUP LOCATION MAP
+   ========================================================= */
+
+function initializePickupLocationEvents() {
+  const businessTab = document.querySelector(
+    '[data-seller-page="business"]'
+  );
+
+  businessTab?.addEventListener("click", () => {
+    window.setTimeout(() => {
+      initializePickupMap();
+      pickupMap?.invalidateSize();
+    }, 80);
+  });
+
+  shopPickupAddress?.addEventListener("focus", () => {
+    initializePickupMap();
+  });
+
+  useCurrentPickupLocationBtn?.addEventListener(
+    "click",
+    useCurrentPickupLocation
+  );
+
+  findPickupAddressBtn?.addEventListener(
+    "click",
+    locateTypedPickupAddress
+  );
+
+  clearPickupPinBtn?.addEventListener(
+    "click",
+    clearPickupLocation
+  );
+
+  if (
+    window.location.hash === "#business" ||
+    !document.getElementById("sellerBusinessView")?.hidden
+  ) {
+    window.setTimeout(initializePickupMap, 150);
+  }
+}
+
+function initializePickupMap() {
+  if (pickupMapInitialized || !shopPickupMap) return;
+
+  if (typeof window.L === "undefined") {
+    setMessage(
+      shopMessage,
+      "The pickup map could not load. Please refresh the page.",
+      "error"
+    );
+    return;
+  }
+
+  const savedLatitude = Number(shopPickupLatitude?.value);
+  const savedLongitude = Number(shopPickupLongitude?.value);
+
+  const hasSavedCoordinates =
+    Number.isFinite(savedLatitude) &&
+    Number.isFinite(savedLongitude) &&
+    savedLatitude !== 0 &&
+    savedLongitude !== 0;
+
+  const initialLatitude = hasSavedCoordinates
+    ? savedLatitude
+    : DEFAULT_PICKUP_COORDINATES.latitude;
+
+  const initialLongitude = hasSavedCoordinates
+    ? savedLongitude
+    : DEFAULT_PICKUP_COORDINATES.longitude;
+
+  pickupMap = window.L.map(shopPickupMap, {
+    zoomControl: true,
+    scrollWheelZoom: false
+  }).setView(
+    [initialLatitude, initialLongitude],
+    hasSavedCoordinates ? 17 : 10
+  );
+
+  window.L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }
+  ).addTo(pickupMap);
+
+  pickupMap.on("click", async (event) => {
+    const { lat, lng } = event.latlng;
+
+    setPickupLocation(lat, lng, {
+      center: false,
+      updateAddress: true
+    });
+  });
+
+  pickupMapInitialized = true;
+
+  if (hasSavedCoordinates) {
+    setPickupLocation(savedLatitude, savedLongitude, {
+      center: true,
+      updateAddress: false
+    });
+  }
+
+  window.setTimeout(() => {
+    pickupMap?.invalidateSize();
+  }, 120);
+}
+
+function setPickupLocation(
+  latitude,
+  longitude,
+  options = {}
+) {
+  const {
+    center = true,
+    updateAddress = false
+  } = options;
+
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return;
+  }
+
+  initializePickupMap();
+
+  if (!pickupMap) return;
+
+  if (!pickupMarker) {
+    pickupMarker = window.L.marker(
+      [lat, lng],
+      {
+        draggable: true
+      }
+    ).addTo(pickupMap);
+
+    pickupMarker.on("dragend", async () => {
+      const markerPosition = pickupMarker.getLatLng();
+
+      updatePickupCoordinateFields(
+        markerPosition.lat,
+        markerPosition.lng
+      );
+
+      await reverseGeocodePickupLocation(
+        markerPosition.lat,
+        markerPosition.lng
+      );
+    });
+  } else {
+    pickupMarker.setLatLng([lat, lng]);
+  }
+
+  updatePickupCoordinateFields(lat, lng);
+
+  if (center) {
+    pickupMap.setView([lat, lng], 17);
+  }
+
+  if (updateAddress) {
+    reverseGeocodePickupLocation(lat, lng);
+  }
+}
+
+function updatePickupCoordinateFields(latitude, longitude) {
+  if (shopPickupLatitude) {
+    shopPickupLatitude.value =
+      Number(latitude).toFixed(6);
+  }
+
+  if (shopPickupLongitude) {
+    shopPickupLongitude.value =
+      Number(longitude).toFixed(6);
+  }
+}
+
+function clearPickupLocation() {
+  if (pickupMarker && pickupMap) {
+    pickupMap.removeLayer(pickupMarker);
+  }
+
+  pickupMarker = null;
+
+  if (shopPickupLatitude) {
+    shopPickupLatitude.value = "";
+  }
+
+  if (shopPickupLongitude) {
+    shopPickupLongitude.value = "";
+  }
+
+  setMessage(
+    shopMessage,
+    "Pickup pin cleared. Select a new location before saving.",
+    "info"
+  );
+}
+
+function useCurrentPickupLocation() {
+  if (!navigator.geolocation) {
+    setMessage(
+      shopMessage,
+      "Location services are not supported by this browser.",
+      "error"
+    );
+    return;
+  }
+
+  useCurrentPickupLocationBtn.disabled = true;
+
+  setMessage(
+    shopMessage,
+    "Finding your current location...",
+    "info"
+  );
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      setPickupLocation(latitude, longitude, {
+        center: true,
+        updateAddress: true
+      });
+
+      setMessage(
+        shopMessage,
+        "Current pickup location selected. Confirm the address and move the pin if needed.",
+        "success"
+      );
+
+      useCurrentPickupLocationBtn.disabled = false;
+    },
+    (error) => {
+      console.warn("Could not get current location:", error);
+
+      const message =
+        error.code === error.PERMISSION_DENIED
+          ? "Location permission was denied. Allow location access or select the pin manually."
+          : "Your current location could not be detected. Select the pin manually.";
+
+      setMessage(shopMessage, message, "error");
+      useCurrentPickupLocationBtn.disabled = false;
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 30000
+    }
+  );
+}
+
+async function locateTypedPickupAddress() {
+  const address = shopPickupAddress?.value.trim() || "";
+
+  if (!address) {
+    setMessage(
+      shopMessage,
+      "Enter the pickup address before searching for it.",
+      "error"
+    );
+    return;
+  }
+
+  findPickupAddressBtn.disabled = true;
+
+  setMessage(
+    shopMessage,
+    "Searching for the pickup address...",
+    "info"
+  );
+
+  try {
+    const searchText = `${address}, Mauritius`;
+
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=mu&q=${encodeURIComponent(searchText)}`,
+      {
+        headers: {
+          Accept: "application/json"
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Address search failed.");
+    }
+
+    const results = await response.json();
+
+    if (!Array.isArray(results) || results.length === 0) {
+      throw new Error(
+        "The address could not be found. Add more details or select the pin manually."
+      );
+    }
+
+    const result = results[0];
+
+    setPickupLocation(
+      Number(result.lat),
+      Number(result.lon),
+      {
+        center: true,
+        updateAddress: false
+      }
+    );
+
+    setMessage(
+      shopMessage,
+      "Address found. Confirm that the pin is on the exact pickup point.",
+      "success"
+    );
+  } catch (error) {
+    console.error("Pickup address search failed:", error);
+
+    setMessage(
+      shopMessage,
+      error.message ||
+        "The address could not be found. Select the pin manually.",
+      "error"
+    );
+  } finally {
+    findPickupAddressBtn.disabled = false;
+  }
+}
+
+async function reverseGeocodePickupLocation(
+  latitude,
+  longitude
+) {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          Accept: "application/json"
+        }
+      }
+    );
+
+    if (!response.ok) return;
+
+    const result = await response.json();
+    const displayName = String(result.display_name || "").trim();
+
+    if (displayName && shopPickupAddress) {
+      shopPickupAddress.value = displayName;
+    }
+  } catch (error) {
+    console.warn("Could not retrieve pickup address:", error);
+  }
 }
 
 /* =========================================================
@@ -988,6 +1364,44 @@ async function loadShop() {
       "";
   }
 
+  const savedPickupLatitude = Number(
+    currentShop.pickupLatitude ??
+    currentShop.pickupLocation?.latitude ??
+    currentShop.pickupLocation?.lat
+  );
+
+  const savedPickupLongitude = Number(
+    currentShop.pickupLongitude ??
+    currentShop.pickupLocation?.longitude ??
+    currentShop.pickupLocation?.lng
+  );
+
+  if (
+    Number.isFinite(savedPickupLatitude) &&
+    Number.isFinite(savedPickupLongitude)
+  ) {
+    if (shopPickupLatitude) {
+      shopPickupLatitude.value =
+        savedPickupLatitude.toFixed(6);
+    }
+
+    if (shopPickupLongitude) {
+      shopPickupLongitude.value =
+        savedPickupLongitude.toFixed(6);
+    }
+
+    if (pickupMapInitialized) {
+      setPickupLocation(
+        savedPickupLatitude,
+        savedPickupLongitude,
+        {
+          center: true,
+          updateAddress: false
+        }
+      );
+    }
+  }
+
   if (currentShop.logoUrl) {
     renderImagePreview(
       shopLogoPreview,
@@ -1015,6 +1429,14 @@ saveShopBtn?.addEventListener("click", async () => {
   const businessLocation = shopLocation?.value.trim() || "";
   const pickupAddress = shopPickupAddress?.value.trim() || "";
 
+  const pickupLatitude = Number(
+    shopPickupLatitude?.value
+  );
+
+  const pickupLongitude = Number(
+    shopPickupLongitude?.value
+  );
+
   if (!businessName) {
     setMessage(shopMessage, "Business name is required.", "error");
     return;
@@ -1031,6 +1453,31 @@ saveShopBtn?.addEventListener("click", async () => {
       "Exact pickup address is required for MauMarket delivery.",
       "error"
     );
+    return;
+  }
+
+  if (
+    !Number.isFinite(pickupLatitude) ||
+    !Number.isFinite(pickupLongitude)
+  ) {
+    setMessage(
+      shopMessage,
+      "Select the exact pickup location on the map before saving.",
+      "error"
+    );
+
+    document
+      .querySelector('[data-seller-page="business"]')
+      ?.click();
+
+    window.setTimeout(() => {
+      initializePickupMap();
+      shopPickupMap?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }, 100);
+
     return;
   }
 
@@ -1073,6 +1520,13 @@ saveShopBtn?.addEventListener("click", async () => {
       shopAddress: pickupAddress,
       pickupInstructions:
         shopPickupInstructions?.value.trim() || "",
+
+      pickupLatitude,
+      pickupLongitude,
+      pickupLocation: {
+        latitude: pickupLatitude,
+        longitude: pickupLongitude
+      },
 
       logoUrl,
       bannerUrl,
@@ -1393,6 +1847,10 @@ function startEditingItem(itemId, item) {
   updateOptionImageChoices();
   updatePricePreview();
   refreshOptionRowTitles();
+
+  document
+    .querySelector('[data-seller-page="add-product"]')
+    ?.click();
 
   const formCard = document.querySelector(".seller-listing-form-card");
 
