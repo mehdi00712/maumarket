@@ -1,77 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Dashboard | MauMarket</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | MauMarket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header class="navbar">
-  <h2>MauMarket Admin</h2>
-  <nav>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="products.html">Marketplace</a>
-  </nav>
+
+    <h2>MauMarket Admin</h2>
+
+    <nav>
+
+        <a href="dashboard.html">Dashboard</a>
+
+        <a href="products.html">Marketplace</a>
+
+        <a href="seller.html">Seller Portal</a>
+
+    </nav>
+
 </header>
 
 <main class="container">
-  <h1>Admin Control Center</h1>
 
-  <div class="cards">
-    <a class="card link-card" href="admin-payments.html">
-      <h3>Payments</h3>
-      <p>Verify Juice payment proofs.</p>
-    </a>
+    <section class="page-header">
 
-    <a class="card link-card" href="admin-delivery.html">
-      <h3>Delivery</h3>
-      <p>Manage pickup and delivery status.</p>
-    </a>
+        <span class="section-kicker">
+            MauMarket Administration
+        </span>
 
-    <a class="card link-card" href="admin-commission.html">
-      <h3>Commission</h3>
-      <p>Track sales, commission, and seller payouts.</p>
-    </a>
+        <h1>
+            Admin Control Center
+        </h1>
 
-    <a class="card link-card" href="admin-payouts.html">
-      <h3>Payouts</h3>
-      <p>Mark seller payouts as paid.</p>
-    </a>
+        <p>
+            Manage sellers, products, Featured Shops, deliveries,
+            payments, analytics and the entire MauMarket platform
+            from one place.
+        </p>
 
-    <a class="card link-card" href="admin-analytics.html">
-      <h3>Analytics</h3>
-      <p>View platform statistics.</p>
-    </a>
+    </section>
 
-    <a class="card link-card" href="admin-users.html">
-      <h3>Users</h3>
-      <p>Approve, block, or manage users.</p>
-    </a>
 
-    <a class="card link-card" href="admin-products.html">
-      <h3>Products</h3>
-      <p>Hide or delete bad products and services.</p>
-    </a>
+    <!-- =======================================================
+         QUICK STATS
+    ======================================================== -->
 
-    <a class="card link-card" href="admin-quota.html">
-      <h3>Slot Requests</h3>
-      <p>Approve sellers who need more product slots.</p>
-    </a>
+    <section class="admin-dashboard-stats">
 
-    <a class="card link-card" href="admin-banners.html">
-      <h3>Ad Banners</h3>
-      <p>Create featured shop banners for the marketplace.</p>
-    </a>
-  </div>
+        <div class="card stat-card">
 
-  <section class="form-card">
-    <h2>Pending Sellers</h2>
-    <div id="sellerList">Loading pending sellers...</div>
-  </section>
+            <h3 id="adminPendingSellerCount">
+                --
+            </h3>
+
+            <p>Pending Sellers</p>
+
+        </div>
+
+        <div class="card stat-card">
+
+            <h3 id="adminFeaturedShopCount">
+                --
+            </h3>
+
+            <p>Featured Shops</p>
+
+        </div>
+
+        <div class="card stat-card">
+
+            <h3 id="adminPendingFeaturedRequests">
+                --
+            </h3>
+
+            <p>Featured Requests</p>
+
+        </div>
+
+        <div class="card stat-card">
+
+            <h3 id="adminMarketplaceProducts">
+                --
+            </h3>
+
+            <p>Marketplace Listings</p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         ADMIN MODULES
+    ======================================================== -->
+
+    <section class="cards">
+
+        <a class="card link-card"
+           href="admin-payments.html">
+
+            <h3>
+                Payments
+            </h3>
+
+            <p>
+                Verify Juice payment proofs.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-delivery.html">
+
+            <h3>
+                Delivery
+            </h3>
+
+            <p>
+                Manage pickup and delivery status.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-commission.html">
+
+            <h3>
+                Commission
+            </h3>
+
+            <p>
+                Track platform commission and seller payouts.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-payouts.html">
+
+            <h3>
+                Seller Payouts
+            </h3>
+
+            <p>
+                Mark seller payouts as completed.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-analytics.html">
+
+            <h3>
+                Analytics
+            </h3>
+
+            <p>
+                View platform performance.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-users.html">
+
+            <h3>
+                Users
+            </h3>
+
+            <p>
+                Approve, block or manage customers and sellers.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-products.html">
+
+            <h3>
+                Products
+            </h3>
+
+            <p>
+                Moderate products and services.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-quota.html">
+
+            <h3>
+                Product Slot Requests
+            </h3>
+
+            <p>
+                Approve requests for additional product slots.
+            </p>
+
+        </a>
+
+
+        <a class="card link-card"
+           href="admin-banners.html">
+
+            <h3>
+                Homepage Banners
+            </h3>
+
+            <p>
+                Manage promotional marketplace banners.
+            </p>
+
+        </a>
+
+
+        <!-- ================================
+             NEW FEATURED SHOP MODULE
+        ================================= -->
+
+        <a class="card link-card featured-card"
+           href="admin-featured-shops.html">
+
+            <span class="featured-label">
+                NEW
+            </span>
+
+            <h3>
+                ⭐ Featured Shops
+            </h3>
+
+            <p>
+                Review payment proofs, approve Featured Shop
+                subscriptions, manage renewals and expiry dates.
+            </p>
+
+        </a>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         PENDING SELLERS
+    ======================================================== -->
+
+    <section class="form-card">
+
+        <div class="section-header">
+
+            <div>
+
+                <span class="section-kicker">
+                    Seller Approval
+                </span>
+
+                <h2>
+                    Pending Sellers
+                </h2>
+
+            </div>
+
+        </div>
+
+        <div id="sellerList">
+
+            Loading pending sellers...
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         QUICK LINKS
+    ======================================================== -->
+
+    <section class="form-card">
+
+        <span class="section-kicker">
+            Administration
+        </span>
+
+        <h2>
+            Quick Actions
+        </h2>
+
+        <div class="cards">
+
+            <a class="card link-card"
+               href="products.html">
+
+                <h3>
+                    View Marketplace
+                </h3>
+
+            </a>
+
+            <a class="card link-card"
+               href="shops.html">
+
+                <h3>
+                    Explore Shops
+                </h3>
+
+            </a>
+
+            <a class="card link-card"
+               href="seller.html">
+
+                <h3>
+                    Seller Dashboard
+                </h3>
+
+            </a>
+
+        </div>
+
+    </section>
+
 </main>
 
-<script type="module" src="js/admin.js"></script>
+<script type="module"
+        src="js/admin.js?v=4.1">
+</script>
+
 </body>
 </html>
