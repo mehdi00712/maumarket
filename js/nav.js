@@ -897,8 +897,10 @@ function getLinksForRole() {
       { label: "Users", icon: "👥", href: "admin-users.html" },
       { label: "Products", icon: "□", href: "admin-products.html" },
       { label: "Payments", icon: "▣", href: "admin-payments.html" },
+      { label: "Featured", icon: "⭐", href: "admin-featured-shops.html" },
       { label: "Delivery", icon: "▸", href: "admin-delivery.html" },
       { label: "Analytics", icon: "⌁", href: "admin-analytics.html" },
+      { label: "Featured Shops", icon: "⭐", href: "admin-featured-shops.html" },
       { label: "Marketplace", icon: "⌂", href: "products.html", desktop: false },
       { label: "Logout", icon: "×", isButton: true, action: "logout" }
     ];
@@ -933,6 +935,7 @@ function getBottomLinks() {
       { label: "Admin", icon: "⚙", href: "admin.html" },
       { label: "Products", icon: "□", href: "admin-products.html" },
       { label: "Payments", icon: "▣", href: "admin-payments.html" },
+      { label: "Featured", icon: "⭐", href: "admin-featured-shops.html" },
       { label: "My Account", icon: "○", href: "dashboard.html" }
     ];
   }
