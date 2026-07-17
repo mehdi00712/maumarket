@@ -31,6 +31,7 @@ import {
    - Price, stock, SKU and image per option
    - Edit existing products and options
    - Backward-compatible with older single-image products
+   - Featured Shop subscription and Explore Shops preference
    ========================================================= */
 
 const COMMISSION_RATE = 0.10;
@@ -41,6 +42,17 @@ const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/webp"
 ]);
+
+const FEATURED_SHOP_MONTHLY_PRICE = 500;
+const FEATURED_SHOP_DURATION_DAYS = 30;
+const MAX_FEATURED_PROOF_SIZE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_FEATURED_PROOF_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "application/pdf"
+]);
+
 
 /* =========================================================
    DOM REFERENCES
@@ -104,6 +116,60 @@ const itemOptionsCount = document.getElementById("itemOptionsCount");
 const addItemOptionBtn = document.getElementById("addItemOptionBtn");
 const itemOptionTemplate = document.getElementById("itemOptionTemplate");
 
+// Featured Shop subscription interface
+const featuredShopStatusBadge = document.getElementById(
+  "featuredShopStatusBadge"
+);
+const featuredShopStatusTitle = document.getElementById(
+  "featuredShopStatusTitle"
+);
+const featuredShopStatusDescription = document.getElementById(
+  "featuredShopStatusDescription"
+);
+const featuredShopPlanValue = document.getElementById(
+  "featuredShopPlanValue"
+);
+const featuredShopStartDate = document.getElementById(
+  "featuredShopStartDate"
+);
+const featuredShopExpiryDate = document.getElementById(
+  "featuredShopExpiryDate"
+);
+const showInExploreShops = document.getElementById(
+  "showInExploreShops"
+);
+const featuredShopPreferenceMessage = document.getElementById(
+  "featuredShopPreferenceMessage"
+);
+const featuredShopPaymentReference = document.getElementById(
+  "featuredShopPaymentReference"
+);
+const featuredShopPaymentProof = document.getElementById(
+  "featuredShopPaymentProof"
+);
+const featuredShopPaymentPreview = document.getElementById(
+  "featuredShopPaymentPreview"
+);
+const featuredShopRequestNote = document.getElementById(
+  "featuredShopRequestNote"
+);
+const featuredShopTermsConfirm = document.getElementById(
+  "featuredShopTermsConfirm"
+);
+const submitFeaturedShopRequestBtn = document.getElementById(
+  "submitFeaturedShopRequestBtn"
+);
+const clearFeaturedShopRequestBtn = document.getElementById(
+  "clearFeaturedShopRequestBtn"
+);
+const featuredShopRequestMessage = document.getElementById(
+  "featuredShopRequestMessage"
+);
+const featuredShopRequestsList = document.getElementById(
+  "featuredShopRequestsList"
+);
+
+
 /* =========================================================
    APPLICATION STATE
    ========================================================= */
@@ -125,6 +191,10 @@ let optionRows = [];
 let pickupMap = null;
 let pickupMarker = null;
 let pickupMapInitialized = false;
+
+let featuredShopRequests = [];
+let featuredShopRequestSubmitting = false;
+
 
 const DEFAULT_PICKUP_COORDINATES = {
   latitude: -20.3484,
@@ -170,6 +240,8 @@ onAuthStateChanged(auth, async (user) => {
       loadSellerCategories()
     ]);
 
+    renderFeaturedShopStatus();
+    await loadFeaturedShopRequests();
     await loadMyItems();
   } catch (error) {
     console.error("Seller dashboard initialization failed:", error);
@@ -240,6 +312,8 @@ function wireFormEvents() {
   itemOptionType?.addEventListener("input", refreshOptionRowTitles);
 
   cancelEditBtn?.addEventListener("click", resetItemForm);
+
+  initializeFeaturedShopEvents();
 }
 
 
@@ -1334,6 +1408,7 @@ async function loadShop() {
 
   if (!shopSnap.exists()) {
     currentShop = null;
+    renderFeaturedShopStatus();
     return;
   }
 
@@ -1419,6 +1494,8 @@ async function loadShop() {
       "banner"
     );
   }
+
+  renderFeaturedShopStatus();
 }
 
 saveShopBtn?.addEventListener("click", async () => {
@@ -2187,6 +2264,897 @@ function getSellerPrice(item) {
   );
 }
 
+
+/* =========================================================
+   FEATURED SHOP SUBSCRIPTION
+   ========================================================= */
+
+function initializeFeaturedShopEvents() {
+  const featuredTab = document.querySelector(
+    '[data-seller-page="featured-shop"]'
+  );
+
+  featuredTab?.addEventListener("click", async () => {
+    renderFeaturedShopStatus();
+
+    if (currentUser) {
+      await loadFeaturedShopRequests();
+    }
+  });
+
+  featuredShopPaymentProof?.addEventListener(
+    "change",
+    previewFeaturedShopPaymentProof
+  );
+
+  showInExploreShops?.addEventListener(
+    "change",
+    saveExploreShopsPreference
+  );
+
+  submitFeaturedShopRequestBtn?.addEventListener(
+    "click",
+    submitFeaturedShopRequest
+  );
+
+  clearFeaturedShopRequestBtn?.addEventListener(
+    "click",
+    clearFeaturedShopRequestForm
+  );
+}
+
+function getFeaturedStatus() {
+  const rawStatus = String(
+    currentShop?.featuredStatus || ""
+  ).trim().toLowerCase();
+
+  const expiryDate = timestampToDate(
+    currentShop?.featuredExpiry
+  );
+
+  const now = new Date();
+  const hasFutureExpiry =
+    expiryDate instanceof Date &&
+    !Number.isNaN(expiryDate.getTime()) &&
+    expiryDate.getTime() > now.getTime();
+
+  const active =
+    currentShop?.featuredShop === true &&
+    currentShop?.featuredPaymentVerified === true &&
+    rawStatus === "active" &&
+    hasFutureExpiry;
+
+  const expired =
+    (
+      currentShop?.featuredShop === true ||
+      rawStatus === "active" ||
+      rawStatus === "expired"
+    ) &&
+    expiryDate instanceof Date &&
+    !Number.isNaN(expiryDate.getTime()) &&
+    expiryDate.getTime() <= now.getTime();
+
+  const pending =
+    rawStatus === "pending" ||
+    featuredShopRequests.some(
+      (request) =>
+        String(request.status || "").toLowerCase() === "pending"
+    );
+
+  return {
+    rawStatus,
+    active,
+    expired,
+    pending,
+    expiryDate,
+    startDate: timestampToDate(
+      currentShop?.featuredSince
+    )
+  };
+}
+
+function renderFeaturedShopStatus() {
+  const status = getFeaturedStatus();
+
+  let badgeText = "Not Active";
+  let badgeClass = "inactive";
+  let title = "No active subscription";
+  let description =
+    "Subscribe for Rs 500 per month to display your shop in Explore Shops.";
+  let plan = "None";
+
+  if (status.active) {
+    badgeText = "Active";
+    badgeClass = "active";
+    title = "Your Featured Shop subscription is active";
+    description =
+      "Your shop is eligible to appear in Explore Shops while the subscription remains active.";
+    plan = "Featured Shop";
+  } else if (status.pending) {
+    badgeText = "Pending Review";
+    badgeClass = "pending";
+    title = "Your payment is being reviewed";
+    description =
+      "MauMarket will activate your Featured Shop subscription after verifying your payment.";
+    plan = "Awaiting approval";
+  } else if (status.expired) {
+    badgeText = "Expired";
+    badgeClass = "expired";
+    title = "Your subscription has expired";
+    description =
+      "Submit a renewal payment to restore your Explore Shops visibility.";
+    plan = "Expired";
+  } else if (status.rawStatus === "rejected") {
+    badgeText = "Not Approved";
+    badgeClass = "rejected";
+    title = "Your latest request was not approved";
+    description =
+      "Review the administrator's reason in your request history and submit a new valid payment proof.";
+    plan = "None";
+  }
+
+  if (featuredShopStatusBadge) {
+    featuredShopStatusBadge.textContent = badgeText;
+    featuredShopStatusBadge.className =
+      `seller-featured-status-badge ${badgeClass}`;
+  }
+
+  if (featuredShopStatusTitle) {
+    featuredShopStatusTitle.textContent = title;
+  }
+
+  if (featuredShopStatusDescription) {
+    featuredShopStatusDescription.textContent = description;
+  }
+
+  if (featuredShopPlanValue) {
+    featuredShopPlanValue.textContent = plan;
+  }
+
+  if (featuredShopStartDate) {
+    featuredShopStartDate.textContent = formatDate(
+      status.startDate
+    );
+  }
+
+  if (featuredShopExpiryDate) {
+    featuredShopExpiryDate.textContent = formatDate(
+      status.expiryDate
+    );
+  }
+
+  const preferenceEnabled = status.active;
+
+  if (showInExploreShops) {
+    showInExploreShops.disabled = !preferenceEnabled;
+    showInExploreShops.checked =
+      preferenceEnabled &&
+      currentShop?.showInExploreShops === true;
+
+    const switchLabel = showInExploreShops
+      .closest(".seller-featured-switch")
+      ?.querySelector(".seller-featured-switch-label");
+
+    if (switchLabel) {
+      switchLabel.textContent = !preferenceEnabled
+        ? "Disabled"
+        : showInExploreShops.checked
+          ? "Visible"
+          : "Hidden";
+    }
+  }
+
+  if (submitFeaturedShopRequestBtn) {
+    const hasPendingRequest = status.pending;
+
+    submitFeaturedShopRequestBtn.disabled =
+      featuredShopRequestSubmitting ||
+      hasPendingRequest;
+
+    submitFeaturedShopRequestBtn.textContent =
+      hasPendingRequest
+        ? "Request Under Review"
+        : status.active
+          ? "Submit Renewal Request"
+          : "Submit Subscription Request";
+  }
+}
+
+async function loadFeaturedShopRequests() {
+  if (!currentUser || !featuredShopRequestsList) return;
+
+  featuredShopRequestsList.innerHTML =
+    "Loading subscription requests...";
+
+  try {
+    const requestsQuery = query(
+      collection(db, "featuredShopRequests"),
+      where("sellerId", "==", currentUser.uid)
+    );
+
+    const snapshot = await getDocs(requestsQuery);
+    featuredShopRequests = [];
+
+    snapshot.forEach((docSnap) => {
+      featuredShopRequests.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    featuredShopRequests.sort((a, b) => {
+      return (
+        getTimestampMilliseconds(b.createdAt) -
+        getTimestampMilliseconds(a.createdAt)
+      );
+    });
+
+    renderFeaturedShopRequests();
+    renderFeaturedShopStatus();
+  } catch (error) {
+    console.error(
+      "Could not load Featured Shop requests:",
+      error
+    );
+
+    featuredShopRequestsList.innerHTML = `
+      <div class="empty-market-card">
+        <h3>Could not load subscription history</h3>
+        <p>${escapeHtml(
+          getFriendlySellerError(
+            error,
+            "Refresh the page and try again."
+          )
+        )}</p>
+      </div>
+    `;
+  }
+}
+
+function renderFeaturedShopRequests() {
+  if (!featuredShopRequestsList) return;
+
+  if (featuredShopRequests.length === 0) {
+    featuredShopRequestsList.innerHTML = `
+      <div class="empty-market-card">
+        <h3>No Featured Shop requests yet</h3>
+        <p>
+          Upload your Rs 500 payment proof to submit your first request.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  featuredShopRequestsList.innerHTML = "";
+
+  featuredShopRequests.forEach((request) => {
+    const status = String(
+      request.status || "pending"
+    ).toLowerCase();
+
+    const statusLabel = {
+      pending: "Pending Review",
+      approved: "Approved",
+      rejected: "Rejected",
+      cancelled: "Cancelled"
+    }[status] || capitalizeWords(status);
+
+    const card = document.createElement("article");
+    card.className =
+      `seller-featured-request-card status-${status}`;
+
+    const proofUrl = String(
+      request.paymentProofUrl || ""
+    ).trim();
+
+    const proofLink = proofUrl
+      ? `
+          <a
+            href="${escapeHtml(proofUrl)}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="secondary-btn"
+          >
+            View Payment Proof
+          </a>
+        `
+      : "";
+
+    const adminReason = String(
+      request.adminReason ||
+      request.rejectionReason ||
+      ""
+    ).trim();
+
+    card.innerHTML = `
+      <div class="seller-featured-request-head">
+        <div>
+          <span class="seller-featured-request-status ${escapeHtml(status)}">
+            ${escapeHtml(statusLabel)}
+          </span>
+          <h3>
+            ${escapeHtml(
+              request.requestType === "renewal"
+                ? "Featured Shop Renewal"
+                : "Featured Shop Subscription"
+            )}
+          </h3>
+        </div>
+
+        <strong>${formatRs(
+          Number(
+            request.amount ||
+            FEATURED_SHOP_MONTHLY_PRICE
+          )
+        )}</strong>
+      </div>
+
+      <div class="seller-featured-request-details">
+        <p>
+          <span>Submitted</span>
+          <strong>${escapeHtml(
+            formatDateTime(
+              timestampToDate(request.createdAt)
+            )
+          )}</strong>
+        </p>
+
+        <p>
+          <span>Payment reference</span>
+          <strong>${escapeHtml(
+            request.paymentReference || "Not provided"
+          )}</strong>
+        </p>
+
+        <p>
+          <span>Billing period</span>
+          <strong>
+            ${Number(
+              request.durationDays ||
+              FEATURED_SHOP_DURATION_DAYS
+            )} days
+          </strong>
+        </p>
+      </div>
+
+      ${
+        request.note
+          ? `
+              <div class="seller-featured-request-note">
+                <strong>Your note</strong>
+                <p>${escapeHtml(request.note)}</p>
+              </div>
+            `
+          : ""
+      }
+
+      ${
+        adminReason
+          ? `
+              <div class="seller-featured-request-note admin-reason">
+                <strong>MauMarket response</strong>
+                <p>${escapeHtml(adminReason)}</p>
+              </div>
+            `
+          : ""
+      }
+
+      <div class="seller-actions">
+        ${proofLink}
+      </div>
+    `;
+
+    featuredShopRequestsList.appendChild(card);
+  });
+}
+
+async function submitFeaturedShopRequest() {
+  if (
+    !currentUser ||
+    featuredShopRequestSubmitting
+  ) {
+    return;
+  }
+
+  const paymentReference =
+    featuredShopPaymentReference?.value.trim() || "";
+
+  const paymentProof =
+    featuredShopPaymentProof?.files?.[0] || null;
+
+  const note =
+    featuredShopRequestNote?.value.trim() || "";
+
+  const acceptedTerms =
+    featuredShopTermsConfirm?.checked === true;
+
+  if (!currentShop?.shopName) {
+    setMessage(
+      featuredShopRequestMessage,
+      "Save your Business Profile before subscribing.",
+      "error"
+    );
+
+    document
+      .querySelector('[data-seller-page="business"]')
+      ?.click();
+
+    return;
+  }
+
+  if (!paymentReference) {
+    setMessage(
+      featuredShopRequestMessage,
+      "Enter the transaction or payment reference.",
+      "error"
+    );
+    featuredShopPaymentReference?.focus();
+    return;
+  }
+
+  if (!paymentProof) {
+    setMessage(
+      featuredShopRequestMessage,
+      "Upload the payment proof before submitting.",
+      "error"
+    );
+    return;
+  }
+
+  const proofValidation =
+    validateFeaturedPaymentProof(paymentProof);
+
+  if (proofValidation) {
+    setMessage(
+      featuredShopRequestMessage,
+      proofValidation,
+      "error"
+    );
+    return;
+  }
+
+  if (!acceptedTerms) {
+    setMessage(
+      featuredShopRequestMessage,
+      "Confirm that the payment information is correct.",
+      "error"
+    );
+    return;
+  }
+
+  const hasPendingRequest =
+    featuredShopRequests.some(
+      (request) =>
+        String(request.status || "").toLowerCase() ===
+        "pending"
+    );
+
+  if (hasPendingRequest) {
+    setMessage(
+      featuredShopRequestMessage,
+      "You already have a Featured Shop request under review.",
+      "error"
+    );
+    return;
+  }
+
+  featuredShopRequestSubmitting = true;
+  renderFeaturedShopStatus();
+
+  setMessage(
+    featuredShopRequestMessage,
+    "Uploading payment proof and submitting your request...",
+    "info"
+  );
+
+  try {
+    const paymentProofUrl =
+      await uploadFeaturedPaymentProof(paymentProof);
+
+    const status = getFeaturedStatus();
+    const requestType =
+      status.active || status.expired
+        ? "renewal"
+        : "subscription";
+
+    const requestData = {
+      sellerId: currentUser.uid,
+      ownerId: currentUser.uid,
+      shopId: currentUser.uid,
+
+      sellerEmail:
+        currentUser.email ||
+        currentUserData?.email ||
+        "",
+
+      sellerName:
+        currentUserData?.name ||
+        currentUserData?.fullName ||
+        "",
+
+      shopName: currentShop.shopName || "",
+      shopLogoUrl: currentShop.logoUrl || "",
+      shopLocation: currentShop.location || "",
+
+      requestType,
+      amount: FEATURED_SHOP_MONTHLY_PRICE,
+      currency: "MUR",
+      durationDays: FEATURED_SHOP_DURATION_DAYS,
+
+      paymentReference,
+      paymentProofUrl,
+      paymentProofName: paymentProof.name || "",
+      paymentProofType: paymentProof.type || "",
+      note,
+
+      status: "pending",
+      adminReason: "",
+      reviewedBy: "",
+      reviewedAt: null,
+
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    await addDoc(
+      collection(db, "featuredShopRequests"),
+      requestData
+    );
+
+    await setDoc(
+      doc(db, "shops", currentUser.uid),
+      {
+        featuredStatus: "pending",
+        featuredPaymentVerified: false,
+        featuredLastRequestAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    clearFeaturedShopRequestForm({
+      preserveMessage: true
+    });
+
+    setMessage(
+      featuredShopRequestMessage,
+      "Your Featured Shop request was submitted successfully. MauMarket will verify the payment.",
+      "success"
+    );
+
+    await loadShop();
+    await loadFeaturedShopRequests();
+  } catch (error) {
+    console.error(
+      "Could not submit Featured Shop request:",
+      error
+    );
+
+    setMessage(
+      featuredShopRequestMessage,
+      getFriendlySellerError(
+        error,
+        "The Featured Shop request could not be submitted."
+      ),
+      "error"
+    );
+  } finally {
+    featuredShopRequestSubmitting = false;
+    renderFeaturedShopStatus();
+  }
+}
+
+async function saveExploreShopsPreference() {
+  if (!currentUser || !showInExploreShops) return;
+
+  const status = getFeaturedStatus();
+
+  if (!status.active) {
+    showInExploreShops.checked = false;
+
+    setMessage(
+      featuredShopPreferenceMessage,
+      "Your subscription must be active before your shop can appear in Explore Shops.",
+      "error"
+    );
+
+    renderFeaturedShopStatus();
+    return;
+  }
+
+  const shouldDisplay =
+    showInExploreShops.checked === true;
+
+  showInExploreShops.disabled = true;
+
+  setMessage(
+    featuredShopPreferenceMessage,
+    "Saving your Explore Shops preference...",
+    "info"
+  );
+
+  try {
+    await updateDoc(
+      doc(db, "shops", currentUser.uid),
+      {
+        showInExploreShops: shouldDisplay,
+        updatedAt: serverTimestamp()
+      }
+    );
+
+    currentShop = {
+      ...(currentShop || {}),
+      showInExploreShops: shouldDisplay
+    };
+
+    setMessage(
+      featuredShopPreferenceMessage,
+      shouldDisplay
+        ? "Your shop is now set to appear in Explore Shops."
+        : "Your shop is hidden from Explore Shops.",
+      "success"
+    );
+  } catch (error) {
+    console.error(
+      "Could not save Explore Shops preference:",
+      error
+    );
+
+    showInExploreShops.checked = !shouldDisplay;
+
+    setMessage(
+      featuredShopPreferenceMessage,
+      getFriendlySellerError(
+        error,
+        "The visibility preference could not be saved."
+      ),
+      "error"
+    );
+  } finally {
+    renderFeaturedShopStatus();
+  }
+}
+
+function previewFeaturedShopPaymentProof() {
+  if (!featuredShopPaymentProof) return;
+
+  const file =
+    featuredShopPaymentProof.files?.[0] || null;
+
+  if (!file) {
+    clearFeaturedPaymentPreview();
+    return;
+  }
+
+  const validation =
+    validateFeaturedPaymentProof(file);
+
+  if (validation) {
+    featuredShopPaymentProof.value = "";
+    clearFeaturedPaymentPreview();
+
+    setMessage(
+      featuredShopRequestMessage,
+      validation,
+      "error"
+    );
+    return;
+  }
+
+  setMessage(featuredShopRequestMessage, "", "");
+
+  if (!featuredShopPaymentPreview) return;
+
+  featuredShopPaymentPreview.innerHTML = "";
+  featuredShopPaymentPreview.style.display = "block";
+
+  if (file.type === "application/pdf") {
+    featuredShopPaymentPreview.innerHTML = `
+      <div class="seller-featured-file-preview">
+        <span aria-hidden="true">📄</span>
+        <div>
+          <strong>${escapeHtml(file.name)}</strong>
+          <small>${formatFileSize(file.size)}</small>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    featuredShopPaymentPreview.innerHTML = `
+      <div class="seller-featured-file-preview image-proof">
+        <img
+          src="${escapeHtml(reader.result)}"
+          alt="Selected Featured Shop payment proof"
+        >
+        <div>
+          <strong>${escapeHtml(file.name)}</strong>
+          <small>${formatFileSize(file.size)}</small>
+        </div>
+      </div>
+    `;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function validateFeaturedPaymentProof(file) {
+  if (!file) {
+    return "Select a payment proof file.";
+  }
+
+  if (!ALLOWED_FEATURED_PROOF_TYPES.has(file.type)) {
+    return "Payment proof must be a PNG, JPG, WebP or PDF file.";
+  }
+
+  if (file.size > MAX_FEATURED_PROOF_SIZE_BYTES) {
+    return "Payment proof must be smaller than 10 MB.";
+  }
+
+  return "";
+}
+
+async function uploadFeaturedPaymentProof(file) {
+  const safeOriginalName = String(
+    file.name || "payment-proof"
+  )
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "");
+
+  const uniquePart =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`;
+
+  const fileName =
+    `${Date.now()}-${uniquePart}-${safeOriginalName}`;
+
+  const paymentReference = ref(
+    storage,
+    `featured-shop-payments/${currentUser.uid}/${fileName}`
+  );
+
+  await uploadBytes(paymentReference, file);
+
+  return await getDownloadURL(paymentReference);
+}
+
+function clearFeaturedShopRequestForm(
+  options = {}
+) {
+  const { preserveMessage = false } = options;
+
+  if (featuredShopPaymentReference) {
+    featuredShopPaymentReference.value = "";
+  }
+
+  if (featuredShopPaymentProof) {
+    featuredShopPaymentProof.value = "";
+  }
+
+  if (featuredShopRequestNote) {
+    featuredShopRequestNote.value = "";
+  }
+
+  if (featuredShopTermsConfirm) {
+    featuredShopTermsConfirm.checked = false;
+  }
+
+  clearFeaturedPaymentPreview();
+
+  if (!preserveMessage) {
+    setMessage(featuredShopRequestMessage, "", "");
+  }
+}
+
+function clearFeaturedPaymentPreview() {
+  if (!featuredShopPaymentPreview) return;
+
+  featuredShopPaymentPreview.innerHTML = "";
+  featuredShopPaymentPreview.style.display = "none";
+}
+
+function timestampToDate(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value.toDate === "function") {
+    return value.toDate();
+  }
+
+  if (
+    typeof value.seconds === "number"
+  ) {
+    return new Date(value.seconds * 1000);
+  }
+
+  if (
+    typeof value === "number" ||
+    typeof value === "string"
+  ) {
+    const parsed = new Date(value);
+
+    return Number.isNaN(parsed.getTime())
+      ? null
+      : parsed;
+  }
+
+  return null;
+}
+
+function getTimestampMilliseconds(value) {
+  const date = timestampToDate(value);
+  return date ? date.getTime() : 0;
+}
+
+function formatDate(value) {
+  const date =
+    value instanceof Date
+      ? value
+      : timestampToDate(value);
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleDateString("en-MU", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function formatDateTime(value) {
+  const date =
+    value instanceof Date
+      ? value
+      : timestampToDate(value);
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleString("en-MU", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function formatFileSize(bytes) {
+  const size = Number(bytes || 0);
+
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function capitalizeWords(value) {
+  return String(value || "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase()
+    );
+}
+
+
 function setMessage(element, message, type = "") {
   if (!element) return;
 
@@ -2288,4 +3256,3 @@ function initializeSellerDashboardTabs() {
   tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.sellerPage)));
   show(sessionStorage.getItem("maumarketSellerView")||"overview");
 }
-
