@@ -41,10 +41,16 @@ const shopsDirectoryTitle = document.getElementById("shopsDirectoryTitle");
 
 const shopsTotalCount = document.getElementById("shopsTotalCount");
 const shopsListingsCount = document.getElementById("shopsListingsCount");
+const featuredShopsCount = document.getElementById("featuredShopsCount");
+const featuredShopsBanner = document.getElementById("featuredShopsBanner");
+const shopsLoadingState = document.getElementById("shopsLoadingState");
+const shopsErrorState = document.getElementById("shopsErrorState");
+const retryShopsBtn = document.getElementById("retryShopsBtn");
 
 let allShops = [];
 let allListings = [];
 let allCategories = [];
+let featuredShops = [];
 
 let activeSearch = "";
 let activeCategory = "";
@@ -142,6 +148,11 @@ async function loadShopsDirectory() {
           verified: data.verified !== false,
           active: data.active !== false,
           approved: data.approved !== false,
+          featuredShop: data.featuredShop === true,
+          featuredStatus: String(data.featuredStatus || "").toLowerCase(),
+          showInExploreShops: data.showInExploreShops === true,
+          featuredPaymentVerified: data.featuredPaymentVerified === true,
+          featuredExpiry: data.featuredExpiry || null,
           averageRating: Number(data.averageRating || 0),
           totalReviews: Number(data.totalReviews || 0),
           ...data,
@@ -156,7 +167,14 @@ async function loadShopsDirectory() {
         );
       });
 
-    updateHeroStats();
+    featuredShops = allShops.filter(shop =>
+        shop.featuredShop === true &&
+        shop.featuredStatus === "active" &&
+        shop.featuredPaymentVerified === true &&
+        shop.showInExploreShops === true
+      );
+
+      updateHeroStats();
     renderShops();
   } catch (error) {
     console.error("Could not load shops directory:", error);
@@ -440,7 +458,7 @@ function createShopCard(shop) {
         <div class="directory-shop-banner-overlay"></div>
 
         <span class="directory-shop-badge">
-          ${shop.featured === true ? "Featured" : "Verified"}
+          ${shop.featuredShop === true ? "⭐ Featured" : "✓ Verified"}
         </span>
       </div>
 
@@ -550,7 +568,7 @@ function sortShops(shops, sort) {
   if (sort === "featured") {
     copy.sort((a, b) => {
       const aScore =
-        Number(a.featured === true) * 1000 +
+        Number(a.featuredShop === true) * 5000 +
         Number(a.averageRating || 0) * 100 +
         Number(a.totalReviews || 0) * 3 +
         Number(a.listingCount || 0);
@@ -676,6 +694,10 @@ function updateHeroStats() {
     0
   );
 
+  if (featuredShopsCount) {
+    featuredShopsCount.textContent = String(featuredShops.length);
+  }
+
   if (shopsTotalCount) {
     shopsTotalCount.textContent = String(allShops.length);
   }
@@ -794,4 +816,17 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+/* =========================================================
+   FEATURED SHOP HELPERS
+   ========================================================= */
+
+function isFeaturedShop(shop) {
+  return (
+    shop.featuredShop === true &&
+    shop.featuredStatus === "active" &&
+    shop.featuredPaymentVerified === true &&
+    shop.showInExploreShops === true
+  );
 }
