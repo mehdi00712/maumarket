@@ -459,6 +459,8 @@ async function renderAdminDashboard() {
   let productsCount = 0;
   let ordersCount = 0;
   let pendingMerchants = 0;
+  let featuredShops = 0;
+  let pendingFeatured = 0;
 
   try {
     const usersSnap = await getDocs(collection(db, "users"));
@@ -477,6 +479,15 @@ async function renderAdminDashboard() {
 
   try {
     const productsSnap = await getDocs(collection(db, "products"));
+    try {
+      const featuredSnap = await getDocs(query(collection(db,"shops"),where("featuredShop","==",true)));
+      featuredShops = featuredSnap.size;
+    } catch(e){}
+
+    try {
+      const pendingFeaturedSnap = await getDocs(query(collection(db,"featuredShopRequests"),where("status","==","pending")));
+      pendingFeatured = pendingFeaturedSnap.size;
+    } catch(e){}
     productsCount = productsSnap.size;
   } catch (error) {
     console.warn("Could not load products.");
@@ -585,6 +596,14 @@ async function renderAdminDashboard() {
       link: "admin-analytics.html",
       actionText: "View Analytics"
     })}
+
+    ${dashboardCard({
+      label: "Promotion",
+      title: "Featured Shops",
+      description: "Approve Featured Shop subscriptions, verify payments and manage expiry dates.",
+      link: "admin-featured-shops.html",
+      actionText: "Manage Featured"
+    })}
   `;
 
   quickStats.innerHTML = `
@@ -592,6 +611,8 @@ async function renderAdminDashboard() {
     ${statCard(productsCount, "Products", "Products and services listed")}
     ${statCard(ordersCount, "Orders", "Orders placed on MauMarket")}
     ${statCard(pendingMerchants, "Pending Merchants", "Merchant approvals waiting")}
+    ${statCard(featuredShops, "Featured Shops", "Active subscriptions")}
+    ${statCard(pendingFeatured, "Featured Requests", "Awaiting approval")}
   `;
 }
 
@@ -667,6 +688,7 @@ const DASHBOARD_ICONS = {
   "Ad Banners": "📢",
   "Slot Requests": "🧾",
   "Admin Analytics": "📊",
+  "Featured Shops": "⭐",
   "Waiting for Approval": "⏳",
   "Account Blocked": "⛔",
   "Error": "⚠️",
