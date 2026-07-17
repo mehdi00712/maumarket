@@ -170,6 +170,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function wireFormEvents() {
+  initializeSellerDashboardTabs();
   itemPrice?.addEventListener("input", updatePricePreview);
 
   shopLogo?.addEventListener("change", () => {
@@ -1802,3 +1803,31 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+// =========================================================
+// SELLER DASHBOARD APP-STYLE TABS
+// =========================================================
+
+initializeSellerDashboardTabs();
+
+function initializeSellerDashboardTabs() {
+  const tabs=[...document.querySelectorAll("[data-seller-page]")];
+  const views=[...document.querySelectorAll("[data-seller-view]")];
+  if(!tabs.length||!views.length) return;
+  function show(name){
+    tabs.forEach(t=>{
+      const a=t.dataset.sellerPage===name;
+      t.classList.toggle("active",a);
+      t.setAttribute("aria-selected",a);
+    });
+    views.forEach(v=>{
+      const a=v.dataset.sellerView===name;
+      v.classList.toggle("active",a);
+      v.hidden=!a;
+    });
+    sessionStorage.setItem("maumarketSellerView",name);
+  }
+  tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.sellerPage)));
+  show(sessionStorage.getItem("maumarketSellerView")||"overview");
+}
+
