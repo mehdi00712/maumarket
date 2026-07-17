@@ -270,7 +270,7 @@ async function renderSellerDashboard(uid, data) {
   let sellerOrders = 0;
   let deliveredOrders = 0;
 
-  const productLimit = Number(data.productLimit || 50);
+  const productLimit = Number(data.productLimit || 25);
 
   try {
     const productsQ = query(
