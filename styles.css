@@ -2791,3 +2791,135 @@ a.mm-footer-contact-item:hover {
     }
 
 }
+
+/* =========================================================
+   SELLER DASHBOARD TABS
+   ========================================================= */
+
+.seller-dashboard-tabs {
+    position: sticky;
+    top: 12px;
+    z-index: 100;
+
+    width: min(1100px, 100%);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+
+    margin: 24px auto 30px;
+    padding: 10px;
+
+    border: 1px solid #e4e1f8;
+    border-radius: 22px;
+
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 15px 40px rgba(15, 23, 42, 0.1);
+    backdrop-filter: blur(18px);
+}
+
+.seller-dashboard-tab {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    padding: 10px 16px;
+
+    border: 1px solid transparent;
+    border-radius: 16px;
+
+    background: transparent;
+    color: #667085;
+
+    font-size: 14px;
+    font-weight: 850;
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.seller-dashboard-tab span {
+    font-size: 19px;
+}
+
+.seller-dashboard-tab:hover {
+    color: #4f35f5;
+    background: #f5f3ff;
+    transform: translateY(-1px);
+}
+
+.seller-dashboard-tab.active {
+    color: #ffffff;
+    border-color: #6045ff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #4f35f5,
+            #7557ff
+        );
+
+    box-shadow:
+        0 12px 26px rgba(79, 53, 245, 0.24);
+}
+
+.seller-dashboard-view {
+    display: none;
+    animation: sellerViewEnter 0.28s ease;
+}
+
+.seller-dashboard-view.active {
+    display: block;
+}
+
+@keyframes sellerViewEnter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 760px) {
+    .seller-dashboard-tabs {
+        position: relative;
+        top: auto;
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: 18px auto 24px;
+        border-radius: 19px;
+    }
+
+    .seller-dashboard-tab {
+        min-height: 52px;
+        padding: 9px 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 420px) {
+    .seller-dashboard-tabs {
+        gap: 7px;
+        padding: 7px;
+    }
+
+    .seller-dashboard-tab {
+        flex-direction: column;
+        gap: 3px;
+        min-height: 62px;
+        font-size: 11px;
+    }
+
+    .seller-dashboard-tab span {
+        font-size: 18px;
+    }
+}
