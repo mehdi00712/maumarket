@@ -237,7 +237,7 @@ function createUserCard(user) {
       <div>
         <p><strong>Approved:</strong> ${user.approved === true ? "Yes" : "No"}</p>
         <p><strong>Blocked:</strong> ${user.blocked === true ? "Yes" : "No"}</p>
-        <p><strong>Product Limit:</strong> ${Number(user.productLimit || 50)}</p>
+        <p><strong>Product Limit:</strong> ${Number(user.productLimit || 25)}</p>
       </div>
     </div>
 
@@ -328,7 +328,7 @@ async function toggleBlockUser(user) {
 }
 
 async function updateProductLimit(user) {
-  const currentLimit = Number(user.productLimit || 50);
+  const currentLimit = Number(user.productLimit || 25);
   const value = prompt("Enter new product limit:", String(currentLimit));
 
   if (value === null) return;
