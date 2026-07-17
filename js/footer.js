@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         <a
                             class="mm-social-link mm-social-instagram"
-                            href="https://www.instagram.com/maumarket.mu?igsh=MXhmaGs2b2htb2Rkdw=="
+                            href="https://www.instagram.com/maumarket.mu?igsh=cmZic2RybjU5MGFj&utm_source=qr"
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Follow MauMarket on Instagram"
