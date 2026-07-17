@@ -342,6 +342,14 @@ async function renderSellerDashboard(uid, data) {
     })}
 
     ${dashboardCard({
+      label: "Orders",
+      title: "My Orders",
+      description: "Track every order you placed as a buyer, even when you also sell on MauMarket.",
+      link: "my-orders.html",
+      actionText: "View My Orders"
+    })}
+
+    ${dashboardCard({
       label: "Market",
       title: "Marketplace",
       description: "View your public product listings in the MauMarket marketplace.",
