@@ -821,7 +821,6 @@ function createProductCard(item) {
         ${sellerRatingText}${sold > 0 ? ` • ${sold} sold` : ""}
       </p>
 
-      <p class="product-location">📍 ${escapeHtml(location)}</p>
 
       <p class="price">${formatRs(buyerPrice)}</p>
 
