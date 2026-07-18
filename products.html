@@ -36,7 +36,7 @@
 
   <link
     rel="stylesheet"
-    href="styles.css?v=7.1">
+    href="styles.css?v=7.2-filter-fixed">
 
   <style>
     /* =========================================================
@@ -547,7 +547,8 @@
         z-index: 2990;
         display: none;
         background: rgba(15, 23, 42, .48);
-        backdrop-filter: blur(2px);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
       }
 
       .premium-market-sidebar-overlay.show {
@@ -626,6 +627,125 @@
         grid-template-columns: 1fr;
       }
     }
+  
+    /* FINAL MARKETPLACE FILTER RESPONSIVE FIX */
+    .premium-mobile-market-toolbar {
+      display: none !important;
+    }
+
+    .premium-market-sidebar-overlay {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    #closeMarketplaceFilters {
+      display: none !important;
+    }
+
+    body.market-filters-open {
+      overflow: auto !important;
+    }
+
+    @media (min-width: 901px) {
+      .premium-mobile-market-toolbar {
+        display: none !important;
+      }
+
+      .premium-market-sidebar-overlay,
+      .premium-market-sidebar-overlay.show {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
+      .market-sidebar,
+      .market-sidebar.mobile-open {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        z-index: auto !important;
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+
+      #closeMarketplaceFilters {
+        display: none !important;
+      }
+
+      body.market-filters-open {
+        overflow: auto !important;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .premium-mobile-market-toolbar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 16px 0;
+      }
+
+      .market-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 3000 !important;
+        display: block !important;
+        width: min(360px, 92vw) !important;
+        height: 100dvh !important;
+        padding: 22px 16px !important;
+        overflow-y: auto !important;
+        background: #ffffff !important;
+        box-shadow: 22px 0 55px rgba(15, 23, 42, .22) !important;
+        transform: translateX(-105%) !important;
+        transition: transform .25s ease !important;
+      }
+
+      .market-sidebar.mobile-open {
+        transform: translateX(0) !important;
+      }
+
+      #closeMarketplaceFilters {
+        display: grid !important;
+        place-items: center !important;
+      }
+
+      .premium-market-sidebar-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 2990 !important;
+        display: block !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        background: rgba(15, 23, 42, .48) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        transition: opacity .2s ease, visibility .2s ease !important;
+      }
+
+      .premium-market-sidebar-overlay.show {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+      }
+
+      body.market-filters-open {
+        overflow: hidden !important;
+      }
+    }
+
   </style>
 
 </head>
@@ -1110,7 +1230,7 @@
 </div>
 
 <script type="module" src="js/nav.js?v=5.4"></script>
-<script type="module" src="js/products.js?v=8.3-layout-fix"></script>
+<script type="module" src="js/products.js?v=8.4-filter-fixed"></script>
 <script src="js/footer.js"></script>
 
 <script>
@@ -1123,7 +1243,16 @@
     const sidebarClearButton = document.getElementById("sidebarClearFilters");
     const clearSearchButton = document.getElementById("clearSearchTop");
 
+    function isMobileMarketplace() {
+      return window.innerWidth <= 900;
+    }
+
     function openFilters() {
+      if (!isMobileMarketplace()) {
+        closeFilters();
+        return;
+      }
+
       sidebar?.classList.add("mobile-open");
       overlay?.classList.add("show");
       document.body.classList.add("market-filters-open");
@@ -1135,11 +1264,21 @@
       document.body.classList.remove("market-filters-open");
     }
 
-    openButton?.addEventListener("click", openFilters);
-    closeButton?.addEventListener("click", closeFilters);
+    openButton?.addEventListener("click", function (event) {
+      event.preventDefault();
+      openFilters();
+    });
+
+    closeButton?.addEventListener("click", function (event) {
+      event.preventDefault();
+      closeFilters();
+    });
+
     overlay?.addEventListener("click", closeFilters);
 
     browseButton?.addEventListener("click", function () {
+      closeFilters();
+
       document
         .getElementById("marketProducts")
         ?.scrollIntoView({
@@ -1154,16 +1293,20 @@
 
       if (category) {
         category.value = "";
-        category.dispatchEvent(new Event("change", {
-          bubbles: true
-        }));
+        category.dispatchEvent(
+          new Event("change", {
+            bubbles: true
+          })
+        );
       }
 
       if (sort) {
         sort.value = "newest";
-        sort.dispatchEvent(new Event("change", {
-          bubbles: true
-        }));
+        sort.dispatchEvent(
+          new Event("change", {
+            bubbles: true
+          })
+        );
       }
 
       clearSearchButton?.click();
@@ -1171,7 +1314,7 @@
     });
 
     window.addEventListener("resize", function () {
-      if (window.innerWidth > 900) {
+      if (!isMobileMarketplace()) {
         closeFilters();
       }
     });
@@ -1181,6 +1324,10 @@
         closeFilters();
       }
     });
+
+    if (!isMobileMarketplace()) {
+      closeFilters();
+    }
   });
 </script>
 
