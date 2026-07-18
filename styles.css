@@ -4832,3 +4832,55 @@ a.mm-footer-contact-item:hover {
     display: none;
   }
 }
+
+/* Hide mobile filter close button by default */
+.mobile-filter-close,
+#closeFiltersBtn {
+  display: none;
+}
+
+/* Mobile filter drawer */
+@media (max-width: 900px) {
+  .market-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2000;
+
+    width: min(340px, 90%);
+    height: 100vh;
+    padding: 24px 18px;
+
+    overflow-y: auto;
+    background: #ffffff;
+
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+
+    box-shadow: 20px 0 50px rgba(15, 23, 42, 0.2);
+  }
+
+  .market-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobile-filter-close,
+  #closeFiltersBtn {
+    display: grid;
+    place-items: center;
+
+    width: 48px;
+    height: 48px;
+    margin: 0 0 18px auto;
+
+    border: 0;
+    border-radius: 15px;
+
+    color: #ffffff;
+    background: linear-gradient(135deg, #5534ff, #714cff);
+
+    font-size: 24px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+}
