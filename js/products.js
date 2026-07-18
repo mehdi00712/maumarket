@@ -202,60 +202,210 @@ async function loadTopBanner() {
       return;
     }
 
-    const banners = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
+    const banners = snapshot.docs
+      .map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data()
+      }))
+      .filter((banner) => banner.imageUrl)
+      .sort((a, b) => {
+        const aTime = a.createdAt?.seconds || 0;
+        const bTime = b.createdAt?.seconds || 0;
 
-    banners.sort((a, b) => {
-      const aTime = a.createdAt?.seconds || 0;
-      const bTime = b.createdAt?.seconds || 0;
-      return bTime - aTime;
-    });
+        return bTime - aTime;
+      });
 
-    const banner = banners[0];
-
-    if (!banner.imageUrl) {
+    if (banners.length === 0) {
       topAdBanner.style.display = "none";
       return;
     }
 
-    const targetShopId = banner.shopId || banner.sellerId || "";
-
     topAdBanner.style.display = "block";
-    topAdBanner.classList.add("market-premium-ad");
+    topAdBanner.classList.add("featured-banner-slider");
 
-    topAdBanner.innerHTML = `
-      <div class="top-ad-inner compact-ad premium-ad-inner">
-        <img src="${escapeHtml(banner.imageUrl)}" alt="${escapeHtml(banner.title || "Featured shop")}">
+    let currentBannerIndex = 0;
+    let autoSlideTimer = null;
 
-        <div class="top-ad-content premium-ad-content">
-          <span>Featured Shop</span>
-          <h2>${escapeHtml(banner.title || banner.shopName || "Featured Seller")}</h2>
-          <p>${escapeHtml(banner.subtitle || "Discover this MauMarket seller.")}</p>
-          <button type="button">Visit Shop</button>
+    function renderBanner(index) {
+      const banner = banners[index];
+
+      topAdBanner.innerHTML = `
+        <div class="featured-banner-slide">
+
+          <img
+            class="featured-banner-image"
+            src="${escapeHtml(banner.imageUrl)}"
+            alt="${escapeHtml(
+              banner.title ||
+              banner.shopName ||
+              "Featured Shop"
+            )}">
+
+          <div class="featured-banner-overlay"></div>
+
+          <div class="featured-banner-content">
+
+            <span class="featured-banner-badge">
+              ★ Featured Shop
+            </span>
+
+            <h2>
+              ${escapeHtml(
+                banner.title ||
+                banner.shopName ||
+                "Featured Shop"
+              )}
+            </h2>
+
+            <p>
+              ${escapeHtml(
+                banner.subtitle ||
+                "Discover this featured MauMarket seller."
+              )}
+            </p>
+
+            <a
+              href="shops.html"
+              class="featured-banner-button">
+              Explore Featured Shops
+            </a>
+
+          </div>
+
+          ${
+            banners.length > 1
+              ? `
+                <button
+                  type="button"
+                  class="featured-banner-arrow previous"
+                  aria-label="Previous featured shop">
+                  ‹
+                </button>
+
+                <button
+                  type="button"
+                  class="featured-banner-arrow next"
+                  aria-label="Next featured shop">
+                  ›
+                </button>
+
+                <div class="featured-banner-dots">
+                  ${banners
+                    .map(
+                      (_, dotIndex) => `
+                        <button
+                          type="button"
+                          class="featured-banner-dot ${
+                            dotIndex === index ? "active" : ""
+                          }"
+                          data-banner-index="${dotIndex}"
+                          aria-label="Show featured shop ${
+                            dotIndex + 1
+                          }">
+                        </button>
+                      `
+                    )
+                    .join("")}
+                </div>
+              `
+              : ""
+          }
+
         </div>
-      </div>
-    `;
+      `;
 
-    topAdBanner.addEventListener("click", async () => {
-      try {
-        await updateDoc(doc(db, "banners", banner.id), {
-          clicks: increment(1)
+      topAdBanner
+        .querySelector(".featured-banner-button")
+        ?.addEventListener("click", async () => {
+          try {
+            await updateDoc(doc(db, "banners", banner.id), {
+              clicks: increment(1)
+            });
+          } catch (error) {
+            console.warn(
+              "Could not update banner clicks:",
+              error.message
+            );
+          }
         });
-      } catch (error) {
-        console.warn("Could not update banner clicks:", error.message);
+
+      topAdBanner
+        .querySelector(".featured-banner-arrow.previous")
+        ?.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          currentBannerIndex =
+            currentBannerIndex === 0
+              ? banners.length - 1
+              : currentBannerIndex - 1;
+
+          renderBanner(currentBannerIndex);
+          restartAutoSlide();
+        });
+
+      topAdBanner
+        .querySelector(".featured-banner-arrow.next")
+        ?.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          currentBannerIndex =
+            (currentBannerIndex + 1) % banners.length;
+
+          renderBanner(currentBannerIndex);
+          restartAutoSlide();
+        });
+
+      topAdBanner
+        .querySelectorAll(".featured-banner-dot")
+        .forEach((dot) => {
+          dot.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            currentBannerIndex = Number(
+              dot.dataset.bannerIndex || 0
+            );
+
+            renderBanner(currentBannerIndex);
+            restartAutoSlide();
+          });
+        });
+    }
+
+    function startAutoSlide() {
+      if (banners.length <= 1) return;
+
+      autoSlideTimer = window.setInterval(() => {
+        currentBannerIndex =
+          (currentBannerIndex + 1) % banners.length;
+
+        renderBanner(currentBannerIndex);
+      }, 5500);
+    }
+
+    function restartAutoSlide() {
+      if (autoSlideTimer) {
+        window.clearInterval(autoSlideTimer);
       }
 
-      if (targetShopId) {
-        const advertisedShop = await getShop(targetShopId);
-        const publicShopUrl = getPublicShopUrl(advertisedShop, targetShopId);
+      startAutoSlide();
+    }
 
-        window.location.href = publicShopUrl || "products.html";
-      } else {
-        window.location.href = "products.html";
+    renderBanner(currentBannerIndex);
+    startAutoSlide();
+
+    topAdBanner.addEventListener("mouseenter", () => {
+      if (autoSlideTimer) {
+        window.clearInterval(autoSlideTimer);
       }
     });
+
+    topAdBanner.addEventListener("mouseleave", () => {
+      restartAutoSlide();
+    });
+
   } catch (error) {
     console.warn("Banner could not load:", error.message);
     topAdBanner.style.display = "none";
