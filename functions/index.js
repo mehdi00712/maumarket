@@ -1,3 +1,13 @@
+/**
+ * MauMarket Cloud Functions
+ * Updated canonical product-option handling.
+ *
+ * Product options are now stored with:
+ * name, value, unit, displayValue, sellerPrice, buyerPrice,
+ * stock, sku, productCode, image, imageUrl,
+ * measurementValue, measurementUnit, sizeValue and sizeUnit.
+ */
+
 "use strict";
 
 const { setGlobalOptions } = require("firebase-functions/v2");
@@ -223,6 +233,183 @@ function calculatePrices(rawSellerPrice) {
   };
 }
 
+function buildOptionDisplayValue(value, unit) {
+  const cleanValue = String(value ?? "").trim();
+  const cleanUnit = String(unit ?? "").trim();
+
+  if (!cleanValue && !cleanUnit) return "";
+  if (!cleanUnit) return cleanValue;
+  if (!cleanValue) return cleanUnit;
+
+  const labels = {
+    mm: "mm",
+    cm: "cm",
+    m: "m",
+    in: "in",
+    ft: "ft",
+    ml: "ml",
+    l: "L",
+    litre: "L",
+    liter: "L",
+    g: "g",
+    kg: "kg",
+    piece: "piece",
+    pack: "pack",
+    set: "set",
+    pair: "pair"
+  };
+
+  const unitLabel =
+    labels[cleanUnit.toLowerCase()] ||
+    cleanUnit;
+
+  return `${cleanValue} ${unitLabel}`.trim();
+}
+
+function normalizeOptionTypeLabel(value) {
+  const raw = String(value ?? "").trim();
+  const normalized = raw.toLowerCase();
+
+  const aliases = {
+    size: "Size",
+    sizes: "Size",
+    colour: "Colour",
+    color: "Colour",
+    colours: "Colour",
+    colors: "Colour",
+    weight: "Weight",
+    weights: "Weight",
+    length: "Length",
+    width: "Width",
+    height: "Height",
+    volume: "Volume",
+    capacity: "Capacity",
+    material: "Material",
+    style: "Style",
+    model: "Model",
+    pack: "Pack",
+    quantity: "Quantity",
+    measurement: "Measurement",
+    measurements: "Measurement",
+    option: "Option",
+    options: "Option",
+    variant: "Option",
+    variants: "Option",
+    variation: "Option",
+    variations: "Option"
+  };
+
+  return aliases[normalized] || raw;
+}
+
+function inferProductOptionType(rawType, rawOptions = []) {
+  const normalizedType = normalizeOptionTypeLabel(rawType);
+
+  const genericTypes = new Set([
+    "",
+    "Option",
+    "Variant",
+    "Variation"
+  ]);
+
+  if (normalizedType && !genericTypes.has(normalizedType)) {
+    return normalizedType;
+  }
+
+  const values = rawOptions
+    .map((option) => {
+      if (!option || typeof option !== "object") return "";
+
+      return String(
+        option.value ??
+        option.measurementValue ??
+        option.sizeValue ??
+        option.displayValue ??
+        option.name ??
+        option.label ??
+        ""
+      ).trim();
+    })
+    .filter(Boolean)
+    .map((value) =>
+      value.replace(/^size\s*[:\-]?\s*/i, "").trim()
+    );
+
+  const units = rawOptions
+    .map((option) =>
+      String(
+        option?.unit ??
+        option?.measurementUnit ??
+        option?.sizeUnit ??
+        ""
+      ).trim().toLowerCase()
+    )
+    .filter(Boolean);
+
+  if (units.some((unit) => ["g", "kg"].includes(unit))) {
+    return "Weight";
+  }
+
+  if (
+    units.some((unit) =>
+      ["ml", "l", "litre", "liter"].includes(unit)
+    )
+  ) {
+    return "Capacity";
+  }
+
+  if (
+    units.some((unit) =>
+      ["mm", "cm", "m", "in", "ft"].includes(unit)
+    )
+  ) {
+    return "Size";
+  }
+
+  const allNumeric =
+    values.length > 0 &&
+    values.every((value) =>
+      /^-?\d+(?:[.,]\d+)?$/.test(value)
+    );
+
+  if (allNumeric) {
+    return "Size";
+  }
+
+  const commonColours = new Set([
+    "red",
+    "blue",
+    "green",
+    "black",
+    "white",
+    "yellow",
+    "orange",
+    "purple",
+    "pink",
+    "grey",
+    "gray",
+    "brown",
+    "gold",
+    "silver",
+    "beige",
+    "navy",
+    "maroon",
+    "teal",
+    "turquoise"
+  ]);
+
+  if (
+    values.length > 0 &&
+    values.every((value) =>
+      commonColours.has(value.toLowerCase())
+    )
+  ) {
+    return "Colour";
+  }
+
+  return normalizedType || "Option";
+}
+
 /* =========================================================
    PRODUCT OPTION / VARIANT VALIDATION
    ========================================================= */
@@ -230,7 +417,8 @@ function calculatePrices(rawSellerPrice) {
 function buildProductOption(
   rawOption,
   index,
-  imageUrls
+  imageUrls,
+  optionType
 ) {
   if (
     !rawOption ||
@@ -243,12 +431,46 @@ function buildProductOption(
     );
   }
 
-  const name = cleanText(
-    rawOption.name || rawOption.label,
-    `options[${index}].name`,
+  const rawValue =
+    rawOption.value ??
+    rawOption.measurementValue ??
+    rawOption.sizeValue ??
+    rawOption.displayValue ??
+    rawOption.name ??
+    rawOption.label ??
+    "";
+
+  const value = cleanText(
+    String(rawValue),
+    `options[${index}].value`,
     1,
     150
   );
+
+  const unit = cleanOptionalText(
+    rawOption.unit ??
+    rawOption.measurementUnit ??
+    rawOption.sizeUnit ??
+    "",
+    `options[${index}].unit`,
+    50
+  );
+
+  const displayValue =
+    cleanOptionalText(
+      rawOption.displayValue ?? "",
+      `options[${index}].displayValue`,
+      200
+    ) ||
+    buildOptionDisplayValue(value, unit);
+
+  const canonicalName =
+    normalizeOptionTypeLabel(
+      rawOption.optionType ||
+      rawOption.type ||
+      optionType ||
+      "Option"
+    ) || "Option";
 
   const rawSellerPrice =
     rawOption.sellerPrice ??
@@ -271,6 +493,12 @@ function buildProductOption(
     150
   );
 
+  const productCode = cleanOptionalText(
+    rawOption.productCode || rawOption.sku,
+    `options[${index}].productCode`,
+    150
+  );
+
   let imageIndex = null;
 
   if (
@@ -287,10 +515,28 @@ function buildProductOption(
     );
   }
 
+  const directImageUrl =
+    typeof rawOption.imageUrl === "string" &&
+    rawOption.imageUrl.trim()
+      ? cleanUrl(
+          rawOption.imageUrl,
+          `options[${index}].imageUrl`
+        )
+      : typeof rawOption.image === "string" &&
+        rawOption.image.trim()
+        ? cleanUrl(
+            rawOption.image,
+            `options[${index}].image`
+          )
+        : "";
+
   const imageUrl =
-    imageIndex !== null
-      ? imageUrls[imageIndex] || imageUrls[0] || ""
-      : imageUrls[0] || "";
+    directImageUrl ||
+    (
+      imageIndex !== null
+        ? imageUrls[imageIndex] || imageUrls[0] || ""
+        : imageUrls[0] || ""
+    );
 
   return {
     id:
@@ -302,8 +548,18 @@ function buildProductOption(
           )
         : `option-${index + 1}`,
 
-    name,
-    label: name,
+    name: canonicalName,
+    label: canonicalName,
+    optionType: canonicalName,
+
+    value,
+    unit,
+    displayValue,
+
+    measurementValue: value,
+    measurementUnit: unit,
+    sizeValue: value,
+    sizeUnit: unit,
 
     sellerPrice: prices.sellerPrice,
     commissionRate: prices.commissionRate,
@@ -314,9 +570,10 @@ function buildProductOption(
 
     stock,
     sku,
-    productCode: sku,
+    productCode,
 
     imageIndex,
+    image: imageUrl,
     imageUrl,
 
     active: rawOption.active !== false
@@ -325,7 +582,8 @@ function buildProductOption(
 
 function buildProductOptions(
   rawOptions,
-  imageUrls
+  imageUrls,
+  optionType
 ) {
   if (rawOptions === undefined || rawOptions === null) {
     return [];
@@ -345,38 +603,45 @@ function buildProductOptions(
     );
   }
 
-  const usedNames = new Set();
+  const usedValues = new Set();
   const usedSkus = new Set();
 
   return rawOptions.map((rawOption, index) => {
     const option = buildProductOption(
       rawOption,
       index,
-      imageUrls
+      imageUrls,
+      optionType
     );
 
-    const normalizedName = option.name.toLowerCase();
+    const normalizedValue =
+      option.displayValue.toLowerCase();
 
-    if (usedNames.has(normalizedName)) {
+    if (usedValues.has(normalizedValue)) {
       throw new HttpsError(
         "invalid-argument",
-        `The option "${option.name}" is duplicated.`
+        `The option value "${option.displayValue}" is duplicated.`
       );
     }
 
-    usedNames.add(normalizedName);
+    usedValues.add(normalizedValue);
 
-    if (option.sku) {
-      const normalizedSku = option.sku.toLowerCase();
+    const codeForUniqueness =
+      option.productCode ||
+      option.sku;
 
-      if (usedSkus.has(normalizedSku)) {
+    if (codeForUniqueness) {
+      const normalizedCode =
+        codeForUniqueness.toLowerCase();
+
+      if (usedSkus.has(normalizedCode)) {
         throw new HttpsError(
           "invalid-argument",
-          `The product code "${option.sku}" is duplicated.`
+          `The product code "${codeForUniqueness}" is duplicated.`
         );
       }
 
-      usedSkus.add(normalizedSku);
+      usedSkus.add(normalizedCode);
     }
 
     return option;
@@ -499,8 +764,31 @@ function buildProduct(raw, sellerId, shopData = {}) {
         ? raw.variants
         : [];
 
+  const optionType = hasOptions
+    ? inferProductOptionType(
+        raw.optionType ||
+        raw.variationType ||
+        raw.optionName ||
+        "",
+        rawOptions
+      )
+    : "";
+
+  const safeOptionType = hasOptions
+    ? cleanText(
+        optionType || "Option",
+        "optionType",
+        1,
+        100
+      )
+    : "";
+
   const options = hasOptions
-    ? buildProductOptions(rawOptions, imageUrls)
+    ? buildProductOptions(
+        rawOptions,
+        imageUrls,
+        safeOptionType
+      )
     : [];
 
   if (hasOptions && options.length === 0) {
@@ -509,15 +797,6 @@ function buildProduct(raw, sellerId, shopData = {}) {
       "At least one product option is required."
     );
   }
-
-  const optionType = hasOptions
-    ? cleanText(
-        raw.optionType || "Option",
-        "optionType",
-        1,
-        100
-      )
-    : "";
 
   const optionSummary = getOptionsSummary(options);
 
@@ -589,7 +868,7 @@ function buildProduct(raw, sellerId, shopData = {}) {
     imageUrls,
 
     hasOptions,
-    optionType,
+    optionType: safeOptionType,
     options,
     variants: options,
     variantCount: options.length,
