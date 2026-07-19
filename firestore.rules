@@ -80,8 +80,15 @@ service cloud.firestore {
 
     function orderBelongsToSeller(data) {
       return isApprovedSeller()
-        && hasSellerIds(data)
-        && data.sellerIds.hasAny([request.auth.uid]);
+        && (
+          (
+            hasSellerIds(data)
+            && data.sellerIds.hasAny([request.auth.uid])
+          )
+          || data.sellerId == request.auth.uid
+          || data.merchantId == request.auth.uid
+          || data.shopId == request.auth.uid
+        );
     }
 
     function orderBelongsToCustomer(data) {
