@@ -18,7 +18,7 @@ setGlobalOptions({
 
 const db = getFirestore();
 
-const LEGACY_SELLER_LIMIT = 50;
+const LEGACY_SELLER_LIMIT = 25;
 const MAX_LIMIT = 10000;
 const COMMISSION_RATE = 0.10;
 const MAX_PRODUCT_IMAGES = 3;
