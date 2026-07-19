@@ -1269,8 +1269,60 @@
               class="item-option-name"
               type="text"
               maxlength="80"
-              placeholder="Example: Red"
+              placeholder="Example: Medium, Large, 45 cm"
             >
+
+            <small class="muted">
+              A descriptive name such as Medium, Large, Red or 45 cm.
+            </small>
+
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Size / Measurement
+            </label>
+
+            <input
+              class="item-option-value"
+              type="text"
+              maxlength="40"
+              placeholder="Example: M, L, 45, 500"
+            >
+
+            <small class="muted">
+              Enter the exact size, dimension, weight or volume value.
+            </small>
+
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Unit
+            </label>
+
+            <select class="item-option-unit">
+              <option value="">No unit</option>
+              <option value="mm">Millimetres (mm)</option>
+              <option value="cm">Centimetres (cm)</option>
+              <option value="m">Metres (m)</option>
+              <option value="in">Inches (in)</option>
+              <option value="ft">Feet (ft)</option>
+              <option value="ml">Millilitres (ml)</option>
+              <option value="l">Litres (L)</option>
+              <option value="g">Grams (g)</option>
+              <option value="kg">Kilograms (kg)</option>
+              <option value="piece">Piece</option>
+              <option value="pack">Pack</option>
+              <option value="set">Set</option>
+              <option value="pair">Pair</option>
+            </select>
+
+            <small class="muted">
+              Leave as “No unit” for clothing sizes such as S, M, L or XL.
+            </small>
 
           </div>
 
@@ -1316,7 +1368,7 @@
               class="item-option-sku"
               type="text"
               maxlength="80"
-              placeholder="Example: SHIRT-RED"
+              placeholder="Example: SHIRT-M or WOOD-45CM"
             >
 
           </div>
