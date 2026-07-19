@@ -1,4 +1,4 @@
-import { auth, db, storage } from "./firebase-config.js";
+import { auth, db, storage, functions } from "./firebase-config.js";
 
 import {
   onAuthStateChanged
@@ -24,6 +24,10 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
+import {
+  httpsCallable
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-functions.js";
+
 /* =========================================================
    MAUMARKET SELLER.JS
    - Maximum 3 product images
@@ -33,6 +37,15 @@ import {
    - Backward-compatible with older single-image products
    - Featured Shop subscription and Explore Shops preference
    ========================================================= */
+
+/*
+ * Product creation is performed by the secure callable Cloud Function.
+ * Direct browser creation will be blocked by the final Firestore Rules.
+ */
+const createProductSecurely = httpsCallable(
+  functions,
+  "createProductSecurely"
+);
 
 const COMMISSION_RATE = 0.10;
 const MAX_PRODUCT_IMAGES = 3;
@@ -1677,7 +1690,7 @@ saveItemBtn?.addEventListener("click", async () => {
     return;
   }
 
-  const productLimit = Number(currentUserData?.productLimit || 25);
+  const productLimit = getCurrentSellerProductLimit();
 
   if (!editingItemId && currentProductCount >= productLimit) {
     setMessage(
@@ -1773,26 +1786,64 @@ saveItemBtn?.addEventListener("click", async () => {
         : basePrices.buyerPrice,
       maxBuyerPrice: optionsEnabled
         ? optionSummary.maxBuyerPrice
-        : basePrices.buyerPrice,
-
-      updatedAt: serverTimestamp()
+        : basePrices.buyerPrice
     };
 
     if (editingItemId) {
       await updateDoc(
         doc(db, "products", editingItemId),
-        itemData
+        {
+          ...itemData,
+          updatedAt: serverTimestamp()
+        }
       );
 
       setMessage(itemMessage, "Item updated successfully.", "success");
     } else {
-      await addDoc(collection(db, "products"), {
-        ...itemData,
-        active: true,
-        createdAt: serverTimestamp()
+      /*
+       * Do not use addDoc() here.
+       *
+       * The callable function verifies the authenticated seller, approval
+       * status, block status and product quota on the server. It also sets
+       * sellerId, active, createdAt and updatedAt securely.
+       */
+      const callableResult = await createProductSecurely({
+        product: {
+          ...itemData,
+          active: true
+        }
       });
 
-      setMessage(itemMessage, "Item added successfully.", "success");
+      const secureResult = callableResult?.data || {};
+
+      if (!secureResult.success || !secureResult.productId) {
+        throw new Error(
+          "MauMarket could not confirm that the item was created."
+        );
+      }
+
+      currentProductCount = Number(
+        secureResult.productCount ?? currentProductCount + 1
+      );
+
+      currentUserData = {
+        ...(currentUserData || {}),
+        productLimit: Number(
+          secureResult.productLimit ??
+            getCurrentSellerProductLimit()
+        ),
+        productCount: currentProductCount
+      };
+
+      setMessage(
+        itemMessage,
+        secureResult.remainingSlots === 0
+          ? "Item added successfully. You have now used all your product slots."
+          : `Item added successfully. ${Number(
+              secureResult.remainingSlots || 0
+            )} product slot(s) remaining.`,
+        "success"
+      );
     }
 
     resetItemForm();
@@ -1963,7 +2014,7 @@ async function loadMyItems() {
 
     currentProductCount = snapshot.size;
 
-    const productLimit = Number(currentUserData?.productLimit || 25);
+    const productLimit = getCurrentSellerProductLimit();
 
     if (slotInfo) {
       slotInfo.textContent =
@@ -3170,6 +3221,14 @@ function getFriendlySellerError(error, fallbackMessage) {
   const messages = {
     "permission-denied":
       "You do not have permission to perform this action.",
+    "functions/permission-denied":
+      "Only an approved and unblocked seller can add products.",
+    "functions/unauthenticated":
+      "Your session has expired. Sign in again before adding a product.",
+    "functions/failed-precondition":
+      "Your MauMarket seller profile could not be verified.",
+    "functions/resource-exhausted":
+      "You reached your product slot limit. Request more slots.",
     "storage/unauthorized":
       "You do not have permission to upload this file.",
     "storage/canceled":
@@ -3189,6 +3248,25 @@ function getFriendlySellerError(error, fallbackMessage) {
   };
 
   return messages[code] || fallbackMessage;
+}
+
+function getCurrentSellerProductLimit() {
+  const configuredLimit = Number(currentUserData?.productLimit);
+
+  if (
+    Number.isInteger(configuredLimit) &&
+    configuredLimit >= 0
+  ) {
+    return configuredLimit;
+  }
+
+  /*
+   * Existing MauMarket sellers were promised 50 products. New accounts
+   * must receive productLimit: 25 when their user document is created.
+   * The Cloud Function also applies 50 while migrating an old account
+   * that does not yet contain this field.
+   */
+  return 50;
 }
 
 function createUniqueId() {

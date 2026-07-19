@@ -17,23 +17,40 @@ setGlobalOptions({
 });
 
 const db = getFirestore();
+
 const LEGACY_SELLER_LIMIT = 50;
 const MAX_LIMIT = 10000;
+const COMMISSION_RATE = 0.10;
+const MAX_PRODUCT_IMAGES = 3;
+const MAX_PRODUCT_OPTIONS = 500;
+const MAX_SAFE_PRICE = 100000000;
+const MAX_SAFE_STOCK = 100000000;
 
-function productLimitFor(userData) {
+/* =========================================================
+   GENERIC VALIDATION HELPERS
+   ========================================================= */
+
+function productLimitFor(userData = {}) {
   const value = Number(userData.productLimit);
 
-  if (Number.isInteger(value) && value >= 0 && value <= MAX_LIMIT) {
+  if (
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= MAX_LIMIT
+  ) {
     return value;
   }
 
-  // Existing sellers do not yet have productLimit, so they keep 50.
+  // Existing sellers without productLimit keep the legacy 50-product limit.
   return LEGACY_SELLER_LIMIT;
 }
 
 function cleanText(value, name, min = 1, max = 500) {
   if (typeof value !== "string") {
-    throw new HttpsError("invalid-argument", `${name} must be text.`);
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} must be text.`
+    );
   }
 
   const cleaned = value.trim();
@@ -48,10 +65,35 @@ function cleanText(value, name, min = 1, max = 500) {
   return cleaned;
 }
 
-function cleanNumber(value, name, min = 0, max = Number.MAX_SAFE_INTEGER, integer = false) {
-  const parsed = typeof value === "number" ? value : Number(value);
+function cleanOptionalText(value, name, max = 1000) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return "";
+  }
 
-  if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+  return cleanText(value, name, 1, max);
+}
+
+function cleanNumber(
+  value,
+  name,
+  min = 0,
+  max = Number.MAX_SAFE_INTEGER,
+  integer = false
+) {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : Number(value);
+
+  if (
+    !Number.isFinite(parsed) ||
+    parsed < min ||
+    parsed > max
+  ) {
     throw new HttpsError(
       "invalid-argument",
       `${name} must be a valid number between ${min} and ${max}.`
@@ -59,120 +101,531 @@ function cleanNumber(value, name, min = 0, max = Number.MAX_SAFE_INTEGER, intege
   }
 
   if (integer && !Number.isInteger(parsed)) {
-    throw new HttpsError("invalid-argument", `${name} must be a whole number.`);
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} must be a whole number.`
+    );
   }
 
   return parsed;
 }
 
-function cleanOptionalText(value, name, max = 1000) {
-  if (value === undefined || value === null || value === "") return undefined;
-  return cleanText(value, name, 1, max);
+function cleanBoolean(value, fallback = false) {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  return value === true;
 }
 
-function cleanStringArray(value, name, maxItems = 12) {
-  if (value === undefined || value === null) return undefined;
+function cleanUrl(value, name) {
+  const cleaned = cleanText(value, name, 1, 2000);
 
-  if (!Array.isArray(value) || value.length > maxItems) {
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(cleaned);
+  } catch {
     throw new HttpsError(
       "invalid-argument",
-      `${name} must be an array with no more than ${maxItems} items.`
+      `${name} must be a valid URL.`
     );
   }
 
-  return value.map((item, index) => cleanText(item, `${name}[${index}]`, 1, 2000));
+  if (!["https:", "http:"].includes(parsedUrl.protocol)) {
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} must use http or https.`
+    );
+  }
+
+  return cleaned;
 }
 
-function buildProduct(raw, sellerId) {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new HttpsError("invalid-argument", "Product data is missing or invalid.");
+function cleanUrlArray(
+  value,
+  name,
+  maxItems = MAX_PRODUCT_IMAGES
+) {
+  if (value === undefined || value === null) {
+    return [];
   }
 
-  const type = cleanText(raw.type || "product", "type", 1, 30).toLowerCase();
-
-  if (!['product', 'service'].includes(type)) {
-    throw new HttpsError("invalid-argument", "type must be product or service.");
+  if (!Array.isArray(value)) {
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} must be an array.`
+    );
   }
 
-  const product = {
-    sellerId,
-    type,
-    title: cleanText(raw.title, "title", 2, 150),
-    description: cleanText(raw.description, "description", 2, 5000),
-    price: cleanNumber(raw.price, "price", 0, 100000000),
-    stock: cleanNumber(raw.stock ?? 0, "stock", 0, 100000000, true),
-    category: cleanText(raw.category, "category", 1, 100),
-    active: raw.active !== false,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-    totalReviews: 0,
-    ratingSum: 0,
-    averageRating: 0
-  };
-
-  const textFields = {
-    serviceArea: 250,
-    imageUrl: 2000,
-    unit: 100,
-    material: 250,
-    brand: 150,
-    productCode: 150,
-    sku: 150,
-    delivery: 500,
-    deliveryInfo: 1000,
-    condition: 100
-  };
-
-  for (const [field, max] of Object.entries(textFields)) {
-    const value = cleanOptionalText(raw[field], field, max);
-    if (value !== undefined) product[field] = value;
+  if (value.length > maxItems) {
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} can contain no more than ${maxItems} items.`
+    );
   }
 
-  const numericFields = {
-    salePrice: [0, 100000000, false],
-    minOrderQuantity: [1, 100000000, true],
-    weight: [0, 100000000, false],
-    width: [0, 100000000, false],
-    height: [0, 100000000, false],
-    length: [0, 100000000, false]
-  };
+  const uniqueUrls = [];
 
-  for (const [field, settings] of Object.entries(numericFields)) {
-    if (raw[field] !== undefined && raw[field] !== null && raw[field] !== "") {
-      product[field] = cleanNumber(raw[field], field, ...settings);
+  value.forEach((entry, index) => {
+    const url = cleanUrl(entry, `${name}[${index}]`);
+
+    if (!uniqueUrls.includes(url)) {
+      uniqueUrls.push(url);
     }
+  });
+
+  return uniqueUrls;
+}
+
+function cleanId(value, name, max = 150) {
+  const cleaned = cleanText(value, name, 1, max);
+
+  if (!/^[a-zA-Z0-9._:-]+$/.test(cleaned)) {
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} contains unsupported characters.`
+    );
   }
 
-  const imageUrls = cleanStringArray(raw.imageUrls, "imageUrls", 12);
-  if (imageUrls !== undefined) product.imageUrls = imageUrls;
+  return cleaned;
+}
 
-  const images = cleanStringArray(raw.images, "images", 12);
-  if (images !== undefined) product.images = images;
+function roundMoney(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
 
-  const tags = cleanStringArray(raw.tags, "tags", 30);
-  if (tags !== undefined) product.tags = tags;
+function calculatePrices(rawSellerPrice) {
+  const sellerPrice = roundMoney(
+    cleanNumber(
+      rawSellerPrice,
+      "sellerPrice",
+      0.01,
+      MAX_SAFE_PRICE
+    )
+  );
 
-  if (raw.variants !== undefined) {
-    if (!Array.isArray(raw.variants) || raw.variants.length > 100) {
+  const commissionAmount = roundMoney(
+    sellerPrice * COMMISSION_RATE
+  );
+
+  const buyerPrice = roundMoney(
+    sellerPrice + commissionAmount
+  );
+
+  return {
+    sellerPrice,
+    commissionRate: COMMISSION_RATE,
+    commissionPercent: 10,
+    commissionAmount,
+    buyerPrice,
+    price: buyerPrice
+  };
+}
+
+/* =========================================================
+   PRODUCT OPTION / VARIANT VALIDATION
+   ========================================================= */
+
+function buildProductOption(
+  rawOption,
+  index,
+  imageUrls
+) {
+  if (
+    !rawOption ||
+    typeof rawOption !== "object" ||
+    Array.isArray(rawOption)
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      `options[${index}] must be an object.`
+    );
+  }
+
+  const name = cleanText(
+    rawOption.name || rawOption.label,
+    `options[${index}].name`,
+    1,
+    150
+  );
+
+  const rawSellerPrice =
+    rawOption.sellerPrice ??
+    rawOption.basePrice ??
+    rawOption.price;
+
+  const prices = calculatePrices(rawSellerPrice);
+
+  const stock = cleanNumber(
+    rawOption.stock ?? 0,
+    `options[${index}].stock`,
+    0,
+    MAX_SAFE_STOCK,
+    true
+  );
+
+  const sku = cleanOptionalText(
+    rawOption.sku || rawOption.productCode,
+    `options[${index}].sku`,
+    150
+  );
+
+  let imageIndex = null;
+
+  if (
+    rawOption.imageIndex !== undefined &&
+    rawOption.imageIndex !== null &&
+    rawOption.imageIndex !== ""
+  ) {
+    imageIndex = cleanNumber(
+      rawOption.imageIndex,
+      `options[${index}].imageIndex`,
+      0,
+      Math.max(0, imageUrls.length - 1),
+      true
+    );
+  }
+
+  const imageUrl =
+    imageIndex !== null
+      ? imageUrls[imageIndex] || imageUrls[0] || ""
+      : imageUrls[0] || "";
+
+  return {
+    id:
+      typeof rawOption.id === "string" &&
+      rawOption.id.trim()
+        ? cleanId(
+            rawOption.id,
+            `options[${index}].id`
+          )
+        : `option-${index + 1}`,
+
+    name,
+    label: name,
+
+    sellerPrice: prices.sellerPrice,
+    commissionRate: prices.commissionRate,
+    commissionPercent: prices.commissionPercent,
+    commissionAmount: prices.commissionAmount,
+    buyerPrice: prices.buyerPrice,
+    price: prices.price,
+
+    stock,
+    sku,
+    productCode: sku,
+
+    imageIndex,
+    imageUrl,
+
+    active: rawOption.active !== false
+  };
+}
+
+function buildProductOptions(
+  rawOptions,
+  imageUrls
+) {
+  if (rawOptions === undefined || rawOptions === null) {
+    return [];
+  }
+
+  if (!Array.isArray(rawOptions)) {
+    throw new HttpsError(
+      "invalid-argument",
+      "options must be an array."
+    );
+  }
+
+  if (rawOptions.length > MAX_PRODUCT_OPTIONS) {
+    throw new HttpsError(
+      "invalid-argument",
+      `options can contain no more than ${MAX_PRODUCT_OPTIONS} items.`
+    );
+  }
+
+  const usedNames = new Set();
+  const usedSkus = new Set();
+
+  return rawOptions.map((rawOption, index) => {
+    const option = buildProductOption(
+      rawOption,
+      index,
+      imageUrls
+    );
+
+    const normalizedName = option.name.toLowerCase();
+
+    if (usedNames.has(normalizedName)) {
       throw new HttpsError(
         "invalid-argument",
-        "variants must be an array with no more than 100 items."
+        `The option "${option.name}" is duplicated.`
       );
     }
 
-    product.variants = raw.variants.map((variant, index) => {
-      if (!variant || typeof variant !== "object" || Array.isArray(variant)) {
+    usedNames.add(normalizedName);
+
+    if (option.sku) {
+      const normalizedSku = option.sku.toLowerCase();
+
+      if (usedSkus.has(normalizedSku)) {
         throw new HttpsError(
           "invalid-argument",
-          `variants[${index}] must be an object.`
+          `The product code "${option.sku}" is duplicated.`
         );
       }
-      return variant;
-    });
+
+      usedSkus.add(normalizedSku);
+    }
+
+    return option;
+  });
+}
+
+function getOptionsSummary(options) {
+  if (!Array.isArray(options) || options.length === 0) {
+    return {
+      minSellerPrice: 0,
+      maxSellerPrice: 0,
+      minBuyerPrice: 0,
+      maxBuyerPrice: 0,
+      totalStock: 0
+    };
   }
+
+  const sellerPrices = options.map(
+    (option) => option.sellerPrice
+  );
+
+  const buyerPrices = options.map(
+    (option) => option.buyerPrice
+  );
+
+  return {
+    minSellerPrice: Math.min(...sellerPrices),
+    maxSellerPrice: Math.max(...sellerPrices),
+    minBuyerPrice: Math.min(...buyerPrices),
+    maxBuyerPrice: Math.max(...buyerPrices),
+    totalStock: options.reduce(
+      (sum, option) => sum + option.stock,
+      0
+    )
+  };
+}
+
+/* =========================================================
+   SECURE PRODUCT BUILDER
+   ========================================================= */
+
+function buildProduct(raw, sellerId, shopData = {}) {
+  if (
+    !raw ||
+    typeof raw !== "object" ||
+    Array.isArray(raw)
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Product data is missing or invalid."
+    );
+  }
+
+  const type = cleanText(
+    raw.type || "product",
+    "type",
+    1,
+    30
+  ).toLowerCase();
+
+  if (!["product", "service"].includes(type)) {
+    throw new HttpsError(
+      "invalid-argument",
+      "type must be product or service."
+    );
+  }
+
+  const title = cleanText(
+    raw.title,
+    "title",
+    2,
+    150
+  );
+
+  const description = cleanOptionalText(
+    raw.description,
+    "description",
+    5000
+  );
+
+  const category = cleanText(
+    raw.category,
+    "category",
+    1,
+    100
+  );
+
+  const serviceArea = cleanOptionalText(
+    raw.serviceArea,
+    "serviceArea",
+    250
+  );
+
+  const suppliedImages = [
+    ...(Array.isArray(raw.images) ? raw.images : []),
+    ...(Array.isArray(raw.imageUrls) ? raw.imageUrls : []),
+    ...(typeof raw.imageUrl === "string" &&
+    raw.imageUrl.trim()
+      ? [raw.imageUrl]
+      : [])
+  ];
+
+  const imageUrls = cleanUrlArray(
+    suppliedImages,
+    "images",
+    MAX_PRODUCT_IMAGES * 3
+  ).slice(0, MAX_PRODUCT_IMAGES);
+
+  const hasOptions =
+    raw.hasOptions === true ||
+    (Array.isArray(raw.options) &&
+      raw.options.length > 0) ||
+    (Array.isArray(raw.variants) &&
+      raw.variants.length > 0);
+
+  const rawOptions =
+    Array.isArray(raw.options)
+      ? raw.options
+      : Array.isArray(raw.variants)
+        ? raw.variants
+        : [];
+
+  const options = hasOptions
+    ? buildProductOptions(rawOptions, imageUrls)
+    : [];
+
+  if (hasOptions && options.length === 0) {
+    throw new HttpsError(
+      "invalid-argument",
+      "At least one product option is required."
+    );
+  }
+
+  const optionType = hasOptions
+    ? cleanText(
+        raw.optionType || "Option",
+        "optionType",
+        1,
+        100
+      )
+    : "";
+
+  const optionSummary = getOptionsSummary(options);
+
+  let prices;
+  let stock;
+
+  if (hasOptions) {
+    prices = calculatePrices(
+      optionSummary.minSellerPrice
+    );
+
+    stock = optionSummary.totalStock;
+  } else {
+    const rawSellerPrice =
+      raw.sellerPrice ??
+      (
+        Number(raw.buyerPrice ?? raw.price) /
+        (1 + COMMISSION_RATE)
+      );
+
+    prices = calculatePrices(rawSellerPrice);
+
+    stock = cleanNumber(
+      raw.stock ?? 0,
+      "stock",
+      0,
+      MAX_SAFE_STOCK,
+      true
+    );
+  }
+
+  const shopName =
+    typeof shopData.shopName === "string" &&
+    shopData.shopName.trim()
+      ? cleanText(
+          shopData.shopName,
+          "shopName",
+          1,
+          150
+        )
+      : "MauMarket Seller";
+
+  const product = {
+    sellerId,
+    shopId: sellerId,
+    shopName,
+    publicMerchantLabel:
+      shopData.featuredShop === true
+        ? shopName
+        : "Verified MauMarket Merchant",
+
+    type,
+    title,
+    description,
+
+    sellerPrice: prices.sellerPrice,
+    commissionRate: prices.commissionRate,
+    commissionPercent: prices.commissionPercent,
+    commissionAmount: prices.commissionAmount,
+    buyerPrice: prices.buyerPrice,
+    price: prices.price,
+
+    stock,
+    category,
+    serviceArea,
+
+    imageUrl: imageUrls[0] || "",
+    images: imageUrls,
+    imageUrls,
+
+    hasOptions,
+    optionType,
+    options,
+    variants: options,
+    variantCount: options.length,
+
+    minSellerPrice: hasOptions
+      ? optionSummary.minSellerPrice
+      : prices.sellerPrice,
+
+    maxSellerPrice: hasOptions
+      ? optionSummary.maxSellerPrice
+      : prices.sellerPrice,
+
+    minBuyerPrice: hasOptions
+      ? optionSummary.minBuyerPrice
+      : prices.buyerPrice,
+
+    maxBuyerPrice: hasOptions
+      ? optionSummary.maxBuyerPrice
+      : prices.buyerPrice,
+
+    active: raw.active !== false,
+
+    totalReviews: 0,
+    ratingSum: 0,
+    averageRating: 0,
+
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
+  };
 
   return product;
 }
+
+/* =========================================================
+   SECURE PRODUCT CREATION
+   ========================================================= */
 
 exports.createProductSecurely = onCall(
   {
@@ -181,150 +634,315 @@ exports.createProductSecurely = onCall(
   },
   async (request) => {
     if (!request.auth?.uid) {
-      throw new HttpsError("unauthenticated", "You must be signed in.");
+      throw new HttpsError(
+        "unauthenticated",
+        "You must be signed in."
+      );
     }
 
     const sellerId = request.auth.uid;
     const userRef = db.collection("users").doc(sellerId);
-    const firstUserSnapshot = await userRef.get();
+    const shopRef = db.collection("shops").doc(sellerId);
+
+    const [
+      firstUserSnapshot,
+      firstShopSnapshot
+    ] = await Promise.all([
+      userRef.get(),
+      shopRef.get()
+    ]);
 
     if (!firstUserSnapshot.exists) {
-      throw new HttpsError("failed-precondition", "Seller profile not found.");
+      throw new HttpsError(
+        "failed-precondition",
+        "Seller profile not found."
+      );
     }
 
-    const firstUserData = firstUserSnapshot.data() || {};
+    const firstUserData =
+      firstUserSnapshot.data() || {};
 
     if (firstUserData.blocked === true) {
-      throw new HttpsError("permission-denied", "This seller account is blocked.");
+      throw new HttpsError(
+        "permission-denied",
+        "This seller account is blocked."
+      );
     }
 
-    if (firstUserData.role !== "seller" || firstUserData.approved !== true) {
+    if (
+      firstUserData.role !== "seller" ||
+      firstUserData.approved !== true
+    ) {
       throw new HttpsError(
         "permission-denied",
         "Only approved sellers can add products."
       );
     }
 
-    const rawProduct = request.data?.product || request.data;
-    const safeProduct = buildProduct(rawProduct, sellerId);
+    if (!firstShopSnapshot.exists) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Save your business profile before adding products."
+      );
+    }
 
-    // Used to migrate and reconcile sellers that already have products.
+    const shopData =
+      firstShopSnapshot.data() || {};
+
+    if (shopData.active === false) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Your shop is not currently active."
+      );
+    }
+
+    const rawProduct =
+      request.data?.product || request.data;
+
+    const safeProduct = buildProduct(
+      rawProduct,
+      sellerId,
+      shopData
+    );
+
+    /*
+     * Aggregate count is used to migrate old sellers and repair stale
+     * productCount values before the transaction applies the new quota.
+     */
     const countSnapshot = await db
       .collection("products")
       .where("sellerId", "==", sellerId)
       .count()
       .get();
 
-    const actualCount = countSnapshot.data().count || 0;
+    const actualCount =
+      countSnapshot.data().count || 0;
 
-    const result = await db.runTransaction(async (transaction) => {
-      const latestUserSnapshot = await transaction.get(userRef);
+    const result = await db.runTransaction(
+      async (transaction) => {
+        const latestUserSnapshot =
+          await transaction.get(userRef);
 
-      if (!latestUserSnapshot.exists) {
-        throw new HttpsError("failed-precondition", "Seller profile not found.");
-      }
+        const latestShopSnapshot =
+          await transaction.get(shopRef);
 
-      const userData = latestUserSnapshot.data() || {};
+        if (!latestUserSnapshot.exists) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Seller profile not found."
+          );
+        }
 
-      if (userData.blocked === true) {
-        throw new HttpsError("permission-denied", "This seller account is blocked.");
-      }
+        if (!latestShopSnapshot.exists) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Shop profile not found."
+          );
+        }
 
-      if (userData.role !== "seller" || userData.approved !== true) {
-        throw new HttpsError(
-          "permission-denied",
-          "Only approved sellers can add products."
+        const userData =
+          latestUserSnapshot.data() || {};
+
+        const latestShopData =
+          latestShopSnapshot.data() || {};
+
+        if (userData.blocked === true) {
+          throw new HttpsError(
+            "permission-denied",
+            "This seller account is blocked."
+          );
+        }
+
+        if (
+          userData.role !== "seller" ||
+          userData.approved !== true
+        ) {
+          throw new HttpsError(
+            "permission-denied",
+            "Only approved sellers can add products."
+          );
+        }
+
+        if (latestShopData.active === false) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Your shop is not currently active."
+          );
+        }
+
+        const productLimit =
+          productLimitFor(userData);
+
+        const storedCount =
+          Number.isInteger(userData.productCount)
+            ? Math.max(0, userData.productCount)
+            : 0;
+
+        /*
+         * Math.max prevents a stale stored counter from allowing a seller
+         * to exceed the real number of products already in Firestore.
+         */
+        const currentCount = Math.max(
+          actualCount,
+          storedCount
         );
-      }
 
-      const productLimit = productLimitFor(userData);
-      const storedCount = Number.isInteger(userData.productCount)
-        ? Math.max(0, userData.productCount)
-        : 0;
+        if (currentCount >= productLimit) {
+          throw new HttpsError(
+            "resource-exhausted",
+            `You have reached your product limit of ${productLimit}.`,
+            {
+              productLimit,
+              productCount: currentCount
+            }
+          );
+        }
 
-      // Protects existing products and simultaneous creation requests.
-      const currentCount = Math.max(actualCount, storedCount);
+        const productRef =
+          db.collection("products").doc();
 
-      if (currentCount >= productLimit) {
-        throw new HttpsError(
-          "resource-exhausted",
-          `You have reached your product limit of ${productLimit}.`,
-          { productLimit, productCount: currentCount }
+        const newCount = currentCount + 1;
+
+        transaction.create(
+          productRef,
+          {
+            ...safeProduct,
+
+            // Always refresh the authoritative shop label at creation time.
+            shopName:
+              latestShopData.shopName ||
+              safeProduct.shopName,
+
+            publicMerchantLabel:
+              latestShopData.featuredShop === true
+                ? latestShopData.shopName ||
+                  safeProduct.shopName
+                : "Verified MauMarket Merchant"
+          }
         );
-      }
 
-      const productRef = db.collection("products").doc();
-      const newCount = currentCount + 1;
+        transaction.set(
+          userRef,
+          {
+            productLimit,
+            productCount: newCount,
+            productQuotaUpdatedAt:
+              FieldValue.serverTimestamp()
+          },
+          { merge: true }
+        );
 
-      transaction.create(productRef, safeProduct);
-      transaction.set(
-        userRef,
-        {
+        return {
+          productId: productRef.id,
           productLimit,
           productCount: newCount,
-          productQuotaUpdatedAt: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
+          remainingSlots: Math.max(
+            0,
+            productLimit - newCount
+          )
+        };
+      }
+    );
 
-      return {
-        productId: productRef.id,
-        productLimit,
-        productCount: newCount,
-        remainingSlots: Math.max(0, productLimit - newCount)
-      };
-    });
+    logger.info(
+      "Secure product created",
+      {
+        sellerId,
+        ...result
+      }
+    );
 
-    logger.info("Secure product created", { sellerId, ...result });
-    return { success: true, ...result };
+    return {
+      success: true,
+      ...result
+    };
   }
 );
 
-exports.syncProductCountAfterDelete = onDocumentDeleted(
-  {
-    document: "products/{productId}",
-    retry: true
-  },
-  async (event) => {
-    const data = event.data?.data() || {};
-    const sellerId = typeof data.sellerId === "string" ? data.sellerId : "";
+/* =========================================================
+   PRODUCT COUNT DECREMENT AFTER DELETE
+   ========================================================= */
 
-    if (!sellerId) {
-      logger.warn("Deleted product had no sellerId", {
-        productId: event.params.productId
-      });
-      return;
-    }
+exports.syncProductCountAfterDelete =
+  onDocumentDeleted(
+    {
+      document: "products/{productId}",
+      retry: true
+    },
+    async (event) => {
+      const data = event.data?.data() || {};
 
-    const userRef = db.collection("users").doc(sellerId);
+      const sellerId =
+        typeof data.sellerId === "string"
+          ? data.sellerId
+          : "";
 
-    await db.runTransaction(async (transaction) => {
-      const userSnapshot = await transaction.get(userRef);
-      if (!userSnapshot.exists) return;
+      if (!sellerId) {
+        logger.warn(
+          "Deleted product had no sellerId",
+          {
+            productId: event.params.productId
+          }
+        );
 
-      const userData = userSnapshot.data() || {};
-
-      if (!Number.isInteger(userData.productCount)) {
-        // The next secure create will initialise it from the real count.
         return;
       }
 
-      transaction.set(
-        userRef,
-        {
-          productCount: Math.max(0, userData.productCount - 1),
-          productQuotaUpdatedAt: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
-    });
+      const userRef =
+        db.collection("users").doc(sellerId);
 
-    logger.info("Product count adjusted after deletion", {
-      sellerId,
-      productId: event.params.productId
-    });
-  }
-);
+      await db.runTransaction(
+        async (transaction) => {
+          const userSnapshot =
+            await transaction.get(userRef);
+
+          if (!userSnapshot.exists) {
+            return;
+          }
+
+          const userData =
+            userSnapshot.data() || {};
+
+          if (
+            !Number.isInteger(
+              userData.productCount
+            )
+          ) {
+            /*
+             * A legacy or unsynchronised account will be repaired during
+             * the next secure create or by the admin recalculation callable.
+             */
+            return;
+          }
+
+          transaction.set(
+            userRef,
+            {
+              productCount: Math.max(
+                0,
+                userData.productCount - 1
+              ),
+              productQuotaUpdatedAt:
+                FieldValue.serverTimestamp()
+            },
+            { merge: true }
+          );
+        }
+      );
+
+      logger.info(
+        "Product count adjusted after deletion",
+        {
+          sellerId,
+          productId: event.params.productId
+        }
+      );
+    }
+  );
+
+/* =========================================================
+   ADMIN PRODUCT COUNT RECALCULATION
+   ========================================================= */
 
 exports.recalculateSellerProductCount = onCall(
   {
@@ -333,25 +951,59 @@ exports.recalculateSellerProductCount = onCall(
   },
   async (request) => {
     if (!request.auth?.uid) {
-      throw new HttpsError("unauthenticated", "Sign in is required.");
+      throw new HttpsError(
+        "unauthenticated",
+        "Sign in is required."
+      );
     }
 
-    const adminSnapshot = await db.collection("users").doc(request.auth.uid).get();
-    const adminData = adminSnapshot.exists ? adminSnapshot.data() || {} : {};
+    const adminSnapshot = await db
+      .collection("users")
+      .doc(request.auth.uid)
+      .get();
 
-    if (adminData.role !== "admin" || adminData.blocked === true) {
+    const adminData =
+      adminSnapshot.exists
+        ? adminSnapshot.data() || {}
+        : {};
+
+    if (
+      adminData.role !== "admin" ||
+      adminData.blocked === true
+    ) {
       throw new HttpsError(
         "permission-denied",
         "Administrator access is required."
       );
     }
 
-    const sellerId = cleanText(request.data?.sellerId, "sellerId", 5, 128);
-    const sellerRef = db.collection("users").doc(sellerId);
-    const sellerSnapshot = await sellerRef.get();
+    const sellerId = cleanId(
+      request.data?.sellerId,
+      "sellerId",
+      128
+    );
+
+    const sellerRef =
+      db.collection("users").doc(sellerId);
+
+    const sellerSnapshot =
+      await sellerRef.get();
 
     if (!sellerSnapshot.exists) {
-      throw new HttpsError("not-found", "The seller account was not found.");
+      throw new HttpsError(
+        "not-found",
+        "The seller account was not found."
+      );
+    }
+
+    const sellerData =
+      sellerSnapshot.data() || {};
+
+    if (sellerData.role !== "seller") {
+      throw new HttpsError(
+        "failed-precondition",
+        "The selected account is not a seller."
+      );
     }
 
     const countSnapshot = await db
@@ -360,17 +1012,30 @@ exports.recalculateSellerProductCount = onCall(
       .count()
       .get();
 
-    const productCount = countSnapshot.data().count || 0;
-    const sellerData = sellerSnapshot.data() || {};
-    const productLimit = productLimitFor(sellerData);
+    const productCount =
+      countSnapshot.data().count || 0;
+
+    const productLimit =
+      productLimitFor(sellerData);
 
     await sellerRef.set(
       {
         productLimit,
         productCount,
-        productQuotaUpdatedAt: FieldValue.serverTimestamp()
+        productQuotaUpdatedAt:
+          FieldValue.serverTimestamp()
       },
       { merge: true }
+    );
+
+    logger.info(
+      "Seller product count recalculated",
+      {
+        adminId: request.auth.uid,
+        sellerId,
+        productLimit,
+        productCount
+      }
     );
 
     return {
@@ -378,7 +1043,10 @@ exports.recalculateSellerProductCount = onCall(
       sellerId,
       productLimit,
       productCount,
-      remainingSlots: Math.max(0, productLimit - productCount)
+      remainingSlots: Math.max(
+        0,
+        productLimit - productCount
+      )
     };
   }
 );
