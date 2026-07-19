@@ -1,7 +1,7 @@
 /**
  * MauMarket Product Details
  * Updated option labels and automatic size detection.
- * V3: legacy numeric values saved in option.name are detected as sizes.
+ * V4: polished option cards, cleaner selected-option display and option-image support.
  */
 
 import { auth, db } from "./firebase-config.js";
@@ -269,7 +269,8 @@ function normalizeProductOptions(item) {
         imageIndex: Number.isInteger(imageIndex)
           ? imageIndex
           : null,
-        imageUrl: option.imageUrl || "",
+        image: option.image || option.imageUrl || "",
+        imageUrl: option.imageUrl || option.image || "",
         active: option.active !== false
       };
     })
@@ -283,7 +284,9 @@ function getSelectedOption() {
 function getSelectedImageUrl() {
   const selectedOption = getSelectedOption();
 
-  if (selectedOption?.imageUrl) return selectedOption.imageUrl;
+  if (selectedOption?.imageUrl || selectedOption?.image) {
+    return selectedOption.imageUrl || selectedOption.image;
+  }
 
   if (
     selectedOption?.imageIndex !== null &&
@@ -560,7 +563,7 @@ function renderDetails() {
             <div class="product-selection-summary">
               <div>
                 <span>Selected ${escapeHtml(effectiveOptionType)}</span>
-                <strong>${escapeHtml(getOptionCardPrimaryLabel(selectedOption))}</strong>
+                <strong>${escapeHtml(getSelectedOptionValueLabel(selectedOption))}</strong>
               </div>
               ${selectedOption.productCode || selectedOption.sku
                 ? `
@@ -577,6 +580,19 @@ function renderDetails() {
         <p id="productStockText" class="stock-line ${stock <= 0 ? "out-of-stock" : ""}">
           <strong>${stockText}</strong>
         </p>
+
+        <div class="selected-option-checkout-row">
+          ${
+            selectedOption
+              ? `
+                  <div class="selected-option-checkout-pill">
+                    <span>Selected ${escapeHtml(effectiveOptionType)}</span>
+                    <strong>${escapeHtml(getSelectedOptionValueLabel(selectedOption))}</strong>
+                  </div>
+                `
+              : ""
+          }
+        </div>
 
         <div class="cart-actions clean-cart-actions premium-cart-actions">
           <label class="quantity-field">
@@ -628,7 +644,7 @@ function renderDetails() {
           ? `
             <div class="buy-box-option-summary">
               <span>Selected ${escapeHtml(effectiveOptionType)}</span>
-              <strong>${escapeHtml(getOptionCardPrimaryLabel(selectedOption))}</strong>
+              <strong>${escapeHtml(getSelectedOptionValueLabel(selectedOption))}</strong>
               <small>${getStockText(selectedOption.stock)}</small>
             </div>
           `
@@ -739,7 +755,7 @@ function renderOptionsHtml() {
                 }`
               )}"
               class="product-option-choice
-                ${active ? "active" : ""}
+                ${active ? "active selected-option-choice" : ""}
                 ${outOfStock ? "out-of-stock" : ""}"
               data-option-id="${escapeHtml(option.id)}"
               ${outOfStock ? "disabled" : ""}
@@ -767,10 +783,10 @@ function renderOptionsHtml() {
               </small>
 
               ${
-                option.sku
+                option.productCode || option.sku
                   ? `
                     <small class="product-option-choice-code">
-                      Code: ${escapeHtml(option.sku)}
+                      Code: ${escapeHtml(option.productCode || option.sku)}
                     </small>
                   `
                   : ""
@@ -899,7 +915,7 @@ function renderStaticOptionsFallback() {
             role="radio"
             aria-checked="${active ? "true" : "false"}"
             class="product-option-choice
-              ${active ? "active" : ""}
+              ${active ? "active selected-option-choice" : ""}
               ${outOfStock ? "out-of-stock" : ""}"
             data-fallback-option-id="${escapeHtml(option.id)}"
             ${outOfStock ? "disabled" : ""}
@@ -1152,6 +1168,20 @@ function getOptionCardPrimaryLabel(option) {
   return `${type}: ${displayValue}`;
 }
 
+function getSelectedOptionValueLabel(option) {
+  return String(
+    option?.displayValue ||
+    buildOptionDisplayValue(
+      option?.value,
+      option?.unit
+    ) ||
+    option?.value ||
+    option?.name ||
+    option?.label ||
+    "Selected option"
+  ).trim();
+}
+
 function getOptionCardSecondaryLabel(option) {
   const type = getEffectiveOptionType();
   const explicitName = String(option?.name || option?.label || "").trim();
@@ -1170,10 +1200,10 @@ function getOptionCardSecondaryLabel(option) {
     return explicitName;
   }
 
-  if (!String(option?.unit || "").trim() && type === "Size") {
-    return "Size option";
-  }
-
+  /*
+    Do not show redundant labels such as "Size option".
+    Only return genuinely useful extra information.
+  */
   return "";
 }
 
@@ -1399,7 +1429,7 @@ async function addToCart() {
     setMessage(
       message,
       selectedOption
-        ? `${getOptionDisplayLabel(selectedOption)} added to your cart.`
+        ? `${getEffectiveOptionType()}: ${getSelectedOptionValueLabel(selectedOption)} added to your cart.`
         : "Product added to your cart.",
       "success"
     );
