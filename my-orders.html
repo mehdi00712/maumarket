@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>My Orders | MauMarket</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Track every MauMarket order from payment verification to delivery.">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+
+  <title>My Orders | MauMarket</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Track every MauMarket order, selected product option, payment verification and delivery status."
+  >
+
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -15,139 +25,381 @@
 
 <main class="container orders-page premium-orders-page">
 
-<section class="dashboard-hero orders-hero premium-orders-hero">
+  <!-- =====================================================
+       ORDERS HERO
+  ====================================================== -->
 
-<div class="dashboard-hero-left">
+  <section class="dashboard-hero orders-hero premium-orders-hero">
 
-<span class="hero-badge">📦 My Orders</span>
+    <div class="dashboard-hero-left">
 
-<h1>Track Every Order</h1>
+      <span class="hero-badge">
+        📦 My Orders
+      </span>
 
-<p>
-Monitor your purchases from payment verification through delivery,
-all from one secure MauMarket dashboard.
-</p>
+      <h1>
+        Track Every Order
+      </h1>
 
-<div class="dashboard-hero-buttons">
-<a href="products.html" class="btn">Continue Shopping</a>
-<a href="cart.html" class="secondary-btn">View Cart</a>
-</div>
+      <p>
+        Monitor your purchases, selected sizes and measurements from
+        payment verification through delivery, all from one secure
+        MauMarket dashboard.
+      </p>
 
-<div class="dashboard-hero-features">
-<span>✓ Verified Merchants</span>
-<span>✓ Secure Payments</span>
-<span>✓ Live Tracking</span>
-<span>✓ Buyer Protection</span>
-</div>
+      <div class="dashboard-hero-buttons">
 
-</div>
+        <a href="products.html" class="btn">
+          Continue Shopping
+        </a>
 
-<div class="dashboard-hero-right">
+        <a href="cart.html" class="secondary-btn">
+          View Cart
+        </a>
 
-<div class="dashboard-hero-card">
-<div class="hero-card-icon">🚚</div>
-<h3>Real-Time Tracking</h3>
-<p>Receive live updates until your order arrives.</p>
-</div>
+      </div>
 
-</div>
+      <div class="dashboard-hero-features">
 
-</section>
+        <span>✓ Verified Merchants</span>
+        <span>✓ Secure Payments</span>
+        <span>✓ Product Option Records</span>
+        <span>✓ Live Tracking</span>
+        <span>✓ Buyer Protection</span>
 
-<section class="buyer-trust-strip">
+      </div>
 
-<div class="trust-card">
-<div class="trust-icon">✔</div>
-<strong>Verified Merchants</strong>
-<span>Every merchant is approved by MauMarket.</span>
-</div>
+    </div>
 
-<div class="trust-card">
-<div class="trust-icon">📦</div>
-<strong>Order Tracking</strong>
-<span>Track every stage of your order.</span>
-</div>
+    <div class="dashboard-hero-right">
 
-<div class="trust-card">
-<div class="trust-icon">🚚</div>
-<strong>MauMarket Delivery</strong>
-<span>Pickup and delivery are managed by MauMarket.</span>
-</div>
+      <div class="dashboard-hero-card">
 
-<div class="trust-card">
-<div class="trust-icon">🛡️</div>
-<strong>Buyer Protection</strong>
-<span>Your orders remain protected throughout the process.</span>
-</div>
+        <div class="hero-card-icon">
+          🚚
+        </div>
 
-</section>
+        <h3>
+          Real-Time Tracking
+        </h3>
 
-<section class="orders-toolbar">
+        <p>
+          Receive updates while MauMarket manages payment verification,
+          merchant pickup and customer delivery.
+        </p>
 
-<div class="orders-search">
-<input id="orderSearch" type="search" placeholder="Search order, product or order number">
-</div>
+      </div>
 
-<div class="orders-filters">
-<select id="orderStatusFilter">
-<option value="">All Orders</option>
-<option value="Payment Submitted">Payment Submitted</option>
-<option value="Preparing Order">Preparing Order</option>
-<option value="Ready for Pickup">Ready for Pickup</option>
-<option value="Picked Up">Picked Up</option>
-<option value="Out for Delivery">Out for Delivery</option>
-<option value="Delivery Submitted">Delivery Submitted</option>
-<option value="Delivered">Delivered</option>
-<option value="Cancelled">Cancelled</option>
-</select>
-</div>
+    </div>
 
-</section>
+  </section>
 
-<section class="orders-layout">
 
-<div id="ordersList" class="orders-list">
-Loading your orders...
-</div>
+  <!-- =====================================================
+       BUYER TRUST
+  ====================================================== -->
 
-<aside class="orders-sidebar">
+  <section class="buyer-trust-strip">
 
-<div class="orders-info-card">
-<h2>Need Help?</h2>
-<p>Contact MauMarket support for payment, delivery or order assistance.</p>
-<a href="dashboard.html" class="btn">Contact Support</a>
-</div>
+    <div class="trust-card">
 
-<div class="orders-info-card">
-<h3>MauMarket Protection</h3>
-<ul>
-<li>✓ Verified merchants</li>
-<li>✓ Secure payment verification</li>
-<li>✓ Live delivery tracking</li>
-<li>✓ Customer support</li>
-<li>✓ Verified buyer reviews</li>
-</ul>
-</div>
+      <div class="trust-icon">
+        ✔
+      </div>
 
-<div class="orders-info-card">
-<h3>Order Journey</h3>
-<ul>
-<li>💳 Payment Submitted</li>
-<li>📦 Preparing Order</li>
-<li>📍 Ready for Pickup</li>
-<li>🚚 Out for Delivery</li>
-<li>🎉 Delivered</li>
-</ul>
-</div>
+      <strong>
+        Verified Merchants
+      </strong>
 
-</aside>
+      <span>
+        Every merchant is approved by MauMarket.
+      </span>
 
-</section>
+    </div>
+
+    <div class="trust-card">
+
+      <div class="trust-icon">
+        📦
+      </div>
+
+      <strong>
+        Order Tracking
+      </strong>
+
+      <span>
+        Track every stage of your order.
+      </span>
+
+    </div>
+
+    <div class="trust-card">
+
+      <div class="trust-icon">
+        📏
+      </div>
+
+      <strong>
+        Option Records
+      </strong>
+
+      <span>
+        Selected sizes, measurements and product codes remain attached.
+      </span>
+
+    </div>
+
+    <div class="trust-card">
+
+      <div class="trust-icon">
+        🚚
+      </div>
+
+      <strong>
+        MauMarket Delivery
+      </strong>
+
+      <span>
+        Pickup and delivery are managed by MauMarket.
+      </span>
+
+    </div>
+
+    <div class="trust-card">
+
+      <div class="trust-icon">
+        🛡️
+      </div>
+
+      <strong>
+        Buyer Protection
+      </strong>
+
+      <span>
+        Your orders remain protected throughout the process.
+      </span>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       SEARCH AND FILTERS
+  ====================================================== -->
+
+  <section class="orders-toolbar">
+
+    <div class="orders-search">
+
+      <label class="sr-only" for="orderSearch">
+        Search orders
+      </label>
+
+      <input
+        id="orderSearch"
+        type="search"
+        placeholder="Search order, product, size, measurement or product code"
+        autocomplete="off"
+      >
+
+    </div>
+
+    <div class="orders-filters">
+
+      <label class="sr-only" for="orderStatusFilter">
+        Filter orders by status
+      </label>
+
+      <select id="orderStatusFilter">
+
+        <option value="">
+          All Orders
+        </option>
+
+        <option value="Pending Payment">
+          Pending Payment
+        </option>
+
+        <option value="Payment Submitted">
+          Payment Submitted
+        </option>
+
+        <option value="Payment Rejected">
+          Payment Rejected
+        </option>
+
+        <option value="Preparing Order">
+          Preparing Order
+        </option>
+
+        <option value="Ready for Pickup">
+          Ready for Pickup
+        </option>
+
+        <option value="Picked Up">
+          Picked Up
+        </option>
+
+        <option value="Out for Delivery">
+          Out for Delivery
+        </option>
+
+        <option value="Delivery Submitted">
+          Delivery Submitted
+        </option>
+
+        <option value="Delivered">
+          Delivered
+        </option>
+
+        <option value="Cancelled">
+          Cancelled
+        </option>
+
+      </select>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       PAGE MESSAGE
+  ====================================================== -->
+
+  <p
+    id="ordersPageMessage"
+    class="orders-page-message"
+    role="alert"
+    aria-live="assertive"
+    hidden
+  ></p>
+
+
+  <!-- =====================================================
+       ORDERS LAYOUT
+  ====================================================== -->
+
+  <section class="orders-layout">
+
+    <div
+      id="ordersList"
+      class="orders-list"
+      aria-live="polite"
+      aria-busy="true"
+    >
+
+      <div class="orders-loading-state">
+
+        <div
+          class="orders-loading-spinner"
+          aria-hidden="true"
+        ></div>
+
+        <div>
+
+          <strong>
+            Loading your orders...
+          </strong>
+
+          <p>
+            MauMarket is retrieving your orders and selected product options.
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ===================================================
+         SIDEBAR
+    ==================================================== -->
+
+    <aside class="orders-sidebar">
+
+      <div class="orders-info-card">
+
+        <h2>
+          Need Help?
+        </h2>
+
+        <p>
+          Contact MauMarket support for payment, delivery, product option
+          or order assistance.
+        </p>
+
+        <a href="dashboard.html" class="btn">
+          Contact Support
+        </a>
+
+      </div>
+
+      <div class="orders-info-card">
+
+        <h3>
+          MauMarket Protection
+        </h3>
+
+        <ul>
+          <li>✓ Verified merchants</li>
+          <li>✓ Secure payment verification</li>
+          <li>✓ Recorded product options</li>
+          <li>✓ Live delivery tracking</li>
+          <li>✓ Customer support</li>
+          <li>✓ Verified buyer reviews</li>
+        </ul>
+
+      </div>
+
+      <div class="orders-info-card">
+
+        <h3>
+          Order Journey
+        </h3>
+
+        <ul>
+          <li>💳 Payment Submitted</li>
+          <li>📦 Preparing Order</li>
+          <li>📍 Ready for Pickup</li>
+          <li>🚚 Out for Delivery</li>
+          <li>🎉 Delivered</li>
+        </ul>
+
+      </div>
+
+      <div class="orders-info-card">
+
+        <h3>
+          Product Option Record
+        </h3>
+
+        <p>
+          Each order preserves its selected size, measurement, option value,
+          unit, product code, price and quantity.
+        </p>
+
+      </div>
+
+    </aside>
+
+  </section>
 
 </main>
 
-<script type="module" src="js/nav.js?v=5.3"></script>
-<script type="module" src="js/my-orders.js?v=6.0-private-merchant"></script>
+<script
+  type="module"
+  src="js/nav.js?v=5.3"
+></script>
+
+<script
+  type="module"
+  src="js/my-orders.js?v=6.1-product-options"
+></script>
+
 <script src="js/footer.js"></script>
+
 </body>
 </html>
