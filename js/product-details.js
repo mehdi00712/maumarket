@@ -1,6 +1,7 @@
 /**
  * MauMarket Product Details
  * Updated option labels and automatic size detection.
+ * V2: generic "Option" values no longer override numeric size detection.
  */
 
 import { auth, db } from "./firebase-config.js";
@@ -696,7 +697,7 @@ function renderOptionsHtml() {
           </span>
 
           <h3>
-            Available ${escapeHtml(type)} Options
+            Available ${escapeHtml(type)}${type.toLowerCase().endsWith("option") ? "s" : " Options"}
           </h3>
 
           <p class="muted">
@@ -1041,16 +1042,42 @@ function getEffectiveOptionType() {
 
   const normalizedRawType = rawType.toLowerCase();
 
-  if (aliases[normalizedRawType]) {
+  /*
+    "Option", "Variant" and "Variation" are generic labels.
+    Do not return them before inspecting the real option values.
+    Otherwise numeric values such as 50 and 100 remain displayed as
+    generic options instead of being recognised as sizes.
+  */
+  const genericTypes = new Set([
+    "",
+    "option",
+    "options",
+    "variant",
+    "variants",
+    "variation",
+    "variations"
+  ]);
+
+  if (
+    normalizedRawType &&
+    !genericTypes.has(normalizedRawType) &&
+    aliases[normalizedRawType]
+  ) {
     return aliases[normalizedRawType];
   }
 
-  const declaredType = productOptions
+  const declaredTypes = productOptions
     .map((option) => String(option.optionType || "").trim().toLowerCase())
-    .find((value) => aliases[value]);
+    .filter(Boolean);
 
-  if (declaredType) {
-    return aliases[declaredType];
+  const specificDeclaredType = declaredTypes.find(
+    (value) =>
+      !genericTypes.has(value) &&
+      aliases[value]
+  );
+
+  if (specificDeclaredType) {
+    return aliases[specificDeclaredType];
   }
 
   const units = productOptions
@@ -1100,7 +1127,7 @@ function getOptionCardPrimaryLabel(option) {
     return displayValue;
   }
 
-  return `${type} ${displayValue}`;
+  return `${type}: ${displayValue}`;
 }
 
 function getOptionCardSecondaryLabel(option) {
