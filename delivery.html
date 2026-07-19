@@ -12,9 +12,10 @@
 
   <meta
     name="description"
-    content="Manage assigned MauMarket deliveries, update delivery progress, navigate to customers and submit completed deliveries."
+    content="Manage assigned MauMarket deliveries, review selected product options, collect items from sellers, navigate to customers and submit completed deliveries."
   >
 
+  <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -41,15 +42,23 @@
       </h1>
 
       <p>
-        View assigned orders, collect items from sellers, navigate to customers,
-        update delivery progress, collect signatures and submit completed
-        deliveries for administrator validation.
+        View assigned orders, collect the correct product options from sellers,
+        navigate to customers, update delivery progress, collect signatures and
+        submit completed deliveries for administrator validation.
       </p>
 
       <div class="driver-delivery-hero-points">
 
         <span>
           ✓ Assigned delivery tracking
+        </span>
+
+        <span>
+          ✓ Multi-seller pickup routes
+        </span>
+
+        <span>
+          ✓ Product option and code details
         </span>
 
         <span>
@@ -75,8 +84,8 @@
       </h2>
 
       <p>
-        Manage every step of your assigned deliveries from collection to
-        final customer confirmation.
+        Manage each assigned delivery from seller collection to final customer
+        confirmation, with exact product option and pickup information.
       </p>
 
       <div class="driver-delivery-hero-status">
@@ -285,7 +294,8 @@
         </h2>
 
         <p>
-          Search by customer, order number, phone number, address, status or date.
+          Search by customer, order number, phone, address, seller, product,
+          selected option, size, measurement, SKU, product code, status or date.
         </p>
 
       </div>
@@ -311,7 +321,7 @@
         <input
           id="driverDeliverySearch"
           type="search"
-          placeholder="Search order, customer, phone or address"
+          placeholder="Search order, customer, product, option, code or seller"
           autocomplete="off"
         >
 
@@ -327,6 +337,10 @@
 
           <option value="">
             All Deliveries
+          </option>
+
+          <option value="Preparing Order">
+            Preparing Order
           </option>
 
           <option value="Ready for Pickup">
@@ -347,6 +361,10 @@
 
           <option value="Delivered">
             Delivered
+          </option>
+
+          <option value="Cancelled">
+            Cancelled
           </option>
 
         </select>
@@ -371,6 +389,32 @@
   </section>
 
   <!-- =====================================================
+       DRIVER INFORMATION NOTE
+  ====================================================== -->
+
+  <section class="driver-delivery-notice">
+
+    <div class="driver-delivery-notice-icon">
+      ℹ️
+    </div>
+
+    <div>
+
+      <h2>
+        Check Product Options Before Collection
+      </h2>
+
+      <p>
+        Each item may include a selected size, measurement, unit, colour,
+        variation, SKU, product code or option-specific image. Confirm these
+        details with the seller before marking the order as picked up.
+      </p>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================================
        DELIVERY LIST
   ====================================================== -->
 
@@ -388,7 +432,10 @@
           Assigned Deliveries
         </h2>
 
-        <p id="driverDeliveryResultCount">
+        <p
+          id="driverDeliveryResultCount"
+          aria-live="polite"
+        >
           Loading assigned deliveries...
         </p>
 
@@ -408,10 +455,18 @@
 
     </div>
 
+    <div class="driver-delivery-list-note">
+
+      Delivery cards can display multiple seller pickup locations, selected
+      product options, product codes, customer map pins and delivery proof.
+
+    </div>
+
     <div
       id="deliveryOrdersList"
       class="driver-delivery-list"
       aria-live="polite"
+      aria-busy="true"
     >
       Loading assigned deliveries...
     </div>
@@ -423,6 +478,23 @@
   ====================================================== -->
 
   <section class="driver-delivery-help-grid">
+
+    <article class="driver-delivery-help-card">
+
+      <div class="driver-delivery-help-icon">
+        🏪
+      </div>
+
+      <h3>
+        Verify Every Pickup
+      </h3>
+
+      <p>
+        Check the seller, pickup location, item quantity, selected option,
+        product code and SKU before leaving each pickup stop.
+      </p>
+
+    </article>
 
     <article class="driver-delivery-help-card">
 
@@ -487,8 +559,10 @@
 
 <script
   type="module"
-  src="js/delivery.js?v=7.1"
+  src="js/delivery.js?v=7.2-product-options"
 ></script>
+
 <script src="js/footer.js"></script>
+
 </body>
 </html>
