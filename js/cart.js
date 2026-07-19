@@ -68,7 +68,7 @@ onAuthStateChanged(auth, async (user) => {
    LOAD CART
    ========================================================= */
 
-async async function loadCart() {
+async function loadCart() {
   if (!cartItems || !currentUser) return;
 
   setCartBusy(true);
