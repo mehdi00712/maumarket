@@ -1,7 +1,7 @@
 /**
  * MauMarket Product Details
  * Updated option labels and automatic size detection.
- * V2: generic "Option" values no longer override numeric size detection.
+ * V3: legacy numeric values saved in option.name are detected as sizes.
  */
 
 import { auth, db } from "./firebase-config.js";
@@ -560,7 +560,7 @@ function renderDetails() {
             <div class="product-selection-summary">
               <div>
                 <span>Selected ${escapeHtml(effectiveOptionType)}</span>
-                <strong>${escapeHtml(getOptionDisplayLabel(selectedOption))}</strong>
+                <strong>${escapeHtml(getOptionCardPrimaryLabel(selectedOption))}</strong>
               </div>
               ${selectedOption.productCode || selectedOption.sku
                 ? `
@@ -628,7 +628,7 @@ function renderDetails() {
           ? `
             <div class="buy-box-option-summary">
               <span>Selected ${escapeHtml(effectiveOptionType)}</span>
-              <strong>${escapeHtml(getOptionDisplayLabel(selectedOption))}</strong>
+              <strong>${escapeHtml(getOptionCardPrimaryLabel(selectedOption))}</strong>
               <small>${getStockText(selectedOption.stock)}</small>
             </div>
           `
@@ -1088,9 +1088,23 @@ function getEffectiveOptionType() {
   if (units.some((unit) => ["ml", "l", "litre", "liter"].includes(unit))) return "Capacity";
   if (units.some((unit) => ["mm", "cm", "m", "in", "ft"].includes(unit))) return "Size";
 
+  /*
+    Older MauMarket products sometimes saved the visible size in option.name
+    instead of option.value. Inspect every usable visible field so values such
+    as "50" and "100" are still recognised as sizes.
+  */
   const values = productOptions
-    .map((option) => String(option.value || "").trim())
-    .filter(Boolean);
+    .map((option) => {
+      return String(
+        option.value ||
+        option.displayValue ||
+        option.name ||
+        option.label ||
+        ""
+      ).trim();
+    })
+    .filter(Boolean)
+    .map((value) => value.replace(/^size\s*[:\-]?\s*/i, "").trim());
 
   const allNumeric =
     values.length > 0 &&
@@ -1116,7 +1130,15 @@ function getEffectiveOptionType() {
 
 function getOptionCardPrimaryLabel(option) {
   const type = getEffectiveOptionType();
-  const displayValue = getOptionDisplayLabel(option);
+
+  const displayValue = String(
+    option?.value ||
+    option?.displayValue ||
+    option?.name ||
+    option?.label ||
+    getOptionDisplayLabel(option) ||
+    ""
+  ).trim();
 
   if (!displayValue) return type;
 
