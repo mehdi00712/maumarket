@@ -14,6 +14,7 @@ import {
 const ordersList = document.getElementById("ordersList");
 const orderSearch = document.getElementById("orderSearch");
 const orderStatusFilter = document.getElementById("orderStatusFilter");
+const ordersPageMessage = document.getElementById("ordersPageMessage");
 
 let currentUser = null;
 let reviewedOrderIds = new Set();
@@ -92,6 +93,8 @@ async function loadOrders() {
 function renderOrders() {
   if (!ordersList) return;
 
+  ordersList.setAttribute("aria-busy", "false");
+
   const search = String(orderSearch?.value || "")
     .toLowerCase()
     .trim();
@@ -106,7 +109,14 @@ function renderOrders() {
       ${order.orderStatus || ""}
       ${order.paymentStatus || ""}
       ${order.deliveryAddress || ""}
-      ${(order.items || []).map((item) => item.title || "").join(" ")}
+      ${(order.items || []).map((item) => `
+        ${item.title || ""}
+        ${item.selectedOptionName || item.optionName || ""}
+        ${item.selectedOptionValue || item.optionValue || ""}
+        ${item.selectedOptionUnit || item.optionUnit || ""}
+        ${item.selectedOptionDisplayValue || item.optionDisplayValue || ""}
+        ${item.selectedOptionSku || item.optionSku || item.productCode || item.sku || ""}
+      `).join(" ")}
     `.toLowerCase();
 
     const matchesSearch =
@@ -177,12 +187,37 @@ function createOrderCard(order) {
           item.optionName ||
           "";
 
+        const optionValue =
+          item.selectedOptionValue ||
+          item.optionValue ||
+          item.measurementValue ||
+          item.sizeValue ||
+          "";
+
+        const optionUnit =
+          item.selectedOptionUnit ||
+          item.optionUnit ||
+          item.measurementUnit ||
+          item.sizeUnit ||
+          "";
+
+        const optionDisplayValue =
+          item.selectedOptionDisplayValue ||
+          item.optionDisplayValue ||
+          buildOptionDisplayValue(
+            optionValue,
+            optionUnit
+          ) ||
+          optionName;
+
         const optionType =
           item.optionType || "Option";
 
         const optionSku =
           item.selectedOptionSku ||
           item.optionSku ||
+          item.productCode ||
+          item.sku ||
           "";
 
         return `
@@ -191,16 +226,57 @@ function createOrderCard(order) {
               <strong>${escapeHtml(item.title || "Item")}</strong>
 
               ${
-                optionName
+                optionDisplayValue || optionName
                   ? `
                     <div class="order-option-badge">
                       ${escapeHtml(optionType)}:
-                      <strong>${escapeHtml(optionName)}</strong>
+                      <strong>
+                        ${escapeHtml(
+                          optionDisplayValue ||
+                          optionName
+                        )}
+                      </strong>
                     </div>
 
                     ${
+                      optionValue || optionUnit
+                        ? `
+                          <small class="order-option-measurement">
+                            Size / Measurement:
+                            ${escapeHtml(
+                              buildOptionDisplayValue(
+                                optionValue,
+                                optionUnit
+                              ) ||
+                              optionDisplayValue
+                            )}
+                          </small>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      optionName &&
+                      optionDisplayValue &&
+                      normalizeText(optionName) !==
+                        normalizeText(optionDisplayValue)
+                        ? `
+                          <small>
+                            Option Name:
+                            ${escapeHtml(optionName)}
+                          </small>
+                        `
+                        : ""
+                    }
+
+                    ${
                       optionSku
-                        ? `<small>Product Code: ${escapeHtml(optionSku)}</small>`
+                        ? `
+                          <small>
+                            Product Code:
+                            ${escapeHtml(optionSku)}
+                          </small>
+                        `
                         : ""
                     }
                   `
@@ -327,6 +403,8 @@ function createOrderCard(order) {
 
   const card = document.createElement("article");
   card.className = "order-card premium-customer-order-card";
+  card.dataset.orderId = order.id || "";
+  card.dataset.orderStatus = orderStatus;
 
   card.innerHTML = `
     <div class="customer-order-card-head">
@@ -473,6 +551,13 @@ function renderEmptyOrders() {
 function showOrdersLoading() {
   if (!ordersList) return;
 
+  ordersList.setAttribute("aria-busy", "true");
+
+  if (ordersPageMessage) {
+    ordersPageMessage.hidden = true;
+    ordersPageMessage.textContent = "";
+  }
+
   ordersList.innerHTML = Array.from({ length: 3 })
     .map(() => `
       <div class="order-card order-skeleton-card">
@@ -486,6 +571,13 @@ function showOrdersLoading() {
 
 function showOrdersError(message) {
   if (!ordersList) return;
+
+  ordersList.setAttribute("aria-busy", "false");
+
+  if (ordersPageMessage) {
+    ordersPageMessage.textContent = message || "";
+    ordersPageMessage.hidden = !message;
+  }
 
   ordersList.innerHTML = `
     <div class="empty-market-card">
@@ -558,6 +650,41 @@ function getOrderItemImage(item){
     item.imageUrl ||
     ""
   );
+}
+
+function buildOptionDisplayValue(value, unit) {
+  const cleanValue = String(value || "").trim();
+  const cleanUnit = String(unit || "").trim();
+
+  if (!cleanValue) return "";
+  if (!cleanUnit) return cleanValue;
+
+  const labels = {
+    mm: "mm",
+    cm: "cm",
+    m: "m",
+    in: "in",
+    ft: "ft",
+    ml: "ml",
+    l: "L",
+    g: "g",
+    kg: "kg",
+    piece: "piece",
+    pack: "pack",
+    set: "set",
+    pair: "pair"
+  };
+
+  return `${cleanValue} ${
+    labels[cleanUnit.toLowerCase()] ||
+    cleanUnit
+  }`;
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 function formatStatus(value) {
