@@ -12,7 +12,7 @@
 
   <meta
     name="description"
-    content="Complete your MauMarket order securely with protected Juice payment and pin-based delivery."
+    content="Complete your MauMarket order securely with protected Juice payment, pin-based delivery and full product option details."
   >
 
   <link rel="icon" href="favicon.ico" sizes="any">
@@ -335,7 +335,7 @@
             </h2>
 
             <p>
-              Confirm your products, quantities and final customer prices.
+              Confirm your products, quantities, selected sizes, measurements, product codes and final customer prices.
               Merchant identity and pickup information remain private.
             </p>
 
@@ -368,13 +368,32 @@
 
         </div>
 
-        <div
-          id="checkoutItems"
-          class="premium-checkout-items"
-          aria-live="polite"
-        >
-          Loading your order...
+        <div id="checkoutOptionsNotice" class="checkout-options-notice">
+          <div class="checkout-options-notice-icon">📏</div>
+          <div>
+            <strong>Selected product options are preserved</strong>
+            <p>Sizes such as M or L, measurements such as 45 cm or 500 ml, and product codes will appear below each matching item.</p>
+          </div>
         </div>
+
+        <p id="checkoutItemsMessage" class="checkout-items-message" role="alert" aria-live="assertive" hidden></p>
+
+        <div id="checkoutItems" class="premium-checkout-items" aria-live="polite" aria-busy="true">
+          <div class="checkout-loading-state">
+            <div class="checkout-loading-spinner" aria-hidden="true"></div>
+            <div>
+              <strong>Loading your order...</strong>
+              <p>MauMarket is checking your products, quantities and selected options.</p>
+            </div>
+          </div>
+        </div>
+
+        <section id="checkoutEmptyState" class="checkout-empty-state" hidden>
+          <div class="checkout-empty-icon">🛒</div>
+          <h3>Your cart is empty</h3>
+          <p>Return to the marketplace and add products before completing checkout.</p>
+          <a href="products.html" class="btn">Browse Products</a>
+        </section>
 
       </section>
 
@@ -500,11 +519,12 @@
 
         </div>
 
-        <p
-          id="checkoutMessage"
-          class="checkout-message"
-          aria-live="polite"
-        ></p>
+        <div id="checkoutValidationSummary" class="checkout-validation-summary" hidden>
+          <strong>Please review the following:</strong>
+          <ul id="checkoutValidationList"></ul>
+        </div>
+
+        <p id="checkoutMessage" class="checkout-message" role="alert" aria-live="assertive"></p>
 
       </section>
 
@@ -535,15 +555,18 @@
       <div class="premium-summary-lines">
 
         <div class="summary-row">
+          <span>Items</span>
+          <strong id="checkoutItemsCount">0</strong>
+        </div>
 
-          <span>
-            Items Total
-          </span>
+        <div class="summary-row">
+          <span>Selected Options</span>
+          <strong id="checkoutOptionsCount">0</strong>
+        </div>
 
-          <strong>
-            Rs <span id="itemsTotal">0</span>
-          </strong>
-
+        <div class="summary-row">
+          <span>Items Total</span>
+          <strong>Rs <span id="itemsTotal">0</span></strong>
         </div>
 
         <div class="summary-row">
@@ -576,9 +599,15 @@
         id="placeOrderBtn"
         class="btn checkout-submit-btn premium-checkout-submit"
         type="button"
+        disabled
+        aria-disabled="true"
       >
         Complete Order
       </button>
+
+      <p id="placeOrderHelpText" class="place-order-help-text" aria-live="polite">
+        Your order will become available after your cart and selected options are verified.
+      </p>
 
       <div class="checkout-safe-note">
         🔒 Your payment proof is reviewed securely by MauMarket.
@@ -629,6 +658,11 @@
 
       </div>
 
+      <div class="checkout-option-summary-card">
+        <strong>Product Option Protection</strong>
+        <p>Your selected size, measurement, option value, product code, price and quantity are copied into the final order.</p>
+      </div>
+
       <a
         href="cart.html"
         class="checkout-back-link"
@@ -653,7 +687,7 @@
   defer
 ></script>
 
-<script type="module" src="js/checkout.js?v=8.0"></script>
+<script type="module" src="js/checkout.js?v=8.1-product-options"></script>
 
 <script src="js/footer.js"></script>
 
