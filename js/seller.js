@@ -4,6 +4,7 @@
  *
  * Fixes optionType, size/value storage, product codes, option images,
  * legacy option editing and secure Cloud Function payloads.
+ * Fixes false duplicate errors when several options share the same type.
  */
 
 import { auth, db, storage, functions } from "./firebase-config.js";
@@ -1594,8 +1595,17 @@ function collectOptionData(finalImageUrls) {
     return {
       id: row.dataset.optionId || createUniqueId(),
 
-      name: optionType,
-      label: optionType,
+      /*
+        Keep each option name unique for compatibility with the currently
+        deployed Cloud Function. The shared category stays in optionType.
+
+        Example:
+        optionType: "Size"
+        name: "Medium"
+        value: "M"
+      */
+      name: enteredName || displayValue,
+      label: enteredName || displayValue,
       optionType,
 
       value,
