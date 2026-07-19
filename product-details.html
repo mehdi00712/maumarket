@@ -107,16 +107,18 @@
 
   </section>
 
+
   <!-- =====================================================
-       OPTIONAL STATIC SUPPORT HOOKS
-       product-details.js can populate or hide these
+       PRODUCT OPTIONS FALLBACK / DYNAMIC HOOKS
+       Used when product-details.js renders options separately
   ====================================================== -->
 
   <section
     id="productOptionsFallback"
     class="homepage-section product-options-fallback"
-    style="display:none;"
+    hidden
     aria-live="polite"
+    aria-labelledby="productOptionTypeTitle"
   >
 
     <div class="section-row-title">
@@ -131,9 +133,9 @@
           Choose an Option
         </h2>
 
-        <p>
-          Select your preferred colour, size, flavour or variation before
-          adding the item to your cart.
+        <p id="productOptionsHelpText">
+          Select your preferred colour, size, measurement, flavour or
+          variation before adding the item to your cart.
         </p>
 
       </div>
@@ -141,14 +143,103 @@
     </div>
 
     <div
+      id="productSelectedOptionSummary"
+      class="product-selected-option-summary"
+      hidden
+      aria-live="polite"
+    >
+
+      <span>
+        Selected:
+      </span>
+
+      <strong id="selectedOptionText">
+        None
+      </strong>
+
+    </div>
+
+    <div
       id="productOptionsList"
       class="product-options-list"
+      role="radiogroup"
+      aria-label="Product options"
     ></div>
+
+    <p
+      id="productOptionError"
+      class="product-option-error"
+      role="alert"
+      hidden
+    ></p>
+
+    <div
+      id="selectedOptionDetails"
+      class="selected-option-details"
+      hidden
+    >
+
+      <div class="selected-option-detail">
+
+        <span>
+          Price
+        </span>
+
+        <strong id="selectedOptionPrice">
+          —
+        </strong>
+
+      </div>
+
+      <div class="selected-option-detail">
+
+        <span>
+          Stock
+        </span>
+
+        <strong id="selectedOptionStock">
+          —
+        </strong>
+
+      </div>
+
+      <div
+        id="selectedOptionCodeRow"
+        class="selected-option-detail"
+        hidden
+      >
+
+        <span>
+          Product Code
+        </span>
+
+        <strong id="selectedOptionCode">
+          —
+        </strong>
+
+      </div>
+
+      <div
+        id="selectedOptionMeasurementRow"
+        class="selected-option-detail"
+        hidden
+      >
+
+        <span>
+          Size / Measurement
+        </span>
+
+        <strong id="selectedOptionMeasurement">
+          —
+        </strong>
+
+      </div>
+
+    </div>
 
   </section>
 
 
- 
   <!-- =====================================================
        REVIEWS
        product-details.js can populate these containers
@@ -186,7 +277,7 @@
     <div
       id="productReviewsSummary"
       class="product-reviews-summary"
-      style="display:none;"
+      hidden
     ></div>
 
     <div
@@ -210,6 +301,7 @@
     </div>
 
   </section>
+
 
   <!-- =====================================================
        RELATED PRODUCTS
@@ -259,6 +351,7 @@
 
   </section>
 
+
   <!-- =====================================================
        FINAL TRUST MESSAGE
   ====================================================== -->
@@ -304,8 +397,10 @@
 
 <script
   type="module"
-  src="js/product-details.js?v=8.0-product-options"
+  src="js/product-details.js?v=8.1-size-measurements"
 ></script>
+
 <script src="js/footer.js"></script>
+
 </body>
 </html>
