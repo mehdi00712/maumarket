@@ -94,6 +94,12 @@ const slotInfo = document.getElementById("slotInfo");
 const requestSlotsBtn = document.getElementById("requestSlotsBtn");
 const slotMessage = document.getElementById("slotMessage");
 
+// Live overview metric values
+const overviewProductSlots = document.getElementById("overviewProductSlots");
+const overviewActiveListings = document.getElementById("overviewActiveListings");
+const overviewMerchantOrders = document.getElementById("overviewMerchantOrders");
+const overviewDeliveredOrders = document.getElementById("overviewDeliveredOrders");
+
 const formTitle = document.getElementById("formTitle");
 const itemType = document.getElementById("itemType");
 const itemTitle = document.getElementById("itemTitle");
@@ -256,6 +262,7 @@ onAuthStateChanged(auth, async (user) => {
     renderFeaturedShopStatus();
     await loadFeaturedShopRequests();
     await loadMyItems();
+    await loadSellerOverviewOrders();
   } catch (error) {
     console.error("Seller dashboard initialization failed:", error);
     setMessage(
@@ -2016,6 +2023,8 @@ async function loadMyItems() {
 
     const productLimit = getCurrentSellerProductLimit();
 
+    updateSellerOverviewProductMetrics(snapshot, productLimit);
+
     if (slotInfo) {
       slotInfo.textContent =
         `You are using ${currentProductCount} / ${productLimit} product slots.`;
@@ -3295,6 +3304,92 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+// =========================================================
+// SELLER LIVE OVERVIEW
+// =========================================================
+
+function updateSellerOverviewProductMetrics(snapshot, productLimit) {
+  const products = [];
+  snapshot?.forEach((docSnap) => products.push(docSnap.data()));
+
+  const usedSlots = Number(snapshot?.size || 0);
+  const activeListings = products.filter(
+    (product) => product.active !== false
+  ).length;
+
+  if (overviewProductSlots) {
+    overviewProductSlots.textContent = `${usedSlots}/${Number(productLimit || 0)}`;
+  }
+
+  if (overviewActiveListings) {
+    overviewActiveListings.textContent = String(activeListings);
+  }
+}
+
+async function loadSellerOverviewOrders() {
+  if (!currentUser) return;
+
+  if (overviewMerchantOrders) overviewMerchantOrders.textContent = "…";
+  if (overviewDeliveredOrders) overviewDeliveredOrders.textContent = "…";
+
+  try {
+    const orders = await getOrdersForCurrentSeller();
+    const deliveredStatuses = new Set([
+      "delivered", "completed", "complete", "fulfilled"
+    ]);
+
+    const deliveredCount = orders.filter((order) =>
+      deliveredStatuses.has(normalizeOrderStatus(order.status))
+    ).length;
+
+    if (overviewMerchantOrders) {
+      overviewMerchantOrders.textContent = String(orders.length);
+    }
+    if (overviewDeliveredOrders) {
+      overviewDeliveredOrders.textContent = String(deliveredCount);
+    }
+  } catch (error) {
+    console.error("Could not load seller overview orders:", error);
+    if (overviewMerchantOrders) overviewMerchantOrders.textContent = "0";
+    if (overviewDeliveredOrders) overviewDeliveredOrders.textContent = "0";
+  }
+}
+
+async function getOrdersForCurrentSeller() {
+  const uid = currentUser.uid;
+  const records = new Map();
+  const orderQueries = [
+    query(collection(db, "orders"), where("sellerId", "==", uid)),
+    query(collection(db, "orders"), where("merchantId", "==", uid)),
+    query(collection(db, "orders"), where("shopId", "==", uid)),
+    query(collection(db, "orders"), where("sellerIds", "array-contains", uid))
+  ];
+
+  const results = await Promise.allSettled(
+    orderQueries.map((ordersQuery) => getDocs(ordersQuery))
+  );
+
+  results.forEach((result) => {
+    if (result.status !== "fulfilled") return;
+    result.value.forEach((docSnap) => {
+      records.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+    });
+  });
+
+  if (!results.some((result) => result.status === "fulfilled")) {
+    throw results[0]?.reason || new Error("No seller order query was permitted.");
+  }
+
+  return [...records.values()];
+}
+
+function normalizeOrderStatus(status) {
+  return String(status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[ _-]+/g, " ");
 }
 
 // =========================================================
