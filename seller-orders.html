@@ -12,7 +12,7 @@
 
   <meta
     name="description"
-    content="Manage merchant orders, earnings, commissions and MauMarket fulfilment."
+    content="Manage merchant orders, selected product options, earnings, commissions and MauMarket fulfilment."
   >
 
   <link rel="icon" href="favicon.ico" sizes="any">
@@ -49,6 +49,7 @@
       <div class="seller-orders-hero-points">
 
         <span>✓ Private merchant fulfilment</span>
+        <span>✓ Product option details</span>
         <span>✓ MauMarket-managed delivery</span>
         <span>✓ Automatic commission</span>
         <span>✓ Secure order processing</span>
@@ -107,7 +108,7 @@
         </strong>
 
         <span>
-          Your product price before MauMarket commission.
+          Your product or selected option price before MauMarket commission.
         </span>
 
       </div>
@@ -148,6 +149,26 @@
 
         <span>
           Final product price paid through MauMarket.
+        </span>
+
+      </div>
+
+    </article>
+
+    <article>
+
+      <div class="seller-orders-finance-icon">
+        📏
+      </div>
+
+      <div>
+
+        <strong>
+          Product Options
+        </strong>
+
+        <span>
+          Selected size, measurement, unit and product code.
         </span>
 
       </div>
@@ -210,6 +231,22 @@
 
     </article>
 
+    <article class="seller-orders-stat">
+
+      <span>
+        Option Items
+      </span>
+
+      <strong id="sellerOptionItems">
+        0
+      </strong>
+
+      <small>
+        Ordered items with selected options
+      </small>
+
+    </article>
+
   </section>
 
   <!-- =====================================================
@@ -257,7 +294,7 @@
         <input
           id="sellerOrderSearch"
           type="search"
-          placeholder="Search order, customer, product or address"
+          placeholder="Search order, customer, product, size, measurement or code"
           autocomplete="off"
         >
 
@@ -275,8 +312,16 @@
             All Orders
           </option>
 
+          <option value="Pending Payment">
+            Pending Payment
+          </option>
+
           <option value="Payment Submitted">
             Payment Submitted
+          </option>
+
+          <option value="Payment Rejected">
+            Payment Rejected
           </option>
 
           <option value="Preparing Order">
@@ -312,6 +357,14 @@
       </div>
 
     </div>
+
+    <p
+      id="sellerOrdersPageMessage"
+      class="seller-orders-page-message"
+      role="alert"
+      aria-live="assertive"
+      hidden
+    ></p>
 
   </section>
 
@@ -352,6 +405,7 @@
       id="sellerOrdersList"
       class="seller-orders-list"
       aria-live="polite"
+      aria-busy="true"
     >
       Loading merchant orders...
     </div>
@@ -367,8 +421,10 @@
 
 <script
   type="module"
-  src="js/seller-orders.js?v=5.0-private-merchant"
+  src="js/seller-orders.js?v=5.1-product-options"
 ></script>
+
 <script src="js/footer.js"></script>
+
 </body>
 </html>
