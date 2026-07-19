@@ -19,6 +19,7 @@ const { FieldValue, getFirestore } = require("firebase-admin/firestore");
 
 initializeApp();
 
+
 setGlobalOptions({
   region: "us-central1",
   maxInstances: 20,
