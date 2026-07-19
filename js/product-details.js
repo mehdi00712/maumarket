@@ -20,7 +20,7 @@ import {
    MAUMARKET PRODUCT DETAILS
    - Up to 3 product images
    - Unlimited product options
-   - Option-specific price, stock, SKU and image
+   - Option-specific size/measurement, unit, price, stock, SKU and image
    - Wishlist, cart, reviews and related products
    - Backward-compatible with older products
    ========================================================= */
@@ -35,6 +35,19 @@ const productReviewsSummary = document.getElementById("productReviewsSummary");
 const productReviewsList = document.getElementById("productReviewsList");
 const productReviewsSummaryText = document.getElementById("productReviewsSummaryText");
 const productOptionsFallback = document.getElementById("productOptionsFallback");
+const productOptionsList = document.getElementById("productOptionsList");
+const productOptionTypeTitle = document.getElementById("productOptionTypeTitle");
+const productOptionsHelpText = document.getElementById("productOptionsHelpText");
+const productSelectedOptionSummary = document.getElementById("productSelectedOptionSummary");
+const selectedOptionText = document.getElementById("selectedOptionText");
+const productOptionError = document.getElementById("productOptionError");
+const selectedOptionDetails = document.getElementById("selectedOptionDetails");
+const selectedOptionPrice = document.getElementById("selectedOptionPrice");
+const selectedOptionStock = document.getElementById("selectedOptionStock");
+const selectedOptionCodeRow = document.getElementById("selectedOptionCodeRow");
+const selectedOptionCode = document.getElementById("selectedOptionCode");
+const selectedOptionMeasurementRow = document.getElementById("selectedOptionMeasurementRow");
+const selectedOptionMeasurement = document.getElementById("selectedOptionMeasurement");
 
 const params = new URLSearchParams(window.location.search);
 const itemId = params.get("id");
@@ -91,7 +104,15 @@ async function loadDetails() {
 
     productImages = normalizeProductImages(currentItem);
     productOptions = normalizeProductOptions(currentItem);
-    selectedOptionId = productOptions.find((option) => option.active !== false)?.id || "";
+    selectedOptionId =
+      productOptions.find(
+        (option) =>
+          option.active !== false &&
+          (
+            currentItem.type !== "product" ||
+            Number(option.stock || 0) > 0
+          )
+      )?.id || "";
     selectedImageIndex = 0;
 
     await Promise.all([
@@ -131,7 +152,10 @@ function renderProductError(title, message) {
 
   if (relatedItems) relatedItems.innerHTML = "";
   if (productReviewsList) productReviewsList.innerHTML = "";
-  if (productOptionsFallback) productOptionsFallback.style.display = "none";
+  if (productOptionsFallback) {
+    productOptionsFallback.hidden = true;
+    productOptionsFallback.style.display = "none";
+  }
 }
 
 /* =========================================================
@@ -166,23 +190,72 @@ function normalizeProductOptions(item) {
     .map((option, index) => {
       const sellerPrice = getSellerPrice(option);
       const buyerPrice = getBuyerPrice(option);
-      const imageIndex = option.imageIndex !== undefined && option.imageIndex !== null
-        ? Number(option.imageIndex)
-        : null;
+
+      const imageIndex =
+        option.imageIndex !== undefined &&
+        option.imageIndex !== null
+          ? Number(option.imageIndex)
+          : null;
+
+      const value = String(
+        option.value ??
+        option.measurementValue ??
+        option.sizeValue ??
+        ""
+      ).trim();
+
+      const unit = String(
+        option.unit ??
+        option.measurementUnit ??
+        option.sizeUnit ??
+        ""
+      ).trim();
+
+      const displayValue =
+        String(option.displayValue || "").trim() ||
+        buildOptionDisplayValue(value, unit);
+
+      const name =
+        String(
+          option.name ||
+          option.label ||
+          displayValue ||
+          `Option ${index + 1}`
+        ).trim();
 
       return {
         id: option.id || `option-${index + 1}`,
-        name: option.name || option.label || `Option ${index + 1}`,
-        label: option.label || option.name || `Option ${index + 1}`,
+        name,
+        label: option.label || name,
+
+        value,
+        unit,
+        displayValue: displayValue || name,
+        measurementValue: value,
+        measurementUnit: unit,
+        sizeValue: value,
+        sizeUnit: unit,
+
         sellerPrice,
         buyerPrice,
-        price: Number(option.price || option.buyerPrice || buyerPrice || 0),
-        commissionRate: Number(option.commissionRate ?? COMMISSION_RATE),
-        commissionAmount: Number(option.commissionAmount || 0),
+        price: Number(
+          option.price ||
+          option.buyerPrice ||
+          buyerPrice ||
+          0
+        ),
+        commissionRate: Number(
+          option.commissionRate ?? COMMISSION_RATE
+        ),
+        commissionAmount: Number(
+          option.commissionAmount || 0
+        ),
         stock: Math.max(0, Number(option.stock || 0)),
         sku: option.sku || option.productCode || "",
         productCode: option.productCode || option.sku || "",
-        imageIndex: Number.isInteger(imageIndex) ? imageIndex : null,
+        imageIndex: Number.isInteger(imageIndex)
+          ? imageIndex
+          : null,
         imageUrl: option.imageUrl || "",
         active: option.active !== false
       };
@@ -385,6 +458,14 @@ async function toggleWishlist() {
         optionType: currentItem.optionType || "",
         selectedOptionId: selectedOption?.id || "",
         selectedOptionName: selectedOption?.name || "",
+        selectedOptionValue: selectedOption?.value || "",
+        selectedOptionUnit: selectedOption?.unit || "",
+        selectedOptionDisplayValue:
+          selectedOption?.displayValue ||
+          selectedOption?.name ||
+          "",
+        selectedOptionSku: selectedOption?.sku || "",
+        productCode: selectedOption?.productCode || selectedOption?.sku || "",
         publicMerchantLabel: "Verified MauMarket Merchant",
         addedAt: serverTimestamp()
       }, { merge: true });
@@ -465,7 +546,7 @@ function renderDetails() {
             <div class="product-selection-summary">
               <div>
                 <span>Selected ${escapeHtml(currentItem.optionType || "Option")}</span>
-                <strong>${escapeHtml(selectedOption.name)}</strong>
+                <strong>${escapeHtml(getOptionDisplayLabel(selectedOption))}</strong>
               </div>
               ${selectedOption.sku
                 ? `
@@ -533,7 +614,7 @@ function renderDetails() {
           ? `
             <div class="buy-box-option-summary">
               <span>Selected ${escapeHtml(currentItem.optionType || "Option")}</span>
-              <strong>${escapeHtml(selectedOption.name)}</strong>
+              <strong>${escapeHtml(getOptionDisplayLabel(selectedOption))}</strong>
               <small>${getStockText(selectedOption.stock)}</small>
             </div>
           `
@@ -547,9 +628,7 @@ function renderDetails() {
 
   wireRenderedEvents();
 
-  if (productOptionsFallback) {
-    productOptionsFallback.style.display = "none";
-  }
+  renderStaticOptionsFallback();
 }
 
 function renderGalleryHtml() {
@@ -599,29 +678,100 @@ function renderOptionsHtml() {
     <section class="product-options-panel">
       <div class="product-options-panel-head">
         <div>
-          <span class="section-kicker">Choose ${escapeHtml(type)}</span>
-          <h3>Available ${escapeHtml(type)} Options</h3>
+          <span class="section-kicker">
+            Choose ${escapeHtml(type)}
+          </span>
+
+          <h3>
+            Available ${escapeHtml(type)} Options
+          </h3>
+
+          <p class="muted">
+            Select the exact size, measurement, colour or variation you want.
+          </p>
         </div>
-        <span>${productOptions.length} choice${productOptions.length === 1 ? "" : "s"}</span>
+
+        <span>
+          ${productOptions.length}
+          choice${productOptions.length === 1 ? "" : "s"}
+        </span>
       </div>
 
-      <div id="productOptionChoices" class="product-option-choices">
+      <div
+        id="productOptionChoices"
+        class="product-option-choices"
+        role="radiogroup"
+        aria-label="${escapeHtml(type)} options"
+      >
         ${productOptions.map((option) => {
           const active = option.id === selectedOptionId;
-          const outOfStock = Number(option.stock || 0) <= 0;
+          const outOfStock =
+            currentItem.type === "product" &&
+            Number(option.stock || 0) <= 0;
+
+          const displayLabel = getOptionDisplayLabel(option);
+          const secondaryLabel = getOptionSecondaryLabel(option);
 
           return `
             <button
               type="button"
-              class="product-option-choice ${active ? "active" : ""} ${outOfStock ? "out-of-stock" : ""}"
+              role="radio"
+              aria-checked="${active ? "true" : "false"}"
+              aria-label="${escapeHtml(
+                `${displayLabel}, ${
+                  outOfStock
+                    ? "out of stock"
+                    : formatRs(getBuyerPrice(option))
+                }`
+              )}"
+              class="product-option-choice
+                ${active ? "active" : ""}
+                ${outOfStock ? "out-of-stock" : ""}"
               data-option-id="${escapeHtml(option.id)}"
-              ${outOfStock ? "disabled" : ""}>
-              <span class="product-option-choice-name">${escapeHtml(option.name)}</span>
-              <small>${outOfStock ? "Out of stock" : formatRs(getBuyerPrice(option))}</small>
+              ${outOfStock ? "disabled" : ""}
+            >
+              <span class="product-option-choice-name">
+                ${escapeHtml(displayLabel)}
+              </span>
+
+              ${
+                secondaryLabel
+                  ? `
+                    <span class="product-option-choice-measurement">
+                      ${escapeHtml(secondaryLabel)}
+                    </span>
+                  `
+                  : ""
+              }
+
+              <small>
+                ${
+                  outOfStock
+                    ? "Out of stock"
+                    : `${formatRs(getBuyerPrice(option))} · ${getStockText(option.stock)}`
+                }
+              </small>
+
+              ${
+                option.sku
+                  ? `
+                    <small class="product-option-choice-code">
+                      Code: ${escapeHtml(option.sku)}
+                    </small>
+                  `
+                  : ""
+              }
             </button>
           `;
         }).join("")}
       </div>
+
+      <p
+        id="inlineProductOptionError"
+        class="product-option-error"
+        role="alert"
+        hidden
+      ></p>
     </section>
   `;
 }
@@ -645,10 +795,22 @@ function wireRenderedEvents() {
 }
 
 function selectProductOption(optionId) {
-  const option = productOptions.find((entry) => entry.id === optionId);
-  if (!option || option.stock <= 0) return;
+  const option = productOptions.find(
+    (entry) => entry.id === optionId
+  );
+
+  if (!option) return;
+
+  if (
+    currentItem.type === "product" &&
+    Number(option.stock || 0) <= 0
+  ) {
+    showOptionError("This option is currently out of stock.");
+    return;
+  }
 
   selectedOptionId = option.id;
+  hideOptionError();
 
   if (
     option.imageIndex !== null &&
@@ -656,11 +818,16 @@ function selectProductOption(optionId) {
     option.imageIndex < productImages.length
   ) {
     selectedImageIndex = option.imageIndex;
-  } else if (option.imageUrl && productImages.includes(option.imageUrl)) {
-    selectedImageIndex = productImages.indexOf(option.imageUrl);
+  } else if (
+    option.imageUrl &&
+    productImages.includes(option.imageUrl)
+  ) {
+    selectedImageIndex =
+      productImages.indexOf(option.imageUrl);
   }
 
   renderDetails();
+  renderStaticOptionsFallback();
 }
 
 function selectGalleryImage(index) {
@@ -678,6 +845,214 @@ function selectGalleryImage(index) {
     );
   });
 }
+
+function renderStaticOptionsFallback() {
+  if (!productOptionsFallback) return;
+
+  if (productOptions.length === 0) {
+    productOptionsFallback.hidden = true;
+    productOptionsFallback.style.display = "none";
+    return;
+  }
+
+  const type = currentItem?.optionType || "Option";
+  const selectedOption = getSelectedOption();
+
+  productOptionsFallback.hidden = false;
+  productOptionsFallback.style.display = "block";
+
+  if (productOptionTypeTitle) {
+    productOptionTypeTitle.textContent =
+      `Choose ${type}`;
+  }
+
+  if (productOptionsHelpText) {
+    productOptionsHelpText.textContent =
+      `Select the exact ${type.toLowerCase()}, size, measurement or variation before adding this item to your cart.`;
+  }
+
+  if (productOptionsList) {
+    productOptionsList.innerHTML = productOptions
+      .map((option) => {
+        const active = option.id === selectedOptionId;
+        const outOfStock =
+          currentItem?.type === "product" &&
+          Number(option.stock || 0) <= 0;
+
+        return `
+          <button
+            type="button"
+            role="radio"
+            aria-checked="${active ? "true" : "false"}"
+            class="product-option-choice
+              ${active ? "active" : ""}
+              ${outOfStock ? "out-of-stock" : ""}"
+            data-fallback-option-id="${escapeHtml(option.id)}"
+            ${outOfStock ? "disabled" : ""}
+          >
+            <span class="product-option-choice-name">
+              ${escapeHtml(getOptionDisplayLabel(option))}
+            </span>
+
+            <small>
+              ${
+                outOfStock
+                  ? "Out of stock"
+                  : `${formatRs(getBuyerPrice(option))} · ${getStockText(option.stock)}`
+              }
+            </small>
+          </button>
+        `;
+      })
+      .join("");
+
+    productOptionsList
+      .querySelectorAll("[data-fallback-option-id]")
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          selectProductOption(
+            button.dataset.fallbackOptionId || ""
+          );
+        });
+      });
+  }
+
+  if (productSelectedOptionSummary) {
+    productSelectedOptionSummary.hidden = !selectedOption;
+  }
+
+  if (selectedOptionText) {
+    selectedOptionText.textContent = selectedOption
+      ? getOptionDisplayLabel(selectedOption)
+      : "None";
+  }
+
+  if (selectedOptionDetails) {
+    selectedOptionDetails.hidden = !selectedOption;
+  }
+
+  if (selectedOptionPrice) {
+    selectedOptionPrice.textContent = selectedOption
+      ? formatRs(getBuyerPrice(selectedOption))
+      : "—";
+  }
+
+  if (selectedOptionStock) {
+    selectedOptionStock.textContent = selectedOption
+      ? getStockText(selectedOption.stock)
+      : "—";
+  }
+
+  if (selectedOptionCodeRow) {
+    selectedOptionCodeRow.hidden =
+      !selectedOption?.sku;
+  }
+
+  if (selectedOptionCode) {
+    selectedOptionCode.textContent =
+      selectedOption?.sku || "—";
+  }
+
+  const measurement =
+    selectedOption
+      ? buildOptionDisplayValue(
+          selectedOption.value,
+          selectedOption.unit
+        )
+      : "";
+
+  if (selectedOptionMeasurementRow) {
+    selectedOptionMeasurementRow.hidden =
+      !measurement;
+  }
+
+  if (selectedOptionMeasurement) {
+    selectedOptionMeasurement.textContent =
+      measurement || "—";
+  }
+}
+
+function buildOptionDisplayValue(value, unit) {
+  const cleanValue = String(value || "").trim();
+  const cleanUnit = String(unit || "").trim();
+
+  if (!cleanValue) return "";
+  if (!cleanUnit) return cleanValue;
+
+  const unitLabels = {
+    mm: "mm",
+    cm: "cm",
+    m: "m",
+    in: "in",
+    ft: "ft",
+    ml: "ml",
+    l: "L",
+    g: "g",
+    kg: "kg",
+    piece: "piece",
+    pack: "pack",
+    set: "set",
+    pair: "pair"
+  };
+
+  const label =
+    unitLabels[cleanUnit.toLowerCase()] ||
+    cleanUnit;
+
+  return `${cleanValue} ${label}`;
+}
+
+function getOptionDisplayLabel(option) {
+  return String(
+    option?.displayValue ||
+    buildOptionDisplayValue(
+      option?.value,
+      option?.unit
+    ) ||
+    option?.name ||
+    option?.label ||
+    "Option"
+  ).trim();
+}
+
+function getOptionSecondaryLabel(option) {
+  const measurement = buildOptionDisplayValue(
+    option?.value,
+    option?.unit
+  );
+
+  const name = String(
+    option?.name ||
+    option?.label ||
+    ""
+  ).trim();
+
+  if (
+    measurement &&
+    name &&
+    measurement.toLowerCase() !== name.toLowerCase()
+  ) {
+    return name;
+  }
+
+  return "";
+}
+
+function showOptionError(message) {
+  const inlineError =
+    document.getElementById("inlineProductOptionError");
+
+  [inlineError, productOptionError].forEach((element) => {
+    if (!element) return;
+    element.textContent = message || "";
+    element.hidden = !message;
+  });
+}
+
+function hideOptionError() {
+  showOptionError("");
+}
+
 
 /* =========================================================
    CART
@@ -710,13 +1085,15 @@ async function addToCart() {
   const selectedOption = getSelectedOption();
 
   if (productOptions.length > 0 && !selectedOption) {
-    setMessage(
-      message,
-      `Please choose a ${currentItem.optionType || "product option"} first.`,
-      "error"
-    );
+    const errorText =
+      `Please choose a ${currentItem.optionType || "product option"} first.`;
+
+    setMessage(message, errorText, "error");
+    showOptionError(errorText);
     return;
   }
+
+  hideOptionError();
 
   const priceSource = selectedOption || currentItem;
   const availableStock = getStock(priceSource);
@@ -771,11 +1148,38 @@ async function addToCart() {
         images: productImages,
         hasOptions: productOptions.length > 0,
         optionType: currentItem.optionType || "",
+        optionId,
+        optionType: currentItem.optionType || "",
+        optionName: selectedOption?.name || "",
+        optionValue: selectedOption?.value || "",
+        optionUnit: selectedOption?.unit || "",
+        optionDisplayValue:
+          selectedOption?.displayValue ||
+          selectedOption?.name ||
+          "",
+        optionStock: selectedOption
+          ? Number(selectedOption.stock || 0)
+          : Number(currentItem.stock || 0),
+
         selectedOptionId: optionId,
         selectedOptionName: selectedOption?.name || "",
+        selectedOptionValue: selectedOption?.value || "",
+        selectedOptionUnit: selectedOption?.unit || "",
+        selectedOptionDisplayValue:
+          selectedOption?.displayValue ||
+          selectedOption?.name ||
+          "",
         selectedOptionSku: selectedOption?.sku || "",
-        selectedOptionImageIndex: selectedOption?.imageIndex ?? null,
-        selectedOptionStock: selectedOption ? Number(selectedOption.stock || 0) : null,
+        sku: selectedOption?.sku || "",
+        productCode:
+          selectedOption?.productCode ||
+          selectedOption?.sku ||
+          "",
+        selectedOptionImageIndex:
+          selectedOption?.imageIndex ?? null,
+        selectedOptionStock: selectedOption
+          ? Number(selectedOption.stock || 0)
+          : null,
         addedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       },
@@ -787,7 +1191,7 @@ async function addToCart() {
     setMessage(
       message,
       selectedOption
-        ? `${selectedOption.name} added to your cart.`
+        ? `${getOptionDisplayLabel(selectedOption)} added to your cart.`
         : "Product added to your cart.",
       "success"
     );
@@ -949,7 +1353,7 @@ function createRelatedCard(item) {
         ${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "⭐ No reviews yet"}
       </p>
       <p class="pro-price">${options.length > 0 ? `From ${formatRs(buyerPrice)}` : formatRs(buyerPrice)}</p>
-      <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">View Details</a>
+      <a class="btn" href="product-detail.html?id=${encodeURIComponent(item.id)}">View Details</a>
     </div>
   `;
 
