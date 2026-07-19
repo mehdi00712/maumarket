@@ -20,7 +20,7 @@ import {
    Supports:
    - Standard products
    - Products with options / variants
-   - Option-specific name, SKU, image, price and stock
+   - Option-specific name, value, unit, display value, SKU, image, price and stock
    - Seller earnings and commission calculations
    - Seller preparation workflow
    ========================================================= */
@@ -48,8 +48,24 @@ const sellerTotalCommission =
 const sellerOrdersCountText =
   document.getElementById("sellerOrdersCountText");
 
+const sellerOrderSearch =
+  document.getElementById("sellerOrderSearch");
+
+const sellerOrderStatusFilter =
+  document.getElementById("sellerOrderStatusFilter");
+
+const refreshSellerOrdersBtn =
+  document.getElementById("refreshSellerOrdersBtn");
+
+const sellerOrdersPageMessage =
+  document.getElementById("sellerOrdersPageMessage");
+
+const sellerOptionItems =
+  document.getElementById("sellerOptionItems");
+
 let currentUser = null;
 let currentSellerData = null;
+let allSellerOrders = [];
 
 /* =========================================================
    MOBILE MENU
@@ -58,6 +74,22 @@ let currentSellerData = null;
 sellerOrdersMenuBtn?.addEventListener("click", () => {
   sellerOrdersNav?.classList.toggle("show");
 });
+
+sellerOrderSearch?.addEventListener(
+  "input",
+  renderFilteredSellerOrders
+);
+
+sellerOrderStatusFilter?.addEventListener(
+  "change",
+  renderFilteredSellerOrders
+);
+
+refreshSellerOrdersBtn?.addEventListener(
+  "click",
+  loadSellerOrders
+);
+
 
 /* =========================================================
    AUTHENTICATION
@@ -106,11 +138,24 @@ onAuthStateChanged(auth, async (user) => {
 async function loadSellerOrders() {
   if (!sellerOrdersList || !currentUser) return;
 
+  sellerOrdersList.setAttribute("aria-busy", "true");
+  hideSellerOrdersPageMessage();
+
   sellerOrdersList.innerHTML = `
-    <div class="order-card">
-      Loading seller orders...
+    <div class="seller-orders-loading-state">
+      <div class="seller-orders-loading-spinner" aria-hidden="true"></div>
+
+      <div>
+        <strong>Loading merchant orders...</strong>
+        <p>MauMarket is retrieving your orders and selected product options.</p>
+      </div>
     </div>
   `;
+
+  if (refreshSellerOrdersBtn) {
+    refreshSellerOrdersBtn.disabled = true;
+    refreshSellerOrdersBtn.textContent = "Refreshing...";
+  }
 
   try {
     const ordersQuery = query(
@@ -124,107 +169,37 @@ async function loadSellerOrders() {
 
     const snapshot = await getDocs(ordersQuery);
 
-    if (snapshot.empty) {
-      renderStats(0, 0, 0);
-
-      if (sellerOrdersCountText) {
-        sellerOrdersCountText.textContent =
-          "0 orders";
-      }
-
-      sellerOrdersList.innerHTML = `
-        <div class="order-card">
-          <h3>No orders yet</h3>
-
-          <p>
-            When customers place orders for your products,
-            they will appear here.
-          </p>
-        </div>
-      `;
-
-      return;
-    }
-
-    const orders = [];
-
-    snapshot.forEach((docSnap) => {
-      orders.push({
+    allSellerOrders = snapshot.docs
+      .map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data()
-      });
-    });
-
-    orders.sort((a, b) => {
-      return (
-        Number(b.createdAt?.seconds || 0) -
-        Number(a.createdAt?.seconds || 0)
-      );
-    });
-
-    sellerOrdersList.innerHTML = "";
-
-    let visibleOrderCount = 0;
-    let totalSellerEarnings = 0;
-    let totalCommission = 0;
-
-    for (const order of orders) {
-      const sellerItems =
-        Array.isArray(order.items)
-          ? order.items.filter((item) => {
-              return item.sellerId === currentUser.uid;
-            })
-          : [];
-
-      if (sellerItems.length === 0) continue;
-
-      visibleOrderCount += 1;
-
-      const sellerTotals =
-        calculateSellerOrderTotals(sellerItems);
-
-      totalSellerEarnings +=
-        sellerTotals.sellerAmount;
-
-      totalCommission +=
-        sellerTotals.commissionAmount;
-
-      const orderCard =
-        createSellerOrderCard(
-          order,
-          sellerItems,
-          sellerTotals
+      }))
+      .filter((order) => {
+        return Array.isArray(order.items) &&
+          order.items.some(
+            (item) => item.sellerId === currentUser.uid
+          );
+      })
+      .sort((a, b) => {
+        return (
+          Number(b.createdAt?.seconds || 0) -
+          Number(a.createdAt?.seconds || 0)
         );
+      });
 
-      sellerOrdersList.appendChild(orderCard);
-    }
-
-    renderStats(
-      visibleOrderCount,
-      totalSellerEarnings,
-      totalCommission
-    );
-
-    if (sellerOrdersCountText) {
-      sellerOrdersCountText.textContent =
-        `${visibleOrderCount} order${visibleOrderCount === 1 ? "" : "s"}`;
-    }
-
-    if (!sellerOrdersList.innerHTML.trim()) {
-      sellerOrdersList.innerHTML = `
-        <div class="order-card">
-          <h3>No seller items found</h3>
-
-          <p>
-            These orders do not contain products from your account.
-          </p>
-        </div>
-      `;
-    }
+    renderFilteredSellerOrders();
   } catch (error) {
     console.error(
       "Could not load seller orders:",
       error
+    );
+
+    showSellerOrdersPageMessage(
+      getFriendlySellerOrderError(
+        error,
+        "Please refresh the page and try again."
+      ),
+      "error"
     );
 
     sellerOrdersList.innerHTML = `
@@ -243,7 +218,8 @@ async function loadSellerOrders() {
         <button
           id="retrySellerOrdersBtn"
           type="button"
-          class="btn">
+          class="btn"
+        >
           Try Again
         </button>
       </div>
@@ -255,7 +231,185 @@ async function loadSellerOrders() {
         "click",
         loadSellerOrders
       );
+  } finally {
+    sellerOrdersList.setAttribute("aria-busy", "false");
+
+    if (refreshSellerOrdersBtn) {
+      refreshSellerOrdersBtn.disabled = false;
+      refreshSellerOrdersBtn.textContent = "Refresh";
+    }
   }
+}
+
+function renderFilteredSellerOrders() {
+  if (!sellerOrdersList || !currentUser) return;
+
+  const search = normalizeText(
+    sellerOrderSearch?.value || ""
+  );
+
+  const selectedStatus = String(
+    sellerOrderStatusFilter?.value || ""
+  ).trim();
+
+  const filteredOrders = allSellerOrders.filter(
+    (order) => {
+      const sellerItems = getSellerItems(order);
+
+      const searchableText = normalizeText(`
+        ${order.id || ""}
+        ${order.orderNumber || ""}
+        ${order.customerName || ""}
+        ${order.customerPhone || ""}
+        ${order.deliveryAddress || ""}
+        ${order.orderStatus || ""}
+        ${sellerItems.map((item) => `
+          ${item.title || ""}
+          ${item.category || ""}
+          ${item.selectedOptionName || item.optionName || ""}
+          ${item.selectedOptionValue || item.optionValue || ""}
+          ${item.selectedOptionUnit || item.optionUnit || ""}
+          ${item.selectedOptionDisplayValue || item.optionDisplayValue || ""}
+          ${item.selectedOptionSku || item.optionSku || item.productCode || item.sku || ""}
+        `).join(" ")}
+      `);
+
+      const matchesSearch =
+        !search ||
+        searchableText.includes(search);
+
+      const matchesStatus =
+        !selectedStatus ||
+        String(order.orderStatus || "") === selectedStatus;
+
+      return matchesSearch && matchesStatus;
+    }
+  );
+
+  renderSellerOrderCollection(filteredOrders);
+}
+
+function renderSellerOrderCollection(orders) {
+  sellerOrdersList.innerHTML = "";
+
+  if (allSellerOrders.length === 0) {
+    renderStats(0, 0, 0, 0);
+
+    if (sellerOrdersCountText) {
+      sellerOrdersCountText.textContent = "0 orders";
+    }
+
+    sellerOrdersList.innerHTML = `
+      <div class="order-card">
+        <h3>No orders yet</h3>
+
+        <p>
+          When customers place orders for your products,
+          they will appear here.
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+  if (orders.length === 0) {
+    renderStats(0, 0, 0, 0);
+
+    if (sellerOrdersCountText) {
+      sellerOrdersCountText.textContent = "0 matching orders";
+    }
+
+    sellerOrdersList.innerHTML = `
+      <div class="order-card">
+        <h3>No matching orders</h3>
+
+        <p>
+          Try changing the search text or fulfilment status.
+        </p>
+
+        <button
+          id="clearSellerOrderFiltersBtn"
+          type="button"
+          class="secondary-btn"
+        >
+          Clear Filters
+        </button>
+      </div>
+    `;
+
+    document
+      .getElementById("clearSellerOrderFiltersBtn")
+      ?.addEventListener("click", () => {
+        if (sellerOrderSearch) {
+          sellerOrderSearch.value = "";
+        }
+
+        if (sellerOrderStatusFilter) {
+          sellerOrderStatusFilter.value = "";
+        }
+
+        renderFilteredSellerOrders();
+      });
+
+    return;
+  }
+
+  let visibleOrderCount = 0;
+  let totalSellerEarnings = 0;
+  let totalCommission = 0;
+  let optionItemCount = 0;
+
+  orders.forEach((order) => {
+    const sellerItems = getSellerItems(order);
+
+    if (sellerItems.length === 0) return;
+
+    visibleOrderCount += 1;
+
+    optionItemCount += sellerItems.filter(
+      (item) => hasProductOption(item)
+    ).length;
+
+    const sellerTotals =
+      calculateSellerOrderTotals(sellerItems);
+
+    totalSellerEarnings +=
+      sellerTotals.sellerAmount;
+
+    totalCommission +=
+      sellerTotals.commissionAmount;
+
+    sellerOrdersList.appendChild(
+      createSellerOrderCard(
+        order,
+        sellerItems,
+        sellerTotals
+      )
+    );
+  });
+
+  renderStats(
+    visibleOrderCount,
+    totalSellerEarnings,
+    totalCommission,
+    optionItemCount
+  );
+
+  if (sellerOrdersCountText) {
+    sellerOrdersCountText.textContent =
+      `${visibleOrderCount} order${
+        visibleOrderCount === 1 ? "" : "s"
+      }`;
+  }
+}
+
+function getSellerItems(order) {
+  return Array.isArray(order?.items)
+    ? order.items.filter(
+        (item) => item.sellerId === currentUser.uid
+      )
+    : [];
 }
 
 /* =========================================================
@@ -270,6 +424,10 @@ function createSellerOrderCard(
   const card = document.createElement("article");
   card.className =
     "order-card seller-order-card";
+
+  card.dataset.orderId = order.id || "";
+  card.dataset.orderStatus =
+    order.orderStatus || "Pending Payment";
 
   const paymentNotice =
     order.paymentStatus !== "verified"
@@ -655,31 +813,57 @@ function renderSellerOrderItem(item) {
     item.optionName ||
     "";
 
+  const optionValue =
+    item.selectedOptionValue ||
+    item.optionValue ||
+    item.measurementValue ||
+    item.sizeValue ||
+    "";
+
+  const optionUnit =
+    item.selectedOptionUnit ||
+    item.optionUnit ||
+    item.measurementUnit ||
+    item.sizeUnit ||
+    "";
+
+  const optionDisplayValue =
+    item.selectedOptionDisplayValue ||
+    item.optionDisplayValue ||
+    buildOptionDisplayValue(
+      optionValue,
+      optionUnit
+    ) ||
+    optionName;
+
   const optionSku =
     item.selectedOptionSku ||
     item.optionSku ||
-    item.sku ||
     item.productCode ||
+    item.sku ||
     "";
 
   const hasOption =
-    Boolean(
-      item.selectedOptionId ||
-      optionName
-    );
+    hasProductOption(item);
 
   const imageUrl =
-    item.imageUrl ||
     item.selectedOptionImageUrl ||
+    item.optionImageUrl ||
+    item.imageUrl ||
     "";
 
+  const stockValue =
+    item.selectedOptionStock ??
+    item.optionStock ??
+    null;
+
   const stockInfo =
-    item.selectedOptionStock !== undefined &&
-    item.selectedOptionStock !== null
+    stockValue !== null &&
+    stockValue !== undefined
       ? `
         <span>
           <strong>Option stock when ordered:</strong>
-          ${Number(item.selectedOptionStock || 0)}
+          ${Number(stockValue || 0)}
         </span>
       `
       : "";
@@ -697,7 +881,8 @@ function renderSellerOrderItem(item) {
                 alt="${escapeHtml(
                   item.title ||
                   "Product"
-                )}">
+                )}"
+              >
             `
             : `
               <div class="no-img">
@@ -742,22 +927,71 @@ function renderSellerOrderItem(item) {
               <div class="seller-order-option-card">
 
                 <div>
+
                   <span>
                     Selected ${escapeHtml(optionType)}
                   </span>
 
                   <strong>
                     ${escapeHtml(
+                      optionDisplayValue ||
                       optionName ||
                       "Selected option"
                     )}
                   </strong>
+
                 </div>
+
+                ${
+                  optionValue || optionUnit
+                    ? `
+                      <div>
+
+                        <span>
+                          Size / Measurement
+                        </span>
+
+                        <strong>
+                          ${escapeHtml(
+                            buildOptionDisplayValue(
+                              optionValue,
+                              optionUnit
+                            ) ||
+                            optionDisplayValue
+                          )}
+                        </strong>
+
+                      </div>
+                    `
+                    : ""
+                }
+
+                ${
+                  optionName &&
+                  optionDisplayValue &&
+                  normalizeText(optionName) !==
+                    normalizeText(optionDisplayValue)
+                    ? `
+                      <div>
+
+                        <span>
+                          Option Name
+                        </span>
+
+                        <strong>
+                          ${escapeHtml(optionName)}
+                        </strong>
+
+                      </div>
+                    `
+                    : ""
+                }
 
                 ${
                   optionSku
                     ? `
                       <div>
+
                         <span>
                           Product Code
                         </span>
@@ -765,6 +999,7 @@ function renderSellerOrderItem(item) {
                         <strong>
                           ${escapeHtml(optionSku)}
                         </strong>
+
                       </div>
                     `
                     : ""
@@ -803,6 +1038,53 @@ function renderSellerOrderItem(item) {
 
     </li>
   `;
+}
+
+function hasProductOption(item) {
+  return Boolean(
+    item?.hasOptions === true ||
+    item?.selectedOptionId ||
+    item?.optionId ||
+    item?.selectedOptionName ||
+    item?.optionName ||
+    item?.selectedOptionDisplayValue ||
+    item?.optionDisplayValue
+  );
+}
+
+function buildOptionDisplayValue(value, unit) {
+  const cleanValue = String(value || "").trim();
+  const cleanUnit = String(unit || "").trim();
+
+  if (!cleanValue) return "";
+  if (!cleanUnit) return cleanValue;
+
+  const labels = {
+    mm: "mm",
+    cm: "cm",
+    m: "m",
+    in: "in",
+    ft: "ft",
+    ml: "ml",
+    l: "L",
+    g: "g",
+    kg: "kg",
+    piece: "piece",
+    pack: "pack",
+    set: "set",
+    pair: "pair"
+  };
+
+  return `${cleanValue} ${
+    labels[cleanUnit.toLowerCase()] ||
+    cleanUnit
+  }`;
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 /* =========================================================
@@ -855,7 +1137,8 @@ function calculateSellerOrderTotals(items) {
 function renderStats(
   orderCount,
   sellerAmount,
-  commissionAmount
+  commissionAmount,
+  optionItemCount = 0
 ) {
   if (sellerTotalOrders) {
     sellerTotalOrders.textContent =
@@ -870,6 +1153,11 @@ function renderStats(
   if (sellerTotalCommission) {
     sellerTotalCommission.textContent =
       formatRs(commissionAmount);
+  }
+
+  if (sellerOptionItems) {
+    sellerOptionItems.textContent =
+      String(optionItemCount);
   }
 }
 
@@ -1067,6 +1355,40 @@ function getFriendlySellerOrderError(
     fallbackMessage
   );
 }
+
+function showSellerOrdersPageMessage(
+  message,
+  type = ""
+) {
+  if (!sellerOrdersPageMessage) return;
+
+  sellerOrdersPageMessage.textContent =
+    message || "";
+
+  sellerOrdersPageMessage.hidden =
+    !message;
+
+  sellerOrdersPageMessage.classList.remove(
+    "success",
+    "error",
+    "info",
+    "seller-order-message-success",
+    "seller-order-message-error",
+    "seller-order-message-info"
+  );
+
+  if (message && type) {
+    sellerOrdersPageMessage.classList.add(type);
+    sellerOrdersPageMessage.classList.add(
+      `seller-order-message-${type}`
+    );
+  }
+}
+
+function hideSellerOrdersPageMessage() {
+  showSellerOrdersPageMessage("");
+}
+
 
 /* =========================================================
    FORMATTING
