@@ -1,3 +1,8 @@
+/**
+ * MauMarket Product Details
+ * Updated option labels and automatic size detection.
+ */
+
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -215,18 +220,25 @@ function normalizeProductOptions(item) {
         String(option.displayValue || "").trim() ||
         buildOptionDisplayValue(value, unit);
 
-      const name =
-        String(
-          option.name ||
-          option.label ||
-          displayValue ||
-          `Option ${index + 1}`
-        ).trim();
+      const explicitName = String(
+        option.name ||
+        option.label ||
+        option.optionName ||
+        option.type ||
+        ""
+      ).trim();
+
+      const name = explicitName || `Option ${index + 1}`;
 
       return {
         id: option.id || `option-${index + 1}`,
         name,
         label: option.label || name,
+        optionType: String(
+          option.optionType ||
+          option.type ||
+          ""
+        ).trim(),
 
         value,
         unit,
@@ -455,7 +467,7 @@ async function toggleWishlist() {
         category: currentItem.category || "",
         type: currentItem.type || "",
         hasOptions: productOptions.length > 0,
-        optionType: currentItem.optionType || "",
+        optionType: getEffectiveOptionType(),
         selectedOptionId: selectedOption?.id || "",
         selectedOptionName: selectedOption?.name || "",
         selectedOptionValue: selectedOption?.value || "",
@@ -494,6 +506,7 @@ function renderDetails() {
 
   const rating = getRatingData();
   const selectedOption = getSelectedOption();
+  const effectiveOptionType = getEffectiveOptionType();
   const displaySource = selectedOption || currentItem;
   const buyerPrice = getBuyerPrice(displaySource);
   const stock = getStock(displaySource);
@@ -525,7 +538,7 @@ function renderDetails() {
         <div class="product-price-area">
           <h2 id="productPrice" class="product-price">${formatRs(buyerPrice)}</h2>
           ${productOptions.length > 0
-            ? `<small class="muted">Price and stock depend on the selected ${escapeHtml(currentItem.optionType || "option")}.</small>`
+            ? `<small class="muted">Price and stock depend on the selected ${escapeHtml(effectiveOptionType.toLowerCase())}.</small>`
             : ""}
         </div>
 
@@ -545,14 +558,14 @@ function renderDetails() {
           ? `
             <div class="product-selection-summary">
               <div>
-                <span>Selected ${escapeHtml(currentItem.optionType || "Option")}</span>
+                <span>Selected ${escapeHtml(effectiveOptionType)}</span>
                 <strong>${escapeHtml(getOptionDisplayLabel(selectedOption))}</strong>
               </div>
-              ${selectedOption.sku
+              ${selectedOption.productCode || selectedOption.sku
                 ? `
                   <div>
                     <span>Product Code</span>
-                    <strong>${escapeHtml(selectedOption.sku)}</strong>
+                    <strong>${escapeHtml(selectedOption.productCode || selectedOption.sku)}</strong>
                   </div>
                 `
                 : ""}
@@ -613,7 +626,7 @@ function renderDetails() {
         ${selectedOption
           ? `
             <div class="buy-box-option-summary">
-              <span>Selected ${escapeHtml(currentItem.optionType || "Option")}</span>
+              <span>Selected ${escapeHtml(effectiveOptionType)}</span>
               <strong>${escapeHtml(getOptionDisplayLabel(selectedOption))}</strong>
               <small>${getStockText(selectedOption.stock)}</small>
             </div>
@@ -672,7 +685,7 @@ function renderGalleryHtml() {
 function renderOptionsHtml() {
   if (productOptions.length === 0) return "";
 
-  const type = currentItem.optionType || "Option";
+  const type = getEffectiveOptionType();
 
   return `
     <section class="product-options-panel">
@@ -709,8 +722,8 @@ function renderOptionsHtml() {
             currentItem.type === "product" &&
             Number(option.stock || 0) <= 0;
 
-          const displayLabel = getOptionDisplayLabel(option);
-          const secondaryLabel = getOptionSecondaryLabel(option);
+          const displayLabel = getOptionCardPrimaryLabel(option);
+          const secondaryLabel = getOptionCardSecondaryLabel(option);
 
           return `
             <button
@@ -855,7 +868,7 @@ function renderStaticOptionsFallback() {
     return;
   }
 
-  const type = currentItem?.optionType || "Option";
+  const type = getEffectiveOptionType();
   const selectedOption = getSelectedOption();
 
   productOptionsFallback.hidden = false;
@@ -891,8 +904,18 @@ function renderStaticOptionsFallback() {
             ${outOfStock ? "disabled" : ""}
           >
             <span class="product-option-choice-name">
-              ${escapeHtml(getOptionDisplayLabel(option))}
+              ${escapeHtml(getOptionCardPrimaryLabel(option))}
             </span>
+
+            ${
+              getOptionCardSecondaryLabel(option)
+                ? `
+                    <span class="product-option-choice-measurement">
+                      ${escapeHtml(getOptionCardSecondaryLabel(option))}
+                    </span>
+                  `
+                : ""
+            }
 
             <small>
               ${
@@ -901,6 +924,16 @@ function renderStaticOptionsFallback() {
                   : `${formatRs(getBuyerPrice(option))} · ${getStockText(option.stock)}`
               }
             </small>
+
+            ${
+              option.productCode || option.sku
+                ? `
+                    <small class="product-option-choice-code">
+                      Code: ${escapeHtml(option.productCode || option.sku)}
+                    </small>
+                  `
+                : ""
+            }
           </button>
         `;
       })
@@ -945,12 +978,12 @@ function renderStaticOptionsFallback() {
 
   if (selectedOptionCodeRow) {
     selectedOptionCodeRow.hidden =
-      !selectedOption?.sku;
+      !(selectedOption?.productCode || selectedOption?.sku);
   }
 
   if (selectedOptionCode) {
     selectedOptionCode.textContent =
-      selectedOption?.sku || "—";
+      selectedOption?.productCode || selectedOption?.sku || "—";
   }
 
   const measurement =
@@ -970,6 +1003,129 @@ function renderStaticOptionsFallback() {
     selectedOptionMeasurement.textContent =
       measurement || "—";
   }
+}
+
+function getEffectiveOptionType() {
+  const rawType = String(
+    currentItem?.optionType ||
+    currentItem?.variationType ||
+    currentItem?.optionName ||
+    ""
+  ).trim();
+
+  const aliases = {
+    size: "Size",
+    sizes: "Size",
+    colour: "Colour",
+    color: "Colour",
+    colours: "Colour",
+    colors: "Colour",
+    weight: "Weight",
+    weights: "Weight",
+    length: "Length",
+    width: "Width",
+    height: "Height",
+    volume: "Volume",
+    capacity: "Capacity",
+    material: "Material",
+    style: "Style",
+    model: "Model",
+    pack: "Pack",
+    quantity: "Quantity",
+    measurement: "Measurement",
+    measurements: "Measurement",
+    variation: "Option",
+    variant: "Option",
+    option: "Option"
+  };
+
+  const normalizedRawType = rawType.toLowerCase();
+
+  if (aliases[normalizedRawType]) {
+    return aliases[normalizedRawType];
+  }
+
+  const declaredType = productOptions
+    .map((option) => String(option.optionType || "").trim().toLowerCase())
+    .find((value) => aliases[value]);
+
+  if (declaredType) {
+    return aliases[declaredType];
+  }
+
+  const units = productOptions
+    .map((option) => String(option.unit || "").trim().toLowerCase())
+    .filter(Boolean);
+
+  if (units.some((unit) => ["g", "kg"].includes(unit))) return "Weight";
+  if (units.some((unit) => ["ml", "l", "litre", "liter"].includes(unit))) return "Capacity";
+  if (units.some((unit) => ["mm", "cm", "m", "in", "ft"].includes(unit))) return "Size";
+
+  const values = productOptions
+    .map((option) => String(option.value || "").trim())
+    .filter(Boolean);
+
+  const allNumeric =
+    values.length > 0 &&
+    values.every((value) => /^-?\d+(?:[.,]\d+)?$/.test(value));
+
+  if (allNumeric) return "Size";
+
+  const commonColours = new Set([
+    "red", "blue", "green", "black", "white", "yellow", "orange",
+    "purple", "pink", "grey", "gray", "brown", "gold", "silver",
+    "beige", "navy", "maroon", "teal", "turquoise"
+  ]);
+
+  if (
+    values.length > 0 &&
+    values.every((value) => commonColours.has(value.toLowerCase()))
+  ) {
+    return "Colour";
+  }
+
+  return "Option";
+}
+
+function getOptionCardPrimaryLabel(option) {
+  const type = getEffectiveOptionType();
+  const displayValue = getOptionDisplayLabel(option);
+
+  if (!displayValue) return type;
+
+  if (
+    type === "Option" ||
+    displayValue.toLowerCase().startsWith(type.toLowerCase())
+  ) {
+    return displayValue;
+  }
+
+  return `${type} ${displayValue}`;
+}
+
+function getOptionCardSecondaryLabel(option) {
+  const type = getEffectiveOptionType();
+  const explicitName = String(option?.name || option?.label || "").trim();
+
+  const genericNames = [
+    "option", "size", "colour", "color", "weight", "length",
+    "width", "height", "volume", "capacity", "measurement"
+  ];
+
+  if (
+    explicitName &&
+    !genericNames.includes(explicitName.toLowerCase()) &&
+    !/^option\s+\d+$/i.test(explicitName) &&
+    explicitName.toLowerCase() !== getOptionDisplayLabel(option).toLowerCase()
+  ) {
+    return explicitName;
+  }
+
+  if (!String(option?.unit || "").trim() && type === "Size") {
+    return "Size option";
+  }
+
+  return "";
 }
 
 function buildOptionDisplayValue(value, unit) {
@@ -1086,7 +1242,7 @@ async function addToCart() {
 
   if (productOptions.length > 0 && !selectedOption) {
     const errorText =
-      `Please choose a ${currentItem.optionType || "product option"} first.`;
+      `Please choose a ${getEffectiveOptionType().toLowerCase()} first.`;
 
     setMessage(message, errorText, "error");
     showOptionError(errorText);
@@ -1147,9 +1303,8 @@ async function addToCart() {
         imageUrl: getSelectedImageUrl(),
         images: productImages,
         hasOptions: productOptions.length > 0,
-        optionType: currentItem.optionType || "",
+        optionType: getEffectiveOptionType(),
         optionId,
-        optionType: currentItem.optionType || "",
         optionName: selectedOption?.name || "",
         optionValue: selectedOption?.value || "",
         optionUnit: selectedOption?.unit || "",
@@ -1177,6 +1332,10 @@ async function addToCart() {
           "",
         selectedOptionImageIndex:
           selectedOption?.imageIndex ?? null,
+        selectedOptionImage:
+          selectedOption?.imageUrl || getSelectedImageUrl(),
+        optionImage:
+          selectedOption?.imageUrl || getSelectedImageUrl(),
         selectedOptionStock: selectedOption
           ? Number(selectedOption.stock || 0)
           : null,
