@@ -1,3 +1,11 @@
+/**
+ * MauMarket Seller Dashboard
+ * Updated canonical product-option handling.
+ *
+ * Fixes optionType, size/value storage, product codes, option images,
+ * legacy option editing and secure Cloud Function payloads.
+ */
+
 import { auth, db, storage, functions } from "./firebase-config.js";
 
 import {
@@ -1105,6 +1113,166 @@ function buildOptionDisplayValue(value, unit) {
     : `${cleanValue} ${capitalizeWords(cleanUnit)}`;
 }
 
+function normalizeOptionTypeLabel(value) {
+  const raw = String(value || "").trim();
+  const normalized = raw.toLowerCase();
+
+  const aliases = {
+    size: "Size",
+    sizes: "Size",
+    colour: "Colour",
+    color: "Colour",
+    colours: "Colour",
+    colors: "Colour",
+    weight: "Weight",
+    weights: "Weight",
+    length: "Length",
+    width: "Width",
+    height: "Height",
+    volume: "Volume",
+    capacity: "Capacity",
+    material: "Material",
+    style: "Style",
+    model: "Model",
+    flavour: "Flavour",
+    flavor: "Flavour",
+    pack: "Pack",
+    quantity: "Quantity",
+    measurement: "Measurement",
+    measurements: "Measurement",
+    option: "Option",
+    options: "Option",
+    variant: "Option",
+    variants: "Option",
+    variation: "Option",
+    variations: "Option"
+  };
+
+  return aliases[normalized] || raw;
+}
+
+function inferSellerOptionType(rawType, rows = optionRows) {
+  const normalizedType = normalizeOptionTypeLabel(rawType);
+
+  const knownSpecificTypes = new Set([
+    "Size",
+    "Colour",
+    "Weight",
+    "Length",
+    "Width",
+    "Height",
+    "Volume",
+    "Capacity",
+    "Material",
+    "Style",
+    "Model",
+    "Flavour",
+    "Pack",
+    "Quantity",
+    "Measurement"
+  ]);
+
+  if (knownSpecificTypes.has(normalizedType)) {
+    return normalizedType;
+  }
+
+  const values = rows
+    .map((row) => {
+      const value =
+        row.querySelector(".item-option-value")?.value.trim() ||
+        row.querySelector(".item-option-name")?.value.trim() ||
+        "";
+
+      return value
+        .replace(/^size\s*[:\-]?\s*/i, "")
+        .trim();
+    })
+    .filter(Boolean);
+
+  const units = rows
+    .map((row) =>
+      String(
+        row.querySelector(".item-option-unit")?.value || ""
+      ).trim().toLowerCase()
+    )
+    .filter(Boolean);
+
+  if (units.some((unit) => ["g", "kg"].includes(unit))) {
+    return "Weight";
+  }
+
+  if (
+    units.some((unit) =>
+      ["ml", "l", "litre", "liter"].includes(unit)
+    )
+  ) {
+    return "Capacity";
+  }
+
+  if (
+    units.some((unit) =>
+      ["mm", "cm", "m", "in", "ft"].includes(unit)
+    )
+  ) {
+    return "Size";
+  }
+
+  const allNumeric =
+    values.length > 0 &&
+    values.every((value) =>
+      /^-?\d+(?:[.,]\d+)?$/.test(value)
+    );
+
+  if (allNumeric) {
+    return "Size";
+  }
+
+  const commonColours = new Set([
+    "red",
+    "blue",
+    "green",
+    "black",
+    "white",
+    "yellow",
+    "orange",
+    "purple",
+    "pink",
+    "grey",
+    "gray",
+    "brown",
+    "gold",
+    "silver",
+    "beige",
+    "navy",
+    "maroon",
+    "teal",
+    "turquoise"
+  ]);
+
+  if (
+    values.length > 0 &&
+    values.every((value) =>
+      commonColours.has(value.toLowerCase())
+    )
+  ) {
+    return "Colour";
+  }
+
+  /*
+    Unknown text such as a product code must not become optionType.
+    Use a safe generic label unless a recognised type or clear value
+    pattern can be determined.
+  */
+  return "Option";
+}
+
+function getCanonicalSellerOptionType() {
+  return inferSellerOptionType(
+    itemOptionType?.value.trim() || "",
+    optionRows
+  );
+}
+
 function addOptionRow(optionData = {}) {
   if (!itemOptionTemplate || !itemOptionsList) return;
 
@@ -1127,17 +1295,31 @@ function addOptionRow(optionData = {}) {
 
   if (nameInput) {
     nameInput.value =
+      optionData.optionType ||
       optionData.name ||
       optionData.label ||
-      optionData.displayValue ||
       "";
   }
 
   if (valueInput) {
+    const legacyName = String(
+      optionData.name ||
+      optionData.label ||
+      ""
+    ).trim();
+
     valueInput.value =
       optionData.value ??
       optionData.measurementValue ??
       optionData.sizeValue ??
+      optionData.displayValue ??
+      (
+        legacyName &&
+        legacyName.toLowerCase() !==
+          String(optionData.optionType || "").toLowerCase()
+          ? legacyName
+          : ""
+      ) ??
       "";
   }
 
@@ -1243,8 +1425,8 @@ function refreshOptionRowTitles() {
 
     if (titleLabel) {
       titleLabel.textContent =
-        optionName ||
         displayValue ||
+        optionName ||
         `New ${typeLabel}`;
     }
   });
@@ -1292,33 +1474,50 @@ function updateOptionImageChoices() {
 function collectOptionData(finalImageUrls) {
   if (!enableItemOptions?.checked) return [];
 
-  const optionType = itemOptionType?.value.trim() || "";
-
-  if (!optionType) {
-    throw new Error(
-      "Enter an option type, for example Colour, Size or Flavour."
-    );
-  }
-
   if (optionRows.length === 0) {
     throw new Error("Add at least one option.");
   }
 
+  const optionType = getCanonicalSellerOptionType();
+
+  if (itemOptionType) {
+    itemOptionType.value = optionType;
+  }
+
   const usedOptionKeys = new Set();
-  const usedSkus = new Set();
+  const usedProductCodes = new Set();
 
   return optionRows.map((row, index) => {
     const enteredName =
       row.querySelector(".item-option-name")?.value.trim() || "";
 
+    /*
+      New forms use item-option-value for the visible size/colour/value.
+      Older forms sometimes stored that value in item-option-name.
+    */
     const value =
-      row.querySelector(".item-option-value")?.value.trim() || "";
+      row.querySelector(".item-option-value")?.value.trim() ||
+      enteredName ||
+      "";
 
     const unit =
       row.querySelector(".item-option-unit")?.value || "";
 
-    const displayValue = buildOptionDisplayValue(value, unit);
-    const name = enteredName || displayValue;
+    if (!value) {
+      throw new Error(
+        `${optionType} option ${index + 1} needs a value.`
+      );
+    }
+
+    if (unit && !value) {
+      throw new Error(
+        `${optionType} option ${index + 1} has a unit but no value.`
+      );
+    }
+
+    const displayValue =
+      buildOptionDisplayValue(value, unit) ||
+      value;
 
     const sellerPrice = Number(
       row.querySelector(".item-option-price")?.value || 0
@@ -1330,49 +1529,45 @@ function collectOptionData(finalImageUrls) {
       )
     );
 
-    const sku =
+    const productCode =
       row.querySelector(".item-option-sku")?.value.trim() || "";
 
     const rawImageIndex =
       row.querySelector(".item-option-image-index")?.value ?? "";
 
-    if (!name) {
-      throw new Error(
-        `Option ${index + 1} needs an option name or size/measurement.`
-      );
-    }
-
-    if (unit && !value) {
-      throw new Error(
-        `${name} has a unit selected but no size or measurement value.`
-      );
-    }
-
     const normalizedOptionKey =
-      `${name}|${value}|${unit}`.toLowerCase();
+      `${displayValue}`.toLowerCase();
 
     if (usedOptionKeys.has(normalizedOptionKey)) {
-      throw new Error(`The option "${name}" is duplicated.`);
+      throw new Error(
+        `The ${optionType.toLowerCase()} "${displayValue}" is duplicated.`
+      );
     }
 
     usedOptionKeys.add(normalizedOptionKey);
 
     if (!Number.isFinite(sellerPrice) || sellerPrice <= 0) {
-      throw new Error(`${name} needs a valid seller price.`);
+      throw new Error(
+        `${optionType} ${displayValue} needs a valid seller price.`
+      );
     }
 
     if (!Number.isFinite(stock) || stock < 0) {
-      throw new Error(`${name} needs a valid stock quantity.`);
+      throw new Error(
+        `${optionType} ${displayValue} needs a valid stock quantity.`
+      );
     }
 
-    if (sku) {
-      const normalizedSku = sku.toLowerCase();
+    if (productCode) {
+      const normalizedCode = productCode.toLowerCase();
 
-      if (usedSkus.has(normalizedSku)) {
-        throw new Error(`The product code "${sku}" is duplicated.`);
+      if (usedProductCodes.has(normalizedCode)) {
+        throw new Error(
+          `The product code "${productCode}" is duplicated.`
+        );
       }
 
-      usedSkus.add(normalizedSku);
+      usedProductCodes.add(normalizedCode);
     }
 
     let imageIndex = null;
@@ -1389,16 +1584,24 @@ function collectOptionData(finalImageUrls) {
       }
     }
 
+    const imageUrl =
+      imageIndex !== null
+        ? finalImageUrls[imageIndex] || finalImageUrls[0] || ""
+        : finalImageUrls[0] || "";
+
     const prices = calculatePrices(sellerPrice);
 
     return {
       id: row.dataset.optionId || createUniqueId(),
-      name,
-      label: name,
+
+      name: optionType,
+      label: optionType,
+      optionType,
 
       value,
       unit,
-      displayValue: displayValue || name,
+      displayValue,
+
       measurementValue: value,
       measurementUnit: unit,
       sizeValue: value,
@@ -1412,14 +1615,12 @@ function collectOptionData(finalImageUrls) {
       price: prices.buyerPrice,
 
       stock,
-      sku,
-      productCode: sku,
+      sku: productCode,
+      productCode,
 
       imageIndex,
-      imageUrl:
-        imageIndex !== null
-          ? finalImageUrls[imageIndex] || ""
-          : finalImageUrls[0] || "",
+      image: imageUrl,
+      imageUrl,
 
       active: true
     };
@@ -1434,14 +1635,34 @@ function normalizeProductOptions(item) {
         ? item.variants
         : [];
 
+  const inferredType = inferStoredProductOptionType(
+    item.optionType ||
+    item.variantType ||
+    "",
+    rawOptions
+  );
+
   return rawOptions.map((option, index) => {
     const sellerPrice = getSellerPrice(option);
     const prices = calculatePrices(sellerPrice);
+
+    const legacyName = String(
+      option.name ||
+      option.label ||
+      ""
+    ).trim();
 
     const value = String(
       option.value ??
       option.measurementValue ??
       option.sizeValue ??
+      option.displayValue ??
+      (
+        legacyName &&
+        legacyName.toLowerCase() !== inferredType.toLowerCase()
+          ? legacyName
+          : ""
+      ) ??
       ""
     ).trim();
 
@@ -1454,25 +1675,25 @@ function normalizeProductOptions(item) {
 
     const displayValue =
       String(option.displayValue || "").trim() ||
-      buildOptionDisplayValue(value, unit);
+      buildOptionDisplayValue(value, unit) ||
+      value;
 
-    const fallbackName =
-      displayValue ||
-      `Option ${index + 1}`;
-
-    const name =
-      option.name ||
-      option.label ||
-      fallbackName;
+    const imageUrl =
+      option.image ||
+      option.imageUrl ||
+      "";
 
     return {
       id: option.id || `option-${index + 1}`,
-      name,
-      label: option.label || name,
+
+      name: inferredType,
+      label: inferredType,
+      optionType: inferredType,
 
       value,
       unit,
-      displayValue: displayValue || name,
+      displayValue,
+
       measurementValue: value,
       measurementUnit: unit,
       sizeValue: value,
@@ -1500,10 +1721,99 @@ function normalizeProductOptions(item) {
           ? Number(option.imageIndex)
           : null,
 
-      imageUrl: option.imageUrl || "",
+      image: imageUrl,
+      imageUrl,
       active: option.active !== false
     };
   });
+}
+
+function inferStoredProductOptionType(rawType, rawOptions = []) {
+  const normalizedType = normalizeOptionTypeLabel(rawType);
+
+  const knownSpecificTypes = new Set([
+    "Size",
+    "Colour",
+    "Weight",
+    "Length",
+    "Width",
+    "Height",
+    "Volume",
+    "Capacity",
+    "Material",
+    "Style",
+    "Model",
+    "Flavour",
+    "Pack",
+    "Quantity",
+    "Measurement"
+  ]);
+
+  if (knownSpecificTypes.has(normalizedType)) {
+    return normalizedType;
+  }
+
+  const values = rawOptions
+    .map((option) =>
+      String(
+        option?.value ??
+        option?.measurementValue ??
+        option?.sizeValue ??
+        option?.displayValue ??
+        option?.name ??
+        option?.label ??
+        ""
+      ).trim()
+    )
+    .filter(Boolean)
+    .map((value) =>
+      value.replace(/^size\s*[:\-]?\s*/i, "").trim()
+    );
+
+  const units = rawOptions
+    .map((option) =>
+      String(
+        option?.unit ??
+        option?.measurementUnit ??
+        option?.sizeUnit ??
+        ""
+      ).trim().toLowerCase()
+    )
+    .filter(Boolean);
+
+  if (units.some((unit) => ["g", "kg"].includes(unit))) {
+    return "Weight";
+  }
+
+  if (
+    units.some((unit) =>
+      ["ml", "l", "litre", "liter"].includes(unit)
+    )
+  ) {
+    return "Capacity";
+  }
+
+  if (
+    units.some((unit) =>
+      ["mm", "cm", "m", "in", "ft"].includes(unit)
+    )
+  ) {
+    return "Size";
+  }
+
+  const allNumeric =
+    values.length > 0 &&
+    values.every((value) =>
+      /^-?\d+(?:[.,]\d+)?$/.test(value)
+    );
+
+  if (allNumeric) {
+    return "Size";
+  }
+
+  return normalizedType === "Option"
+    ? "Option"
+    : "Option";
 }
 
 function getOptionsSummary(options) {
@@ -1896,7 +2206,7 @@ saveItemBtn?.addEventListener("click", async () => {
 
       hasOptions: optionsEnabled,
       optionType: optionsEnabled
-        ? itemOptionType?.value.trim() || ""
+        ? getCanonicalSellerOptionType()
         : "",
       options,
       variants: options,
@@ -2083,10 +2393,18 @@ function startEditingItem(itemId, item) {
   }
 
   if (itemOptionType) {
-    itemOptionType.value =
-      item.optionType ||
-      item.variantType ||
-      (hasOptions ? "Option" : "");
+    itemOptionType.value = hasOptions
+      ? inferStoredProductOptionType(
+          item.optionType ||
+          item.variantType ||
+          "",
+          Array.isArray(item.options)
+            ? item.options
+            : Array.isArray(item.variants)
+              ? item.variants
+              : []
+        )
+      : "";
   }
 
   setOptionsEnabled(hasOptions);
