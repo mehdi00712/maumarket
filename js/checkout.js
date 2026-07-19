@@ -32,6 +32,14 @@ const orderNotes = document.getElementById("orderNotes");
 const paymentProof = document.getElementById("paymentProof");
 
 const checkoutItems = document.getElementById("checkoutItems");
+const checkoutItemsMessage = document.getElementById("checkoutItemsMessage");
+const checkoutEmptyState = document.getElementById("checkoutEmptyState");
+const checkoutItemsCount = document.getElementById("checkoutItemsCount");
+const checkoutOptionsCount = document.getElementById("checkoutOptionsCount");
+const checkoutValidationSummary = document.getElementById("checkoutValidationSummary");
+const checkoutValidationList = document.getElementById("checkoutValidationList");
+const placeOrderHelpText = document.getElementById("placeOrderHelpText");
+
 const itemsTotalEl = document.getElementById("itemsTotal");
 const deliveryFeeEl = document.getElementById("deliveryFee");
 const grandTotalEl = document.getElementById("grandTotal");
@@ -315,6 +323,39 @@ async function loadCheckout() {
           hydratedItem.optionName ||
           "",
 
+        selectedOptionValue:
+          hydratedItem.selectedOptionValue ||
+          hydratedItem.optionValue ||
+          hydratedItem.measurementValue ||
+          hydratedItem.sizeValue ||
+          "",
+
+        selectedOptionUnit:
+          hydratedItem.selectedOptionUnit ||
+          hydratedItem.optionUnit ||
+          hydratedItem.measurementUnit ||
+          hydratedItem.sizeUnit ||
+          "",
+
+        selectedOptionDisplayValue:
+          hydratedItem.selectedOptionDisplayValue ||
+          hydratedItem.optionDisplayValue ||
+          buildOptionDisplayValue(
+            hydratedItem.selectedOptionValue ||
+            hydratedItem.optionValue ||
+            hydratedItem.measurementValue ||
+            hydratedItem.sizeValue ||
+            "",
+            hydratedItem.selectedOptionUnit ||
+            hydratedItem.optionUnit ||
+            hydratedItem.measurementUnit ||
+            hydratedItem.sizeUnit ||
+            ""
+          ) ||
+          hydratedItem.selectedOptionName ||
+          hydratedItem.optionName ||
+          "",
+
         selectedOptionSku:
           hydratedItem.selectedOptionSku ||
           hydratedItem.optionSku ||
@@ -362,6 +403,7 @@ async function loadCheckout() {
     }
 
     updateTotals(itemsTotal);
+    updateCheckoutCounts(cartItems);
 
     if (invalidPriceCount > 0) {
       showCheckoutMessage(
@@ -476,8 +518,43 @@ function createCheckoutItemElement(item) {
                 </span>
 
                 <strong>
-                  ${escapeHtml(optionDetails.optionName)}
+                  ${escapeHtml(
+                    optionDetails.optionDisplayValue ||
+                    optionDetails.optionName
+                  )}
                 </strong>
+
+                ${
+                  optionDetails.optionValue ||
+                  optionDetails.optionUnit
+                    ? `
+                      <small class="checkout-option-measurement">
+                        Size / Measurement:
+                        ${escapeHtml(
+                          buildOptionDisplayValue(
+                            optionDetails.optionValue,
+                            optionDetails.optionUnit
+                          ) ||
+                          optionDetails.optionDisplayValue
+                        )}
+                      </small>
+                    `
+                    : ""
+                }
+
+                ${
+                  optionDetails.optionName &&
+                  optionDetails.optionDisplayValue &&
+                  normalizeText(optionDetails.optionName) !==
+                    normalizeText(optionDetails.optionDisplayValue)
+                    ? `
+                      <small>
+                        Option Name:
+                        ${escapeHtml(optionDetails.optionName)}
+                      </small>
+                    `
+                    : ""
+                }
 
                 ${
                   optionDetails.optionSku
@@ -540,6 +617,11 @@ function renderEmptyCheckout() {
 
   cartItems = [];
   updateTotals(0);
+  updateCheckoutCounts([]);
+
+  if (checkoutEmptyState) {
+    checkoutEmptyState.hidden = false;
+  }
 
   if (placeOrderBtn) {
     placeOrderBtn.disabled = true;
@@ -685,6 +767,31 @@ placeOrderBtn?.addEventListener("click", async () => {
       selectedOptionName:
         item.selectedOptionName || "",
 
+      selectedOptionValue:
+        item.selectedOptionValue ||
+        item.optionValue ||
+        "",
+
+      selectedOptionUnit:
+        item.selectedOptionUnit ||
+        item.optionUnit ||
+        "",
+
+      selectedOptionDisplayValue:
+        item.selectedOptionDisplayValue ||
+        item.optionDisplayValue ||
+        buildOptionDisplayValue(
+          item.selectedOptionValue ||
+          item.optionValue ||
+          "",
+          item.selectedOptionUnit ||
+          item.optionUnit ||
+          ""
+        ) ||
+        item.selectedOptionName ||
+        item.optionName ||
+        "",
+
       selectedOptionSku:
         item.selectedOptionSku || "",
 
@@ -726,6 +833,37 @@ placeOrderBtn?.addEventListener("click", async () => {
 
       optionName:
         item.selectedOptionName || "",
+
+      optionValue:
+        item.selectedOptionValue ||
+        item.optionValue ||
+        "",
+
+      optionUnit:
+        item.selectedOptionUnit ||
+        item.optionUnit ||
+        "",
+
+      optionDisplayValue:
+        item.selectedOptionDisplayValue ||
+        item.optionDisplayValue ||
+        buildOptionDisplayValue(
+          item.selectedOptionValue ||
+          item.optionValue ||
+          "",
+          item.selectedOptionUnit ||
+          item.optionUnit ||
+          ""
+        ) ||
+        item.selectedOptionName ||
+        item.optionName ||
+        "",
+
+      productCode:
+        item.selectedOptionSku ||
+        item.productCode ||
+        item.sku ||
+        "",
 
       optionSku:
         item.selectedOptionSku || "",
@@ -962,7 +1100,26 @@ function buildSellerBreakdown(items) {
       optionType: item.optionType || "",
       selectedOptionId: item.selectedOptionId || "",
       selectedOptionName: item.selectedOptionName || "",
+      selectedOptionValue:
+        item.selectedOptionValue || item.optionValue || "",
+      selectedOptionUnit:
+        item.selectedOptionUnit || item.optionUnit || "",
+      selectedOptionDisplayValue:
+        item.selectedOptionDisplayValue ||
+        item.optionDisplayValue ||
+        buildOptionDisplayValue(
+          item.selectedOptionValue || item.optionValue || "",
+          item.selectedOptionUnit || item.optionUnit || ""
+        ) ||
+        item.selectedOptionName ||
+        item.optionName ||
+        "",
       selectedOptionSku: item.selectedOptionSku || "",
+      productCode:
+        item.selectedOptionSku ||
+        item.productCode ||
+        item.sku ||
+        "",
       selectedOptionImageIndex:
         item.selectedOptionImageIndex ?? null,
       selectedOptionImageUrl:
@@ -1031,7 +1188,26 @@ function buildPickupStops(items) {
       optionType: item.optionType || "",
       selectedOptionId: item.selectedOptionId || "",
       selectedOptionName: item.selectedOptionName || "",
+      selectedOptionValue:
+        item.selectedOptionValue || item.optionValue || "",
+      selectedOptionUnit:
+        item.selectedOptionUnit || item.optionUnit || "",
+      selectedOptionDisplayValue:
+        item.selectedOptionDisplayValue ||
+        item.optionDisplayValue ||
+        buildOptionDisplayValue(
+          item.selectedOptionValue || item.optionValue || "",
+          item.selectedOptionUnit || item.optionUnit || ""
+        ) ||
+        item.selectedOptionName ||
+        item.optionName ||
+        "",
       selectedOptionSku: item.selectedOptionSku || "",
+      productCode:
+        item.selectedOptionSku ||
+        item.productCode ||
+        item.sku ||
+        "",
       selectedOptionImageIndex:
         item.selectedOptionImageIndex ?? null,
       selectedOptionImageUrl:
@@ -1374,7 +1550,56 @@ async function hydrateCartItemPricing(rawItem) {
       rawItem.optionName ||
       option?.name ||
       option?.label ||
+      option?.displayValue ||
       option?.value ||
+      "",
+
+    selectedOptionValue:
+      rawItem.selectedOptionValue ||
+      rawItem.optionValue ||
+      rawItem.measurementValue ||
+      rawItem.sizeValue ||
+      option?.value ||
+      option?.measurementValue ||
+      option?.sizeValue ||
+      "",
+
+    selectedOptionUnit:
+      rawItem.selectedOptionUnit ||
+      rawItem.optionUnit ||
+      rawItem.measurementUnit ||
+      rawItem.sizeUnit ||
+      option?.unit ||
+      option?.measurementUnit ||
+      option?.sizeUnit ||
+      "",
+
+    selectedOptionDisplayValue:
+      rawItem.selectedOptionDisplayValue ||
+      rawItem.optionDisplayValue ||
+      option?.displayValue ||
+      buildOptionDisplayValue(
+        rawItem.selectedOptionValue ||
+        rawItem.optionValue ||
+        rawItem.measurementValue ||
+        rawItem.sizeValue ||
+        option?.value ||
+        option?.measurementValue ||
+        option?.sizeValue ||
+        "",
+        rawItem.selectedOptionUnit ||
+        rawItem.optionUnit ||
+        rawItem.measurementUnit ||
+        rawItem.sizeUnit ||
+        option?.unit ||
+        option?.measurementUnit ||
+        option?.sizeUnit ||
+        ""
+      ) ||
+      rawItem.selectedOptionName ||
+      rawItem.optionName ||
+      option?.name ||
+      option?.label ||
       "",
 
     selectedOptionSku:
@@ -1538,6 +1763,85 @@ function getFirstImageUrl(value) {
   return "";
 }
 
+function buildOptionDisplayValue(value, unit) {
+  const cleanValue = String(value || "").trim();
+  const cleanUnit = String(unit || "").trim();
+
+  if (!cleanValue) return "";
+  if (!cleanUnit) return cleanValue;
+
+  const unitLabels = {
+    mm: "mm",
+    cm: "cm",
+    m: "m",
+    in: "in",
+    ft: "ft",
+    ml: "ml",
+    l: "L",
+    g: "g",
+    kg: "kg",
+    piece: "piece",
+    pack: "pack",
+    set: "set",
+    pair: "pair"
+  };
+
+  return `${cleanValue} ${
+    unitLabels[cleanUnit.toLowerCase()] ||
+    cleanUnit
+  }`;
+}
+
+function updateCheckoutCounts(items) {
+  const safeItems = Array.isArray(items)
+    ? items
+    : [];
+
+  const itemCount = safeItems.reduce(
+    (total, item) =>
+      total + Math.max(
+        1,
+        Number(item.quantity || 1)
+      ),
+    0
+  );
+
+  const optionCount = safeItems.filter(
+    (item) =>
+      item.hasOptions === true ||
+      Boolean(
+        item.selectedOptionId ||
+        item.optionId ||
+        item.selectedOptionDisplayValue ||
+        item.optionDisplayValue ||
+        item.selectedOptionName ||
+        item.optionName
+      )
+  ).length;
+
+  if (checkoutItemsCount) {
+    checkoutItemsCount.textContent =
+      String(itemCount);
+  }
+
+  if (checkoutOptionsCount) {
+    checkoutOptionsCount.textContent =
+      String(optionCount);
+  }
+
+  if (checkoutEmptyState) {
+    checkoutEmptyState.hidden =
+      safeItems.length > 0;
+  }
+
+  if (placeOrderHelpText) {
+    placeOrderHelpText.textContent =
+      safeItems.length > 0
+        ? "Confirm your delivery details and upload your Juice payment proof."
+        : "Add products to your cart before completing checkout.";
+  }
+}
+
 function normalizeText(value) {
   return String(value || "")
     .trim()
@@ -1561,11 +1865,34 @@ function getItemOptionDetails(item) {
     item.optionName ||
     "";
 
+  const optionValue =
+    item.selectedOptionValue ||
+    item.optionValue ||
+    item.measurementValue ||
+    item.sizeValue ||
+    "";
+
+  const optionUnit =
+    item.selectedOptionUnit ||
+    item.optionUnit ||
+    item.measurementUnit ||
+    item.sizeUnit ||
+    "";
+
+  const optionDisplayValue =
+    item.selectedOptionDisplayValue ||
+    item.optionDisplayValue ||
+    buildOptionDisplayValue(
+      optionValue,
+      optionUnit
+    ) ||
+    optionName;
+
   const optionSku =
     item.selectedOptionSku ||
     item.optionSku ||
-    item.sku ||
     item.productCode ||
+    item.sku ||
     "";
 
   const optionType =
@@ -1577,13 +1904,17 @@ function getItemOptionDetails(item) {
     Boolean(
       item.selectedOptionId ||
       item.optionId ||
-      optionName
+      optionName ||
+      optionDisplayValue
     );
 
   return {
     hasOption,
     optionType,
     optionName,
+    optionValue,
+    optionUnit,
+    optionDisplayValue,
     optionSku,
 
     imageUrl:
