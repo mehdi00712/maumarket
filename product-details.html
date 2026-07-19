@@ -12,10 +12,17 @@
 
   <meta
     name="description"
-    content="View MauMarket product details, product options, secure payment information, verified reviews and island-wide delivery protection."
+    content="View MauMarket product details, available sizes and options, secure payment information, verified reviews and island-wide delivery protection."
   >
 
-  <link rel="icon" href="favicon.ico" sizes="any">
+  <meta name="theme-color" content="#4f35ff">
+
+  <!--
+    The previous favicon.ico reference was removed because no favicon.ico
+    currently exists at https://maumarket.mu/favicon.ico.
+    Add it back after uploading a real favicon file to the website root.
+  -->
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -42,16 +49,27 @@
       </h1>
 
       <p>
-        Review product information, available options, buyer feedback,
-        secure payment details and MauMarket delivery protection.
+        Review product information, available sizes and options, buyer
+        feedback, secure payment details and MauMarket delivery protection.
       </p>
 
       <div class="private-product-hero-points">
 
-        <span>✓ Verified MauMarket Merchant</span>
-        <span>✓ Secure payment review</span>
-        <span>✓ MauMarket-managed delivery</span>
-        <span>✓ Buyer support included</span>
+        <span>
+          ✓ Verified MauMarket Merchant
+        </span>
+
+        <span>
+          ✓ Secure payment review
+        </span>
+
+        <span>
+          ✓ MauMarket-managed delivery
+        </span>
+
+        <span>
+          ✓ Buyer support included
+        </span>
 
       </div>
 
@@ -98,7 +116,7 @@
 
         <p>
           Please wait while MauMarket retrieves the product information,
-          images, available options and reviews.
+          images, available sizes, options and reviews.
         </p>
 
       </div>
@@ -110,7 +128,9 @@
 
   <!-- =====================================================
        PRODUCT OPTIONS FALLBACK / DYNAMIC HOOKS
-       Used when product-details.js renders options separately
+
+       product-details.js uses these elements when the option
+       selector is rendered outside the main product card.
   ====================================================== -->
 
   <section
@@ -134,7 +154,7 @@
         </h2>
 
         <p id="productOptionsHelpText">
-          Select your preferred colour, size, measurement, flavour or
+          Select your preferred size, colour, measurement, flavour or
           variation before adding the item to your cart.
         </p>
 
@@ -242,12 +262,12 @@
 
   <!-- =====================================================
        REVIEWS
-       product-details.js can populate these containers
+       product-details.js populates these containers.
   ====================================================== -->
 
   <section
     id="productReviewsSection"
-    class="homepage-section premium-product-reviews-section"
+    class="homepage-section premium-product-reviews-section product-reviews-section"
   >
 
     <div class="section-row-title">
@@ -358,7 +378,10 @@
 
   <section class="product-final-trust-card">
 
-    <div class="product-final-trust-icon">
+    <div
+      class="product-final-trust-icon"
+      aria-hidden="true"
+    >
       🛡
     </div>
 
@@ -397,10 +420,10 @@
 
 <script
   type="module"
-  src="js/product-details.js?v=8.3-size-legacy-fix"
+  src="js/product-details.js?v=8.4-option-polish"
 ></script>
 
-<script src="js/footer.js"></script>
+<script src="js/footer.js?v=2.0"></script>
 
 </body>
 </html>
