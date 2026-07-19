@@ -1,3 +1,20 @@
+/**
+ * MauMarket Delivery Dashboard
+ * Product-option compatible version.
+ *
+ * Supports:
+ * - selectedOptionName
+ * - selectedOptionValue
+ * - selectedOptionUnit
+ * - selectedOptionDisplayValue
+ * - measurementValue / measurementUnit
+ * - sizeValue / sizeUnit
+ * - buyerPrice / sellerPrice
+ * - SKU / productCode
+ * - option-specific images
+ * - multi-seller pickup routes
+ */
+
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -156,12 +173,12 @@ function applyFilters() {
       ${job.orderNotes || ""}
       ${job.orderStatus || ""}
       ${job.deliveryStatus || ""}
-      ${(job.items || []).map((item) => `
-      ${item.title || ""}
-      ${item.selectedOptionName || item.optionName || ""}
-      ${item.optionType || ""}
-      ${item.selectedOptionSku || item.optionSku || item.sku || ""}
-    `).join(" ")} ${(normalizePickupStops(job)).map(s=>`${s.shopName} ${s.pickupAddress}`).join(" ")}
+      ${(job.items || []).map((item) => itemSearchText(item)).join(" ")}
+      ${(normalizePickupStops(job)).map((stop) => `
+        ${stop.shopName || ""}
+        ${stop.pickupAddress || ""}
+        ${(stop.items || []).map((item) => itemSearchText(item)).join(" ")}
+      `).join(" ")}
     `);
 
     const jobDate = getJobDate(job);
@@ -211,6 +228,8 @@ function updateStats() {
 
 function renderJobs(jobs) {
   if (!deliveryOrdersList) return;
+
+  deliveryOrdersList.setAttribute("aria-busy", "false");
 
   if (jobs.length === 0) {
     deliveryOrdersList.innerHTML = `
@@ -272,15 +291,9 @@ function deliveryCardHtml(order) {
 
   const pickupHtml = renderPickupStops(normalizePickupStops(order));
 
-  const itemsHtml = (order.items || []).map((item) => `
-    <li>
-      <strong>${escapeHtml(item.title || "Item")}</strong>
-      <span>
-        Rs ${formatMoney(item.price || 0)} × ${Number(item.quantity || 1)}
-        ${item.shopName ? `— ${escapeHtml(item.shopName)}` : ""}
-      </span>
-    </li>
-  `).join("");
+  const itemsHtml = (order.items || [])
+    .map((item) => deliveryItemHtml(item))
+    .join("");
 
   return `
     <article class="driver-delivery-card" data-order-id="${escapeHtml(orderId)}">
@@ -336,10 +349,14 @@ function deliveryCardHtml(order) {
 
         <div class="driver-detail-grid">
           <div>
-            <h4>Pickup Locations</h4>${pickupHtml}<h4>Items</h4>
-            <ul class="driver-items-list">
-              ${itemsHtml || "<li>No items found.</li>"}
-            </ul>
+            <h4>Pickup Locations</h4>
+            ${pickupHtml}
+
+            <h4>Items and Selected Options</h4>
+
+            <div class="driver-items-list">
+              ${itemsHtml || `<p class="muted">No items found.</p>`}
+            </div>
           </div>
 
           <div>
@@ -515,6 +532,10 @@ async function handleDriverAction(event) {
   }
 
   if (action === "pickup") {
+    if (!confirm("Confirm that all items, selected options and product codes have been collected from the seller(s)?")) {
+      return;
+    }
+
     await updateDelivery(orderId, {
       orderStatus: "Picked Up",
       deliveryStatus: "picked_up",
@@ -527,6 +548,10 @@ async function handleDriverAction(event) {
   }
 
   if (action === "out") {
+    if (!confirm("Start delivery to the customer now?")) {
+      return;
+    }
+
     await updateDelivery(orderId, {
       orderStatus: "Out for Delivery",
       deliveryStatus: "out_for_delivery",
@@ -636,14 +661,25 @@ function printDeliveryNote(job) {
 
   const pickupRows = renderPickupStops(normalizePickupStops(job));
 
-  const itemsRows = (job.items || []).map((item) => `
-    <tr>
-      <td>${escapeHtml(item.title || "Item")}</td>
-      <td>${Number(item.quantity || 1)}</td>
-      <td>Rs ${formatMoney(item.price || 0)}</td>
-      <td>Rs ${formatMoney(Number(item.price || 0) * Number(item.quantity || 1))}</td>
-    </tr>
-  `).join("");
+  const itemsRows = (job.items || []).map((item) => {
+    const normalizedItem = normalizeDeliveryItem(item);
+    const optionDisplay = getItemOptionDisplay(normalizedItem);
+
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(normalizedItem.title)}</strong>
+          ${optionDisplay ? `<br><small>${escapeHtml(optionDisplay)}</small>` : ""}
+          ${normalizedItem.productCode ? `<br><small>Product code: ${escapeHtml(normalizedItem.productCode)}</small>` : ""}
+          ${normalizedItem.sku ? `<br><small>SKU: ${escapeHtml(normalizedItem.sku)}</small>` : ""}
+          ${normalizedItem.shopName ? `<br><small>Seller: ${escapeHtml(normalizedItem.shopName)}</small>` : ""}
+        </td>
+        <td>${normalizedItem.quantity}</td>
+        <td>Rs ${formatMoney(normalizedItem.price)}</td>
+        <td>Rs ${formatMoney(normalizedItem.subtotal)}</td>
+      </tr>
+    `;
+  }).join("");
 
   const html = `
     <html>
@@ -764,7 +800,7 @@ function printDeliveryNote(job) {
           <table>
             <thead>
               <tr>
-                <th>Item</th>
+                <th>Item / Selected Option</th>
                 <th>Qty</th>
                 <th>Price</th>
                 <th>Total</th>
@@ -814,25 +850,434 @@ function printDeliveryNote(job) {
 /* =========================
    PICKUP HELPERS
 ========================= */
-function normalizePickupStops(order){
- if(Array.isArray(order.pickupStops)&&order.pickupStops.length)return order.pickupStops;
- if(Array.isArray(order.sellerBreakdown)&&order.sellerBreakdown.length)return order.sellerBreakdown;
- const g={};
- (order.items||[]).forEach(item=>{
-   const id=item.sellerId||"unknown";
-   if(!g[id]) g[id]={shopName:item.shopName||"Shop",pickupAddress:item.pickupAddress||item.shopAddress||item.shopLocation||"",items:[]};
-   g[id].items.push(item);
- });
- return Object.values(g);
+function normalizePickupStops(order) {
+  if (Array.isArray(order.pickupStops) && order.pickupStops.length > 0) {
+    return order.pickupStops.map((stop) => normalizePickupStop(stop));
+  }
+
+  if (Array.isArray(order.sellerBreakdown) && order.sellerBreakdown.length > 0) {
+    return order.sellerBreakdown.map((stop) => normalizePickupStop(stop));
+  }
+
+  const grouped = {};
+
+  (order.items || []).forEach((item) => {
+    const normalizedItem = normalizeDeliveryItem(item);
+    const sellerId = normalizedItem.sellerId || "unknown";
+
+    if (!grouped[sellerId]) {
+      grouped[sellerId] = {
+        sellerId,
+        shopName: normalizedItem.shopName || "Shop",
+        shopLocation: item.shopLocation || "",
+        shopAddress: item.shopAddress || "",
+        pickupAddress:
+          item.pickupAddress ||
+          item.shopAddress ||
+          item.shopLocation ||
+          "",
+        pickupLatitude:
+          item.pickupLatitude ??
+          item.pickupLocation?.lat ??
+          null,
+        pickupLongitude:
+          item.pickupLongitude ??
+          item.pickupLocation?.lng ??
+          null,
+        items: []
+      };
+    }
+
+    grouped[sellerId].items.push(normalizedItem);
+  });
+
+  return Object.values(grouped).map((stop) => normalizePickupStop(stop));
 }
-function renderPickupStops(stops){
- if(!stops.length)return "<p>No pickup locations.</p>";
- return stops.map((s,i)=>`<div class="pickup-stop-card"><h4>Pickup ${i+1}: ${escapeHtml(s.shopName||"Shop")}</h4><p>${escapeHtml(s.pickupAddress||"Pickup location not set")}</p><ul>${(s.items||[]).map(it=>`<li>${escapeHtml(it.title||"Item")} × ${Number(it.quantity||1)}</li>`).join("")}</ul></div>`).join("");
+
+function normalizePickupStop(stop = {}) {
+  const latitude = Number(
+    stop.pickupLatitude ??
+    stop.pickupLocation?.lat ??
+    stop.latitude ??
+    0
+  );
+
+  const longitude = Number(
+    stop.pickupLongitude ??
+    stop.pickupLocation?.lng ??
+    stop.longitude ??
+    0
+  );
+
+  return {
+    ...stop,
+    sellerId: stop.sellerId || "",
+    shopName: stop.shopName || stop.name || "Shop",
+    shopLocation: stop.shopLocation || stop.location || "",
+    shopAddress: stop.shopAddress || stop.address || "",
+    pickupAddress:
+      stop.pickupAddress ||
+      stop.shopAddress ||
+      stop.shopLocation ||
+      stop.address ||
+      stop.location ||
+      "",
+    pickupLatitude: latitude || null,
+    pickupLongitude: longitude || null,
+    pickupLocation:
+      latitude && longitude
+        ? { lat: latitude, lng: longitude }
+        : null,
+    items: Array.isArray(stop.items)
+      ? stop.items.map((item) => normalizeDeliveryItem(item))
+      : []
+  };
+}
+
+function renderPickupStops(stops) {
+  if (!stops.length) {
+    return `<p class="muted">No pickup locations saved.</p>`;
+  }
+
+  return stops.map((stop, index) => {
+    const mapUrl = getPickupMapUrl(stop);
+
+    const itemRows = (stop.items || []).map((item) => {
+      const normalizedItem = normalizeDeliveryItem(item);
+      const optionDisplay = getItemOptionDisplay(normalizedItem);
+
+      return `
+        <li>
+          <strong>${escapeHtml(normalizedItem.title)}</strong>
+          ${optionDisplay ? `<span> — ${escapeHtml(optionDisplay)}</span>` : ""}
+          ${normalizedItem.productCode ? `<span> — Code: ${escapeHtml(normalizedItem.productCode)}</span>` : ""}
+          ${normalizedItem.sku ? `<span> — SKU: ${escapeHtml(normalizedItem.sku)}</span>` : ""}
+          <span> × ${normalizedItem.quantity}</span>
+        </li>
+      `;
+    }).join("");
+
+    return `
+      <article class="pickup-stop-card">
+        <div class="pickup-stop-head">
+          <span>Pickup ${index + 1}</span>
+          <strong>${escapeHtml(stop.shopName)}</strong>
+        </div>
+
+        <p>
+          <strong>Address:</strong>
+          ${escapeHtml(stop.pickupAddress || "Pickup location not set")}
+        </p>
+
+        ${
+          stop.pickupLatitude && stop.pickupLongitude
+            ? `
+                <p>
+                  <strong>Pin:</strong>
+                  ${Number(stop.pickupLatitude).toFixed(6)},
+                  ${Number(stop.pickupLongitude).toFixed(6)}
+                </p>
+              `
+            : ""
+        }
+
+        <ul>
+          ${itemRows || "<li>No items listed for this pickup.</li>"}
+        </ul>
+
+        ${
+          mapUrl
+            ? `
+                <a
+                  class="secondary-btn map-btn"
+                  href="${escapeHtml(mapUrl)}"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Open Pickup Map
+                </a>
+              `
+            : ""
+        }
+      </article>
+    `;
+  }).join("");
+}
+
+function getPickupMapUrl(stop) {
+  if (stop.pickupLatitude && stop.pickupLongitude) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+      `${stop.pickupLatitude},${stop.pickupLongitude}`
+    )}`;
+  }
+
+  const address =
+    stop.pickupAddress ||
+    stop.shopAddress ||
+    stop.shopLocation ||
+    "";
+
+  if (!address) return "";
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
+
+function normalizeDeliveryItem(item = {}) {
+  const selectedOption =
+    item.selectedOption && typeof item.selectedOption === "object"
+      ? item.selectedOption
+      : {};
+
+  const selectedOptionName =
+    item.selectedOptionName ??
+    selectedOption.name ??
+    item.optionName ??
+    item.variantName ??
+    "";
+
+  const selectedOptionValue =
+    item.selectedOptionValue ??
+    selectedOption.value ??
+    item.optionValue ??
+    item.variantValue ??
+    item.measurementValue ??
+    item.sizeValue ??
+    "";
+
+  const selectedOptionUnit =
+    item.selectedOptionUnit ??
+    selectedOption.unit ??
+    item.optionUnit ??
+    item.variantUnit ??
+    item.measurementUnit ??
+    item.sizeUnit ??
+    "";
+
+  const selectedOptionDisplayValue =
+    item.selectedOptionDisplayValue ??
+    selectedOption.displayValue ??
+    item.optionDisplayValue ??
+    item.variantDisplayValue ??
+    buildDisplayValue(selectedOptionValue, selectedOptionUnit);
+
+  const buyerPrice = Number(
+    item.buyerPrice ??
+    selectedOption.buyerPrice ??
+    item.price ??
+    0
+  );
+
+  const sellerPrice = Number(
+    item.sellerPrice ??
+    selectedOption.sellerPrice ??
+    item.merchantPrice ??
+    buyerPrice
+  );
+
+  const quantity = Math.max(1, Number(item.quantity || 1));
+  const price = Number(item.price ?? buyerPrice ?? 0);
+  const subtotal = Number(item.subtotal ?? price * quantity);
+
+  return {
+    ...item,
+    productId: item.productId || item.id || "",
+    sellerId: item.sellerId || "",
+    shopName: item.shopName || item.sellerName || "",
+    title: item.title || item.productTitle || item.name || "Item",
+    quantity,
+    price,
+    buyerPrice,
+    sellerPrice,
+    subtotal,
+    image:
+      item.optionImage ||
+      selectedOption.image ||
+      item.image ||
+      item.imageUrl ||
+      item.productImage ||
+      "",
+    optionImage:
+      item.optionImage ||
+      selectedOption.image ||
+      "",
+    selectedOptionName: String(selectedOptionName || "").trim(),
+    selectedOptionValue: String(selectedOptionValue ?? "").trim(),
+    selectedOptionUnit: String(selectedOptionUnit || "").trim(),
+    selectedOptionDisplayValue: String(selectedOptionDisplayValue || "").trim(),
+    measurementValue: String(
+      item.measurementValue ??
+      selectedOption.measurementValue ??
+      selectedOptionValue ??
+      ""
+    ).trim(),
+    measurementUnit: String(
+      item.measurementUnit ??
+      selectedOption.measurementUnit ??
+      selectedOptionUnit ??
+      ""
+    ).trim(),
+    sizeValue: String(
+      item.sizeValue ??
+      selectedOption.sizeValue ??
+      selectedOptionValue ??
+      ""
+    ).trim(),
+    sizeUnit: String(
+      item.sizeUnit ??
+      selectedOption.sizeUnit ??
+      selectedOptionUnit ??
+      ""
+    ).trim(),
+    sku: String(
+      item.sku ??
+      item.selectedOptionSku ??
+      item.optionSku ??
+      selectedOption.sku ??
+      ""
+    ).trim(),
+    productCode: String(
+      item.productCode ??
+      item.selectedOptionProductCode ??
+      selectedOption.productCode ??
+      ""
+    ).trim()
+  };
+}
+
+function buildDisplayValue(value, unit) {
+  const cleanValue = String(value ?? "").trim();
+  const cleanUnit = String(unit ?? "").trim();
+
+  if (!cleanValue && !cleanUnit) return "";
+  if (!cleanUnit) return cleanValue;
+  if (!cleanValue) return cleanUnit;
+
+  return `${cleanValue} ${cleanUnit}`.trim();
+}
+
+function getItemOptionDisplay(item = {}) {
+  const normalizedItem = normalizeDeliveryItem(item);
+
+  if (normalizedItem.selectedOptionDisplayValue) {
+    return normalizedItem.selectedOptionName
+      ? `${normalizedItem.selectedOptionName}: ${normalizedItem.selectedOptionDisplayValue}`
+      : normalizedItem.selectedOptionDisplayValue;
+  }
+
+  const value =
+    normalizedItem.selectedOptionValue ||
+    normalizedItem.measurementValue ||
+    normalizedItem.sizeValue ||
+    "";
+
+  const unit =
+    normalizedItem.selectedOptionUnit ||
+    normalizedItem.measurementUnit ||
+    normalizedItem.sizeUnit ||
+    "";
+
+  const displayValue = buildDisplayValue(value, unit);
+
+  if (!displayValue) return "";
+
+  return normalizedItem.selectedOptionName
+    ? `${normalizedItem.selectedOptionName}: ${displayValue}`
+    : displayValue;
+}
+
+function itemSearchText(item = {}) {
+  const normalizedItem = normalizeDeliveryItem(item);
+
+  return [
+    normalizedItem.title,
+    normalizedItem.shopName,
+    normalizedItem.selectedOptionName,
+    normalizedItem.selectedOptionValue,
+    normalizedItem.selectedOptionUnit,
+    normalizedItem.selectedOptionDisplayValue,
+    normalizedItem.measurementValue,
+    normalizedItem.measurementUnit,
+    normalizedItem.sizeValue,
+    normalizedItem.sizeUnit,
+    normalizedItem.sku,
+    normalizedItem.productCode
+  ].filter(Boolean).join(" ");
+}
+
+function deliveryItemHtml(item = {}) {
+  const normalizedItem = normalizeDeliveryItem(item);
+  const optionDisplay = getItemOptionDisplay(normalizedItem);
+  const image = normalizedItem.optionImage || normalizedItem.image || "";
+
+  return `
+    <article class="driver-product-item">
+      ${
+        image
+          ? `
+              <img
+                class="driver-product-image"
+                src="${escapeHtml(image)}"
+                alt="${escapeHtml(normalizedItem.title)}"
+                loading="lazy"
+              >
+            `
+          : `
+              <div class="driver-product-image driver-product-image-placeholder">
+                No image
+              </div>
+            `
+      }
+
+      <div class="driver-product-content">
+        <div class="driver-product-heading">
+          <strong>${escapeHtml(normalizedItem.title)}</strong>
+          <span>× ${normalizedItem.quantity}</span>
+        </div>
+
+        ${
+          optionDisplay
+            ? `
+                <p class="driver-product-option">
+                  <strong>Selected option:</strong>
+                  ${escapeHtml(optionDisplay)}
+                </p>
+              `
+            : ""
+        }
+
+        <div class="driver-product-meta">
+          ${
+            normalizedItem.productCode
+              ? `<span><strong>Product code:</strong> ${escapeHtml(normalizedItem.productCode)}</span>`
+              : ""
+          }
+
+          ${
+            normalizedItem.sku
+              ? `<span><strong>SKU:</strong> ${escapeHtml(normalizedItem.sku)}</span>`
+              : ""
+          }
+
+          ${
+            normalizedItem.shopName
+              ? `<span><strong>Seller:</strong> ${escapeHtml(normalizedItem.shopName)}</span>`
+              : ""
+          }
+        </div>
+
+        <div class="driver-product-pricing">
+          <span>Unit price: Rs ${formatMoney(normalizedItem.price)}</span>
+          <strong>Subtotal: Rs ${formatMoney(normalizedItem.subtotal)}</strong>
+        </div>
+      </div>
+    </article>
+  `;
 }
 
 
 function setLoading() {
   if (deliveryOrdersList) {
+    deliveryOrdersList.setAttribute("aria-busy", "true");
     deliveryOrdersList.innerHTML = `
       <div class="driver-empty-state driver-loading-state">
         <div class="driver-loading-spinner" aria-hidden="true"></div>
@@ -849,6 +1294,7 @@ function setLoading() {
 
 function renderError(message) {
   if (deliveryOrdersList) {
+    deliveryOrdersList.setAttribute("aria-busy", "false");
     deliveryOrdersList.innerHTML = `
       <div class="driver-empty-state">
         <h3>Could not load deliveries</h3>
