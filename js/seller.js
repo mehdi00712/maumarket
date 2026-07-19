@@ -32,7 +32,7 @@ import {
    MAUMARKET SELLER.JS
    - Maximum 3 product images
    - Unlimited product options
-   - Price, stock, SKU and image per option
+   - Size/measurement, unit, price, stock, SKU and image per option
    - Edit existing products and options
    - Backward-compatible with older single-image products
    - Featured Shop subscription and Explore Shops preference
@@ -1089,6 +1089,22 @@ function setOptionsEnabled(enabled) {
   refreshOptionCount();
 }
 
+function buildOptionDisplayValue(value, unit) {
+  const cleanValue = String(value || "").trim();
+  const cleanUnit = String(unit || "").trim();
+
+  if (!cleanValue) return "";
+  if (!cleanUnit) return cleanValue;
+
+  const compactUnits = new Set([
+    "mm", "cm", "m", "in", "ft", "ml", "l", "g", "kg"
+  ]);
+
+  return compactUnits.has(cleanUnit.toLowerCase())
+    ? `${cleanValue} ${cleanUnit}`
+    : `${cleanValue} ${capitalizeWords(cleanUnit)}`;
+}
+
 function addOptionRow(optionData = {}) {
   if (!itemOptionTemplate || !itemOptionsList) return;
 
@@ -1101,6 +1117,8 @@ function addOptionRow(optionData = {}) {
     optionData.id || createUniqueId();
 
   const nameInput = row.querySelector(".item-option-name");
+  const valueInput = row.querySelector(".item-option-value");
+  const unitSelect = row.querySelector(".item-option-unit");
   const priceInput = row.querySelector(".item-option-price");
   const stockInput = row.querySelector(".item-option-stock");
   const skuInput = row.querySelector(".item-option-sku");
@@ -1108,7 +1126,40 @@ function addOptionRow(optionData = {}) {
   const removeButton = row.querySelector(".seller-remove-option-btn");
 
   if (nameInput) {
-    nameInput.value = optionData.name || optionData.label || "";
+    nameInput.value =
+      optionData.name ||
+      optionData.label ||
+      optionData.displayValue ||
+      "";
+  }
+
+  if (valueInput) {
+    valueInput.value =
+      optionData.value ??
+      optionData.measurementValue ??
+      optionData.sizeValue ??
+      "";
+  }
+
+  if (unitSelect) {
+    const savedUnit =
+      optionData.unit ||
+      optionData.measurementUnit ||
+      optionData.sizeUnit ||
+      "";
+
+    const hasSavedUnit = Array.from(unitSelect.options).some(
+      (option) => option.value === savedUnit
+    );
+
+    if (savedUnit && !hasSavedUnit) {
+      const customOption = document.createElement("option");
+      customOption.value = savedUnit;
+      customOption.textContent = savedUnit;
+      unitSelect.appendChild(customOption);
+    }
+
+    unitSelect.value = savedUnit;
   }
 
   if (priceInput) {
@@ -1142,6 +1193,8 @@ function addOptionRow(optionData = {}) {
   }
 
   nameInput?.addEventListener("input", refreshOptionRowTitles);
+  valueInput?.addEventListener("input", refreshOptionRowTitles);
+  unitSelect?.addEventListener("change", refreshOptionRowTitles);
 
   removeButton?.addEventListener("click", () => {
     row.remove();
@@ -1174,13 +1227,25 @@ function refreshOptionRowTitles() {
     const titleLabel = row.querySelector(".seller-option-title");
     const optionName =
       row.querySelector(".item-option-name")?.value.trim() || "";
+    const optionValue =
+      row.querySelector(".item-option-value")?.value.trim() || "";
+    const optionUnit =
+      row.querySelector(".item-option-unit")?.value || "";
+
+    const displayValue = buildOptionDisplayValue(
+      optionValue,
+      optionUnit
+    );
 
     if (numberLabel) {
       numberLabel.textContent = `${typeLabel} ${index + 1}`;
     }
 
     if (titleLabel) {
-      titleLabel.textContent = optionName || `New ${typeLabel}`;
+      titleLabel.textContent =
+        optionName ||
+        displayValue ||
+        `New ${typeLabel}`;
     }
   });
 }
@@ -1239,12 +1304,21 @@ function collectOptionData(finalImageUrls) {
     throw new Error("Add at least one option.");
   }
 
-  const usedNames = new Set();
+  const usedOptionKeys = new Set();
   const usedSkus = new Set();
 
   return optionRows.map((row, index) => {
-    const name =
+    const enteredName =
       row.querySelector(".item-option-name")?.value.trim() || "";
+
+    const value =
+      row.querySelector(".item-option-value")?.value.trim() || "";
+
+    const unit =
+      row.querySelector(".item-option-unit")?.value || "";
+
+    const displayValue = buildOptionDisplayValue(value, unit);
+    const name = enteredName || displayValue;
 
     const sellerPrice = Number(
       row.querySelector(".item-option-price")?.value || 0
@@ -1263,16 +1337,25 @@ function collectOptionData(finalImageUrls) {
       row.querySelector(".item-option-image-index")?.value ?? "";
 
     if (!name) {
-      throw new Error(`Option ${index + 1} needs a name.`);
+      throw new Error(
+        `Option ${index + 1} needs an option name or size/measurement.`
+      );
     }
 
-    const normalizedName = name.toLowerCase();
+    if (unit && !value) {
+      throw new Error(
+        `${name} has a unit selected but no size or measurement value.`
+      );
+    }
 
-    if (usedNames.has(normalizedName)) {
+    const normalizedOptionKey =
+      `${name}|${value}|${unit}`.toLowerCase();
+
+    if (usedOptionKeys.has(normalizedOptionKey)) {
       throw new Error(`The option "${name}" is duplicated.`);
     }
 
-    usedNames.add(normalizedName);
+    usedOptionKeys.add(normalizedOptionKey);
 
     if (!Number.isFinite(sellerPrice) || sellerPrice <= 0) {
       throw new Error(`${name} needs a valid seller price.`);
@@ -1313,6 +1396,14 @@ function collectOptionData(finalImageUrls) {
       name,
       label: name,
 
+      value,
+      unit,
+      displayValue: displayValue || name,
+      measurementValue: value,
+      measurementUnit: unit,
+      sizeValue: value,
+      sizeUnit: unit,
+
       sellerPrice: prices.sellerPrice,
       commissionRate: prices.commissionRate,
       commissionPercent: prices.commissionPercent,
@@ -1347,16 +1438,45 @@ function normalizeProductOptions(item) {
     const sellerPrice = getSellerPrice(option);
     const prices = calculatePrices(sellerPrice);
 
+    const value = String(
+      option.value ??
+      option.measurementValue ??
+      option.sizeValue ??
+      ""
+    ).trim();
+
+    const unit = String(
+      option.unit ??
+      option.measurementUnit ??
+      option.sizeUnit ??
+      ""
+    ).trim();
+
+    const displayValue =
+      String(option.displayValue || "").trim() ||
+      buildOptionDisplayValue(value, unit);
+
+    const fallbackName =
+      displayValue ||
+      `Option ${index + 1}`;
+
+    const name =
+      option.name ||
+      option.label ||
+      fallbackName;
+
     return {
       id: option.id || `option-${index + 1}`,
-      name:
-        option.name ||
-        option.label ||
-        `Option ${index + 1}`,
-      label:
-        option.label ||
-        option.name ||
-        `Option ${index + 1}`,
+      name,
+      label: option.label || name,
+
+      value,
+      unit,
+      displayValue: displayValue || name,
+      measurementValue: value,
+      measurementUnit: unit,
+      sizeValue: value,
+      sizeUnit: unit,
 
       sellerPrice,
       commissionRate:
@@ -2108,7 +2228,12 @@ function renderSellerItemCard(itemId, item) {
           ${escapeHtml(
             options
               .slice(0, 5)
-              .map((option) => option.name)
+              .map(
+                (option) =>
+                  option.displayValue ||
+                  option.name ||
+                  option.label
+              )
               .join(", ")
           )}${options.length > 5 ? "…" : ""}
         </small>
