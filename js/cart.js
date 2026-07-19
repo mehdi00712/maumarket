@@ -17,7 +17,7 @@ import {
    Supports:
    - Standard products
    - Products with options / variants
-   - Option-specific price, stock, SKU and image
+   - Option-specific size/measurement, unit, price, stock, SKU and image
    - Separate cart rows for each selected option
    - Firestore cart badge updates
    ========================================================= */
@@ -28,6 +28,11 @@ const cartItems = document.getElementById("cartItems");
 const cartTotal = document.getElementById("cartTotal");
 const summaryItems = document.getElementById("summaryItems");
 const productsTotal = document.getElementById("productsTotal");
+const cartPageMessage = document.getElementById("cartPageMessage");
+const emptyCartState = document.getElementById("emptyCartState");
+const checkoutBtn = document.getElementById("checkoutBtn");
+const checkoutValidationMessage = document.getElementById("checkoutValidationMessage");
+const cartOptionsNotice = document.getElementById("cartOptionsNotice");
 
 let currentUser = null;
 
@@ -43,6 +48,13 @@ onAuthStateChanged(auth, async (user) => {
 
   currentUser = user;
 
+  hideEmptyCartState();
+
+  updateCheckoutState({
+    canCheckout: false,
+    message: "Your cart is loading."
+  });
+
   /*
     MauMarket now stores the cart only in Firestore.
     Remove any old localStorage cart to avoid stale totals.
@@ -56,12 +68,17 @@ onAuthStateChanged(auth, async (user) => {
    LOAD CART
    ========================================================= */
 
-async function loadCart() {
+async async function loadCart() {
   if (!cartItems || !currentUser) return;
+
+  setCartBusy(true);
+  hideCartPageMessage();
+  hideEmptyCartState();
 
   cartItems.innerHTML = `
     <div class="cart-loading-card">
-      Loading your cart...
+      <strong>Loading your cart...</strong>
+      <p>MauMarket is retrieving your selected products and options.</p>
     </div>
   `;
 
@@ -83,14 +100,15 @@ async function loadCart() {
 
     let total = 0;
     let itemCount = 0;
+    let hasInvalidItems = false;
 
     const merchantGroups = {};
 
     snapshot.forEach((docSnap) => {
-      const item = {
+      const item = normalizeCartItem({
         id: docSnap.id,
         ...docSnap.data()
-      };
+      });
 
       const merchantId =
         item.sellerId ||
@@ -130,18 +148,42 @@ async function loadCart() {
         <div class="cart-seller-items"></div>
       `;
 
-      const holder = section.querySelector(".cart-seller-items");
+      const holder =
+        section.querySelector(".cart-seller-items");
 
       group.items.forEach((item) => {
         const quantity = Math.max(
           1,
-          Number(item.quantity || 1)
+          Math.floor(Number(item.quantity || 1))
         );
 
         const price = getBuyerPrice(item);
         const lineTotal = roundMoney(
           price * quantity
         );
+
+        const stock = getCartItemStock(item);
+        const isProduct =
+          String(item.type || "product").toLowerCase() === "product";
+
+        const invalid =
+          price <= 0 ||
+          (
+            isProduct &&
+            (
+              stock <= 0 ||
+              quantity > stock
+            )
+          ) ||
+          (
+            item.hasOptions &&
+            !item.optionId &&
+            !item.selectedOptionId
+          );
+
+        if (invalid) {
+          hasInvalidItems = true;
+        }
 
         merchantTotal += lineTotal;
         merchantCount += quantity;
@@ -156,7 +198,7 @@ async function loadCart() {
           lineTotal
         );
 
-        holder.appendChild(card);
+        holder?.appendChild(card);
       });
 
       const footer = document.createElement("div");
@@ -164,7 +206,8 @@ async function loadCart() {
 
       footer.innerHTML = `
         <span>
-          ${merchantCount} item${merchantCount === 1 ? "" : "s"}
+          ${merchantCount}
+          item${merchantCount === 1 ? "" : "s"}
         </span>
 
         <strong>
@@ -181,27 +224,41 @@ async function loadCart() {
       total
     });
 
+    updateCheckoutState({
+      canCheckout: itemCount > 0 && !hasInvalidItems,
+      message: hasInvalidItems
+        ? "Review unavailable, out-of-stock or incomplete product options before checkout."
+        : ""
+    });
+
     updateCartBadge(itemCount);
+
+    if (cartOptionsNotice) {
+      cartOptionsNotice.hidden = false;
+    }
   } catch (error) {
     console.error("Could not load cart:", error);
+
+    const message = getFriendlyCartError(
+      error,
+      "Please refresh the page and try again."
+    );
+
+    showCartPageMessage(message, "error");
 
     cartItems.innerHTML = `
       <div class="empty-cart-card">
         <h2>Could not load your cart</h2>
 
         <p>
-          ${escapeHtml(
-            getFriendlyCartError(
-              error,
-              "Please refresh the page and try again."
-            )
-          )}
+          ${escapeHtml(message)}
         </p>
 
         <button
           id="retryCartBtn"
           type="button"
-          class="btn">
+          class="btn"
+        >
           Try Again
         </button>
       </div>
@@ -210,12 +267,15 @@ async function loadCart() {
     document
       .getElementById("retryCartBtn")
       ?.addEventListener("click", loadCart);
+
+    updateCheckoutState({
+      canCheckout: false,
+      message: "Your cart must load successfully before checkout."
+    });
+  } finally {
+    setCartBusy(false);
   }
 }
-
-/* =========================================================
-   CART ITEM CARD
-   ========================================================= */
 
 function createCartItemCard(
   item,
@@ -226,12 +286,21 @@ function createCartItemCard(
   const card = document.createElement("article");
   card.className = "cart-item pro-cart-item";
 
+  card.dataset.cartItemId = item.id || "";
+  card.dataset.productId = item.productId || "";
+  card.dataset.optionId =
+    item.optionId ||
+    item.selectedOptionId ||
+    "";
+
   const hasOption =
     Boolean(
-      item.selectedOptionId ||
-      item.selectedOptionName ||
       item.optionId ||
-      item.optionName
+      item.selectedOptionId ||
+      item.optionName ||
+      item.selectedOptionName ||
+      item.optionDisplayValue ||
+      item.selectedOptionDisplayValue
     );
 
   const optionType =
@@ -239,21 +308,43 @@ function createCartItemCard(
     "Option";
 
   const optionName =
-    item.selectedOptionName ||
     item.optionName ||
+    item.selectedOptionName ||
     "";
 
+  const optionValue =
+    item.optionValue ||
+    item.selectedOptionValue ||
+    "";
+
+  const optionUnit =
+    item.optionUnit ||
+    item.selectedOptionUnit ||
+    "";
+
+  const optionDisplayValue =
+    item.optionDisplayValue ||
+    item.selectedOptionDisplayValue ||
+    buildOptionDisplayValue(
+      optionValue,
+      optionUnit
+    ) ||
+    optionName;
+
   const optionSku =
+    item.productCode ||
     item.selectedOptionSku ||
     item.optionSku ||
     item.sku ||
     "";
 
-  const optionStock =
-    getCartItemStock(item);
+  const optionStock = getCartItemStock(item);
+
+  const isProduct =
+    String(item.type || "product").toLowerCase() === "product";
 
   const maxQuantity =
-    optionStock > 0
+    isProduct && optionStock > 0
       ? optionStock
       : "";
 
@@ -262,6 +353,19 @@ function createCartItemCard(
     item.selectedOptionImageUrl ||
     "";
 
+  const isUnavailable =
+    isProduct && optionStock <= 0;
+
+  const quantityTooHigh =
+    isProduct &&
+    optionStock > 0 &&
+    quantity > optionStock;
+
+  card.classList.toggle(
+    "cart-item-invalid",
+    isUnavailable || quantityTooHigh
+  );
+
   card.innerHTML = `
     <div class="cart-item-img">
       ${
@@ -269,7 +373,10 @@ function createCartItemCard(
           ? `
             <img
               src="${escapeHtml(imageUrl)}"
-              alt="${escapeHtml(item.title || "Product")}">
+              alt="${escapeHtml(
+                item.title || "Product"
+              )}"
+            >
           `
           : `
             <div class="no-img">
@@ -282,6 +389,7 @@ function createCartItemCard(
     <div class="cart-info">
 
       <div class="cart-product-meta-row">
+
         <span class="badge">
           ${escapeHtml(item.type || "item")}
         </span>
@@ -290,11 +398,16 @@ function createCartItemCard(
           hasOption
             ? `
               <span class="cart-option-badge">
-                ${escapeHtml(optionName)}
+                ${escapeHtml(
+                  optionDisplayValue ||
+                  optionName ||
+                  "Selected option"
+                )}
               </span>
             `
             : ""
         }
+
       </div>
 
       <h3>
@@ -314,25 +427,80 @@ function createCartItemCard(
           ? `
             <div class="cart-selected-option-card">
 
-              <div>
+              <div class="cart-item-option">
+
                 <span>
                   Selected ${escapeHtml(optionType)}
                 </span>
 
                 <strong>
-                  ${escapeHtml(optionName || "Selected option")}
+                  ${escapeHtml(
+                    optionDisplayValue ||
+                    optionName ||
+                    "Selected option"
+                  )}
                 </strong>
+
               </div>
+
+              ${
+                optionValue || optionUnit
+                  ? `
+                    <div class="cart-item-measurement">
+
+                      <span>
+                        Size / Measurement
+                      </span>
+
+                      <strong>
+                        ${escapeHtml(
+                          buildOptionDisplayValue(
+                            optionValue,
+                            optionUnit
+                          ) ||
+                          optionDisplayValue
+                        )}
+                      </strong>
+
+                    </div>
+                  `
+                  : ""
+              }
+
+              ${
+                optionName &&
+                optionDisplayValue &&
+                optionName.toLowerCase() !==
+                  optionDisplayValue.toLowerCase()
+                  ? `
+                    <div>
+
+                      <span>
+                        Option Name
+                      </span>
+
+                      <strong>
+                        ${escapeHtml(optionName)}
+                      </strong>
+
+                    </div>
+                  `
+                  : ""
+              }
 
               ${
                 optionSku
                   ? `
-                    <div>
-                      <span>Product Code</span>
+                    <div class="cart-item-product-code">
+
+                      <span>
+                        Product Code
+                      </span>
 
                       <strong>
                         ${escapeHtml(optionSku)}
                       </strong>
+
                     </div>
                   `
                   : ""
@@ -364,19 +532,41 @@ function createCartItemCard(
           type="number"
           min="1"
           ${maxQuantity ? `max="${maxQuantity}"` : ""}
-          value="${quantity}">
+          value="${quantity}"
+          ${isUnavailable ? "disabled" : ""}
+          inputmode="numeric"
+        >
 
         ${
-          optionStock > 0
+          isProduct
             ? `
-              <small class="muted">
-                ${optionStock} available
+              <small
+                class="cart-item-stock-message
+                ${isUnavailable ? "error" : "muted"}"
+              >
+                ${
+                  isUnavailable
+                    ? "This option is out of stock"
+                    : `${optionStock} available`
+                }
               </small>
             `
             : ""
         }
 
       </div>
+
+      ${
+        quantityTooHigh
+          ? `
+            <p class="cart-item-message error">
+              Only ${optionStock}
+              item${optionStock === 1 ? "" : "s"}
+              are available for this option.
+            </p>
+          `
+          : ""
+      }
 
       <p class="cart-line-total">
         Subtotal:
@@ -387,8 +577,8 @@ function createCartItemCard(
 
       <p
         class="cart-item-message"
-        aria-live="polite">
-      </p>
+        aria-live="polite"
+      ></p>
 
     </div>
 
@@ -396,7 +586,8 @@ function createCartItemCard(
 
       <button
         class="danger-btn remove-btn"
-        type="button">
+        type="button"
+      >
         Remove
       </button>
 
@@ -409,8 +600,11 @@ function createCartItemCard(
   const removeButton =
     card.querySelector(".remove-btn");
 
+  const itemMessages =
+    card.querySelectorAll(".cart-item-message");
+
   const itemMessage =
-    card.querySelector(".cart-item-message");
+    itemMessages[itemMessages.length - 1] || null;
 
   quantityInput?.addEventListener(
     "change",
@@ -435,6 +629,22 @@ function createCartItemCard(
       }
 
       if (
+        isProduct &&
+        optionStock <= 0
+      ) {
+        event.target.value = quantity;
+
+        setItemMessage(
+          itemMessage,
+          "This product option is currently out of stock.",
+          "error"
+        );
+
+        return;
+      }
+
+      if (
+        isProduct &&
         optionStock > 0 &&
         newQuantity > optionStock
       ) {
@@ -442,7 +652,13 @@ function createCartItemCard(
 
         setItemMessage(
           itemMessage,
-          `Only ${optionStock} item${optionStock === 1 ? "" : "s"} are available.`,
+          `Only ${optionStock} item${
+            optionStock === 1 ? "" : "s"
+          } are available for ${
+            optionDisplayValue ||
+            optionName ||
+            "this option"
+          }.`,
           "error"
         );
 
@@ -492,9 +708,14 @@ function createCartItemCard(
   removeButton?.addEventListener(
     "click",
     async () => {
+      const description =
+        optionDisplayValue ||
+        optionName ||
+        "this option";
+
       const confirmed = window.confirm(
         hasOption
-          ? `Remove ${optionName || "this option"} from your cart?`
+          ? `Remove ${description} from your cart?`
           : "Remove this item from your cart?"
       );
 
@@ -534,10 +755,6 @@ function createCartItemCard(
   return card;
 }
 
-/* =========================================================
-   SUMMARY
-   ========================================================= */
-
 function renderSummary({
   itemCount,
   total
@@ -561,29 +778,9 @@ function renderSummary({
 function renderEmptyCart() {
   if (!cartItems) return;
 
-  cartItems.innerHTML = `
-    <div class="empty-cart-card">
+  cartItems.innerHTML = "";
 
-      <div class="empty-cart-icon">
-        🛒
-      </div>
-
-      <h2>
-        Your cart is empty
-      </h2>
-
-      <p>
-        Browse MauMarket and discover products from verified merchants.
-      </p>
-
-      <a
-        class="btn"
-        href="products.html">
-        Browse Products
-      </a>
-
-    </div>
-  `;
+  showEmptyCartState();
 
   if (summaryItems) {
     summaryItems.textContent = "0";
@@ -596,11 +793,16 @@ function renderEmptyCart() {
   if (cartTotal) {
     cartTotal.textContent = "0";
   }
-}
 
-/* =========================================================
-   CART BADGE
-   ========================================================= */
+  if (cartOptionsNotice) {
+    cartOptionsNotice.hidden = true;
+  }
+
+  updateCheckoutState({
+    canCheckout: false,
+    message: "Add at least one product before proceeding to checkout."
+  });
+}
 
 function updateCartBadge(count) {
   window.dispatchEvent(
@@ -614,6 +816,219 @@ function updateCartBadge(count) {
     )
   );
 }
+
+function normalizeCartItem(item) {
+  const optionValue = String(
+    item?.optionValue ??
+    item?.selectedOptionValue ??
+    item?.measurementValue ??
+    item?.sizeValue ??
+    ""
+  ).trim();
+
+  const optionUnit = String(
+    item?.optionUnit ??
+    item?.selectedOptionUnit ??
+    item?.measurementUnit ??
+    item?.sizeUnit ??
+    ""
+  ).trim();
+
+  const optionDisplayValue =
+    String(
+      item?.optionDisplayValue ??
+      item?.selectedOptionDisplayValue ??
+      ""
+    ).trim() ||
+    buildOptionDisplayValue(
+      optionValue,
+      optionUnit
+    ) ||
+    String(
+      item?.optionName ??
+      item?.selectedOptionName ??
+      ""
+    ).trim();
+
+  const optionId =
+    item?.optionId ||
+    item?.selectedOptionId ||
+    "";
+
+  const optionName =
+    item?.optionName ||
+    item?.selectedOptionName ||
+    optionDisplayValue ||
+    "";
+
+  const productCode =
+    item?.productCode ||
+    item?.selectedOptionSku ||
+    item?.optionSku ||
+    item?.sku ||
+    "";
+
+  const hasOptions =
+    Boolean(
+      item?.hasOptions ||
+      optionId ||
+      optionName ||
+      optionDisplayValue
+    );
+
+  return {
+    ...item,
+
+    optionId,
+    optionName,
+    optionValue,
+    optionUnit,
+    optionDisplayValue,
+    optionStock:
+      item?.optionStock ??
+      item?.selectedOptionStock ??
+      item?.stock ??
+      0,
+
+    selectedOptionId:
+      item?.selectedOptionId || optionId,
+    selectedOptionName:
+      item?.selectedOptionName || optionName,
+    selectedOptionValue:
+      item?.selectedOptionValue || optionValue,
+    selectedOptionUnit:
+      item?.selectedOptionUnit || optionUnit,
+    selectedOptionDisplayValue:
+      item?.selectedOptionDisplayValue ||
+      optionDisplayValue,
+    selectedOptionSku:
+      item?.selectedOptionSku ||
+      productCode,
+
+    productCode,
+    sku: item?.sku || productCode,
+    hasOptions
+  };
+}
+
+function buildOptionDisplayValue(value, unit) {
+  const cleanValue = String(value || "").trim();
+  const cleanUnit = String(unit || "").trim();
+
+  if (!cleanValue) return "";
+  if (!cleanUnit) return cleanValue;
+
+  const labels = {
+    mm: "mm",
+    cm: "cm",
+    m: "m",
+    in: "in",
+    ft: "ft",
+    ml: "ml",
+    l: "L",
+    g: "g",
+    kg: "kg",
+    piece: "piece",
+    pack: "pack",
+    set: "set",
+    pair: "pair"
+  };
+
+  const unitLabel =
+    labels[cleanUnit.toLowerCase()] ||
+    cleanUnit;
+
+  return `${cleanValue} ${unitLabel}`;
+}
+
+function setCartBusy(isBusy) {
+  cartItems?.setAttribute(
+    "aria-busy",
+    isBusy ? "true" : "false"
+  );
+}
+
+function showCartPageMessage(
+  message,
+  type = ""
+) {
+  if (!cartPageMessage) return;
+
+  cartPageMessage.textContent =
+    message || "";
+
+  cartPageMessage.hidden = !message;
+
+  cartPageMessage.classList.remove(
+    "success",
+    "error",
+    "info",
+    "cart-message-success",
+    "cart-message-error",
+    "cart-message-info"
+  );
+
+  if (message && type) {
+    cartPageMessage.classList.add(type);
+    cartPageMessage.classList.add(
+      `cart-message-${type}`
+    );
+  }
+}
+
+function hideCartPageMessage() {
+  showCartPageMessage("");
+}
+
+function showEmptyCartState() {
+  if (emptyCartState) {
+    emptyCartState.hidden = false;
+  }
+}
+
+function hideEmptyCartState() {
+  if (emptyCartState) {
+    emptyCartState.hidden = true;
+  }
+}
+
+function updateCheckoutState({
+  canCheckout,
+  message = ""
+}) {
+  if (checkoutBtn) {
+    checkoutBtn.setAttribute(
+      "aria-disabled",
+      canCheckout ? "false" : "true"
+    );
+
+    checkoutBtn.classList.toggle(
+      "disabled",
+      !canCheckout
+    );
+
+    checkoutBtn.tabIndex =
+      canCheckout ? 0 : -1;
+
+    checkoutBtn.onclick = canCheckout
+      ? null
+      : (event) => {
+          event.preventDefault();
+
+          showCartPageMessage(
+            message ||
+            "Your cart is not ready for checkout.",
+            "error"
+          );
+        };
+  }
+
+  if (checkoutValidationMessage) {
+    checkoutValidationMessage.textContent =
+      message || "";
+  }
+}
+
 
 /* =========================================================
    PRICE / STOCK HELPERS
@@ -654,30 +1069,32 @@ function getBuyerPrice(item) {
 }
 
 function getCartItemStock(item) {
-  const selectedOptionStock =
-    Number(
-      item?.selectedOptionStock ??
-      item?.optionStock ??
-      0
-    );
+  const hasOptionStock =
+    item?.selectedOptionStock !== undefined ||
+    item?.optionStock !== undefined;
 
-  if (selectedOptionStock > 0) {
-    return Math.floor(selectedOptionStock);
+  if (hasOptionStock) {
+    return Math.max(
+      0,
+      Math.floor(
+        Number(
+          item?.selectedOptionStock ??
+          item?.optionStock ??
+          0
+        )
+      )
+    );
   }
 
-  const stock =
-    Number(item?.stock || 0);
-
-  if (stock > 0) {
-    return Math.floor(stock);
+  if (item?.stock !== undefined) {
+    return Math.max(
+      0,
+      Math.floor(Number(item.stock || 0))
+    );
   }
 
   return 0;
 }
-
-/* =========================================================
-   ERROR AND MESSAGE HELPERS
-   ========================================================= */
 
 function setItemMessage(
   element,
