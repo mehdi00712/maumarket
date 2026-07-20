@@ -1,10 +1,10 @@
 /**
  * MauMarket Seller Dashboard
- * Updated canonical product-option handling.
+ * Updated nested Size + Colour variant handling.
  *
- * Fixes optionType, size/value storage, product codes, option images,
- * legacy option editing and secure Cloud Function payloads.
- * Fixes false duplicate errors when several options share the same type.
+ * Sellers can add sizes and multiple colours under every size.
+ * Each Size + Colour variant has separate price, stock, code and image.
+ * Existing flat options are migrated into editable Size + Colour groups.
  */
 
 import { auth, db, storage, functions } from "./firebase-config.js";
@@ -138,11 +138,11 @@ const baseStockGroup = document.getElementById("baseStockGroup");
 
 const enableItemOptions = document.getElementById("enableItemOptions");
 const itemOptionsSection = document.getElementById("itemOptionsSection");
-const itemOptionType = document.getElementById("itemOptionType");
-const itemOptionsList = document.getElementById("itemOptionsList");
 const itemOptionsCount = document.getElementById("itemOptionsCount");
-const addItemOptionBtn = document.getElementById("addItemOptionBtn");
-const itemOptionTemplate = document.getElementById("itemOptionTemplate");
+const itemSizesList = document.getElementById("itemSizesList");
+const addItemSizeBtn = document.getElementById("addItemSizeBtn");
+const itemSizeGroupTemplate = document.getElementById("itemSizeGroupTemplate");
+const itemColourVariantTemplate = document.getElementById("itemColourVariantTemplate");
 
 // Featured Shop subscription interface
 const featuredShopStatusBadge = document.getElementById(
@@ -215,6 +215,7 @@ let selectedImageFiles = [];
 let removedExistingImageUrls = new Set();
 
 let optionRows = [];
+let sizeGroups = [];
 
 let pickupMap = null;
 let pickupMarker = null;
@@ -329,16 +330,14 @@ function wireFormEvents() {
   enableItemOptions?.addEventListener("change", () => {
     setOptionsEnabled(enableItemOptions.checked);
 
-    if (enableItemOptions.checked && optionRows.length === 0) {
-      addOptionRow();
+    if (enableItemOptions.checked && sizeGroups.length === 0) {
+      addSizeGroup();
     }
   });
 
-  addItemOptionBtn?.addEventListener("click", () => {
-    addOptionRow();
+  addItemSizeBtn?.addEventListener("click", () => {
+    addSizeGroup();
   });
-
-  itemOptionType?.addEventListener("input", refreshOptionRowTitles);
 
   cancelEditBtn?.addEventListener("click", resetItemForm);
 
@@ -1077,7 +1076,7 @@ function updatePricePreview() {
 }
 
 /* =========================================================
-   PRODUCT OPTIONS / VARIANTS
+   SIZE + COLOUR PRODUCT VARIANTS
    ========================================================= */
 
 function setOptionsEnabled(enabled) {
@@ -1114,241 +1113,226 @@ function buildOptionDisplayValue(value, unit) {
     : `${cleanValue} ${capitalizeWords(cleanUnit)}`;
 }
 
-function normalizeOptionTypeLabel(value) {
-  const raw = String(value || "").trim();
-  const normalized = raw.toLowerCase();
+function getSizeDisplayValue(group) {
+  const sizeName =
+    group.querySelector(".item-size-name")?.value.trim() || "";
 
-  const aliases = {
-    size: "Size",
-    sizes: "Size",
-    colour: "Colour",
-    color: "Colour",
-    colours: "Colour",
-    colors: "Colour",
-    weight: "Weight",
-    weights: "Weight",
-    length: "Length",
-    width: "Width",
-    height: "Height",
-    volume: "Volume",
-    capacity: "Capacity",
-    material: "Material",
-    style: "Style",
-    model: "Model",
-    flavour: "Flavour",
-    flavor: "Flavour",
-    pack: "Pack",
-    quantity: "Quantity",
-    measurement: "Measurement",
-    measurements: "Measurement",
-    option: "Option",
-    options: "Option",
-    variant: "Option",
-    variants: "Option",
-    variation: "Option",
-    variations: "Option"
-  };
+  const sizeValue =
+    group.querySelector(".item-size-value")?.value.trim() || "";
 
-  return aliases[normalized] || raw;
-}
+  const sizeUnit =
+    group.querySelector(".item-size-unit")?.value || "";
 
-function inferSellerOptionType(rawType, rows = optionRows) {
-  const normalizedType = normalizeOptionTypeLabel(rawType);
-
-  const knownSpecificTypes = new Set([
-    "Size",
-    "Colour",
-    "Weight",
-    "Length",
-    "Width",
-    "Height",
-    "Volume",
-    "Capacity",
-    "Material",
-    "Style",
-    "Model",
-    "Flavour",
-    "Pack",
-    "Quantity",
-    "Measurement"
-  ]);
-
-  if (knownSpecificTypes.has(normalizedType)) {
-    return normalizedType;
-  }
-
-  const values = rows
-    .map((row) => {
-      const value =
-        row.querySelector(".item-option-value")?.value.trim() ||
-        row.querySelector(".item-option-name")?.value.trim() ||
-        "";
-
-      return value
-        .replace(/^size\s*[:\-]?\s*/i, "")
-        .trim();
-    })
-    .filter(Boolean);
-
-  const units = rows
-    .map((row) =>
-      String(
-        row.querySelector(".item-option-unit")?.value || ""
-      ).trim().toLowerCase()
-    )
-    .filter(Boolean);
-
-  if (units.some((unit) => ["g", "kg"].includes(unit))) {
-    return "Weight";
-  }
-
-  if (
-    units.some((unit) =>
-      ["ml", "l", "litre", "liter"].includes(unit)
-    )
-  ) {
-    return "Capacity";
-  }
-
-  if (
-    units.some((unit) =>
-      ["mm", "cm", "m", "in", "ft"].includes(unit)
-    )
-  ) {
-    return "Size";
-  }
-
-  const allNumeric =
-    values.length > 0 &&
-    values.every((value) =>
-      /^-?\d+(?:[.,]\d+)?$/.test(value)
-    );
-
-  if (allNumeric) {
-    return "Size";
-  }
-
-  const commonColours = new Set([
-    "red",
-    "blue",
-    "green",
-    "black",
-    "white",
-    "yellow",
-    "orange",
-    "purple",
-    "pink",
-    "grey",
-    "gray",
-    "brown",
-    "gold",
-    "silver",
-    "beige",
-    "navy",
-    "maroon",
-    "teal",
-    "turquoise"
-  ]);
-
-  if (
-    values.length > 0 &&
-    values.every((value) =>
-      commonColours.has(value.toLowerCase())
-    )
-  ) {
-    return "Colour";
-  }
-
-  /*
-    Unknown text such as a product code must not become optionType.
-    Use a safe generic label unless a recognised type or clear value
-    pattern can be determined.
-  */
-  return "Option";
-}
-
-function getCanonicalSellerOptionType() {
-  return inferSellerOptionType(
-    itemOptionType?.value.trim() || "",
-    optionRows
+  return (
+    buildOptionDisplayValue(sizeValue, sizeUnit) ||
+    sizeName
   );
 }
 
-function addOptionRow(optionData = {}) {
-  if (!itemOptionTemplate || !itemOptionsList) return;
+function addSizeGroup(sizeData = {}) {
+  if (
+    !itemSizeGroupTemplate ||
+    !itemSizesList ||
+    !itemColourVariantTemplate
+  ) {
+    return;
+  }
 
-  const fragment = itemOptionTemplate.content.cloneNode(true);
-  const row = fragment.querySelector(".seller-option-row");
+  const fragment =
+    itemSizeGroupTemplate.content.cloneNode(true);
 
-  if (!row) return;
+  const group =
+    fragment.querySelector(".seller-size-group");
 
-  row.dataset.optionId =
-    optionData.id || createUniqueId();
+  if (!group) return;
 
-  const nameInput = row.querySelector(".item-option-name");
-  const valueInput = row.querySelector(".item-option-value");
-  const unitSelect = row.querySelector(".item-option-unit");
-  const priceInput = row.querySelector(".item-option-price");
-  const stockInput = row.querySelector(".item-option-stock");
-  const skuInput = row.querySelector(".item-option-sku");
-  const imageSelect = row.querySelector(".item-option-image-index");
-  const removeButton = row.querySelector(".seller-remove-option-btn");
+  group.dataset.sizeId =
+    sizeData.id ||
+    sizeData.sizeId ||
+    createUniqueId();
+
+  const nameInput =
+    group.querySelector(".item-size-name");
+
+  const valueInput =
+    group.querySelector(".item-size-value");
+
+  const unitSelect =
+    group.querySelector(".item-size-unit");
+
+  const addColourButton =
+    group.querySelector(".seller-add-colour-btn");
+
+  const removeSizeButton =
+    group.querySelector(".seller-remove-size-btn");
 
   if (nameInput) {
     nameInput.value =
-      optionData.optionType ||
-      optionData.name ||
-      optionData.label ||
+      sizeData.sizeName ||
+      sizeData.name ||
       "";
   }
 
   if (valueInput) {
-    const legacyName = String(
-      optionData.name ||
-      optionData.label ||
-      ""
-    ).trim();
-
     valueInput.value =
-      optionData.value ??
-      optionData.measurementValue ??
-      optionData.sizeValue ??
-      optionData.displayValue ??
-      (
-        legacyName &&
-        legacyName.toLowerCase() !==
-          String(optionData.optionType || "").toLowerCase()
-          ? legacyName
-          : ""
-      ) ??
+      sizeData.sizeValue ??
+      sizeData.value ??
       "";
   }
 
   if (unitSelect) {
-    const savedUnit =
-      optionData.unit ||
-      optionData.measurementUnit ||
-      optionData.sizeUnit ||
+    const unit =
+      sizeData.sizeUnit ||
+      sizeData.unit ||
       "";
 
-    const hasSavedUnit = Array.from(unitSelect.options).some(
-      (option) => option.value === savedUnit
+    ensureSelectValue(unitSelect, unit);
+    unitSelect.value = unit;
+  }
+
+  nameInput?.addEventListener(
+    "input",
+    refreshSizeGroupTitles
+  );
+
+  valueInput?.addEventListener(
+    "input",
+    refreshSizeGroupTitles
+  );
+
+  unitSelect?.addEventListener(
+    "change",
+    refreshSizeGroupTitles
+  );
+
+  addColourButton?.addEventListener("click", () => {
+    addColourVariant(group);
+  });
+
+  removeSizeButton?.addEventListener("click", () => {
+    const rows = Array.from(
+      group.querySelectorAll(".seller-colour-variant-row")
     );
 
-    if (savedUnit && !hasSavedUnit) {
-      const customOption = document.createElement("option");
-      customOption.value = savedUnit;
-      customOption.textContent = savedUnit;
-      unitSelect.appendChild(customOption);
-    }
+    optionRows = optionRows.filter(
+      (row) => !rows.includes(row)
+    );
 
-    unitSelect.value = savedUnit;
+    sizeGroups =
+      sizeGroups.filter((entry) => entry !== group);
+
+    group.remove();
+
+    refreshOptionCount();
+    refreshSizeGroupTitles();
+  });
+
+  itemSizesList.appendChild(fragment);
+  sizeGroups.push(group);
+
+  const colours =
+    Array.isArray(sizeData.colours)
+      ? sizeData.colours
+      : Array.isArray(sizeData.colors)
+        ? sizeData.colors
+        : [];
+
+  if (colours.length > 0) {
+    colours.forEach((colour) => {
+      addColourVariant(group, colour);
+    });
+  } else if (
+    sizeData.colourName ||
+    sizeData.colorName ||
+    sizeData.displayValue ||
+    sizeData.sellerPrice !== undefined
+  ) {
+    addColourVariant(group, sizeData);
+  } else {
+    addColourVariant(group);
+  }
+
+  refreshSizeGroupTitles();
+  refreshOptionCount();
+  updateOptionImageChoices();
+}
+
+function addColourVariant(group, variantData = {}) {
+  if (!group || !itemColourVariantTemplate) return;
+
+  const list =
+    group.querySelector(".seller-colour-variants-list");
+
+  if (!list) return;
+
+  const fragment =
+    itemColourVariantTemplate.content.cloneNode(true);
+
+  const row =
+    fragment.querySelector(".seller-colour-variant-row");
+
+  if (!row) return;
+
+  row.dataset.optionId =
+    variantData.id ||
+    variantData.variantId ||
+    createUniqueId();
+
+  const colourNameInput =
+    row.querySelector(".item-colour-name");
+
+  const colourHexInput =
+    row.querySelector(".item-colour-hex");
+
+  const colourCodeInput =
+    row.querySelector(".item-colour-code");
+
+  const priceInput =
+    row.querySelector(".item-option-price");
+
+  const stockInput =
+    row.querySelector(".item-option-stock");
+
+  const skuInput =
+    row.querySelector(".item-option-sku");
+
+  const imageSelect =
+    row.querySelector(".item-option-image-index");
+
+  const removeButton =
+    row.querySelector(".seller-remove-colour-btn");
+
+  if (colourNameInput) {
+    colourNameInput.value =
+      variantData.colourName ||
+      variantData.colorName ||
+      variantData.colour ||
+      variantData.color ||
+      "";
+  }
+
+  const savedColourCode =
+    variantData.colourCode ||
+    variantData.colorCode ||
+    variantData.colourHex ||
+    variantData.colorHex ||
+    "";
+
+  if (colourCodeInput) {
+    colourCodeInput.value = savedColourCode;
+  }
+
+  if (
+    colourHexInput &&
+    /^#[0-9a-f]{6}$/i.test(savedColourCode)
+  ) {
+    colourHexInput.value = savedColourCode;
   }
 
   if (priceInput) {
     const sellerPrice =
-      optionData.sellerPrice ??
-      getSellerPrice(optionData) ??
+      variantData.sellerPrice ??
+      getSellerPrice(variantData) ??
       "";
 
     priceInput.value =
@@ -1356,81 +1340,121 @@ function addOptionRow(optionData = {}) {
   }
 
   if (stockInput) {
-    const stock = optionData.stock ?? "";
-    stockInput.value = stock === "" ? "" : String(stock);
+    const stock = variantData.stock ?? "";
+
+    stockInput.value =
+      stock === "" ? "" : String(stock);
   }
 
   if (skuInput) {
     skuInput.value =
-      optionData.sku ||
-      optionData.productCode ||
+      variantData.productCode ||
+      variantData.sku ||
       "";
   }
 
   if (imageSelect) {
     imageSelect.dataset.selectedValue =
-      optionData.imageIndex !== undefined &&
-      optionData.imageIndex !== null
-        ? String(optionData.imageIndex)
+      variantData.imageIndex !== undefined &&
+      variantData.imageIndex !== null
+        ? String(variantData.imageIndex)
         : "";
   }
 
-  nameInput?.addEventListener("input", refreshOptionRowTitles);
-  valueInput?.addEventListener("input", refreshOptionRowTitles);
-  unitSelect?.addEventListener("change", refreshOptionRowTitles);
+  colourHexInput?.addEventListener("input", () => {
+    if (colourCodeInput) {
+      colourCodeInput.value =
+        colourHexInput.value.toUpperCase();
+    }
+  });
+
+  colourCodeInput?.addEventListener("input", () => {
+    const value =
+      colourCodeInput.value.trim();
+
+    if (
+      colourHexInput &&
+      /^#[0-9a-f]{6}$/i.test(value)
+    ) {
+      colourHexInput.value = value;
+    }
+  });
+
+  colourNameInput?.addEventListener(
+    "input",
+    refreshSizeGroupTitles
+  );
 
   removeButton?.addEventListener("click", () => {
     row.remove();
-    optionRows = optionRows.filter((entry) => entry !== row);
+
+    optionRows =
+      optionRows.filter((entry) => entry !== row);
 
     refreshOptionCount();
-    refreshOptionRowTitles();
+    refreshSizeGroupTitles();
   });
 
-  itemOptionsList.appendChild(fragment);
+  list.appendChild(fragment);
   optionRows.push(row);
 
   updateOptionImageChoices();
   refreshOptionCount();
-  refreshOptionRowTitles();
+  refreshSizeGroupTitles();
 }
 
-function refreshOptionCount() {
-  if (itemOptionsCount) {
-    itemOptionsCount.textContent = String(optionRows.length);
-  }
-}
+function refreshSizeGroupTitles() {
+  sizeGroups.forEach((group, sizeIndex) => {
+    const numberLabel =
+      group.querySelector(".seller-size-number");
 
-function refreshOptionRowTitles() {
-  const typeLabel =
-    itemOptionType?.value.trim() || "Option";
+    const titleLabel =
+      group.querySelector(".seller-size-title");
 
-  optionRows.forEach((row, index) => {
-    const numberLabel = row.querySelector(".seller-option-number");
-    const titleLabel = row.querySelector(".seller-option-title");
-    const optionName =
-      row.querySelector(".item-option-name")?.value.trim() || "";
-    const optionValue =
-      row.querySelector(".item-option-value")?.value.trim() || "";
-    const optionUnit =
-      row.querySelector(".item-option-unit")?.value || "";
-
-    const displayValue = buildOptionDisplayValue(
-      optionValue,
-      optionUnit
-    );
+    const sizeDisplay =
+      getSizeDisplayValue(group);
 
     if (numberLabel) {
-      numberLabel.textContent = `${typeLabel} ${index + 1}`;
+      numberLabel.textContent =
+        `Size ${sizeIndex + 1}`;
     }
 
     if (titleLabel) {
       titleLabel.textContent =
-        displayValue ||
-        optionName ||
-        `New ${typeLabel}`;
+        sizeDisplay || "New Size";
     }
+
+    const rows = Array.from(
+      group.querySelectorAll(
+        ".seller-colour-variant-row"
+      )
+    );
+
+    rows.forEach((row, colourIndex) => {
+      const colourName =
+        row.querySelector(
+          ".item-colour-name"
+        )?.value.trim() || "";
+
+      const title =
+        row.querySelector(
+          ".seller-colour-variant-title"
+        );
+
+      if (title) {
+        title.textContent =
+          colourName ||
+          `Colour ${colourIndex + 1}`;
+      }
+    });
   });
+}
+
+function refreshOptionCount() {
+  if (itemOptionsCount) {
+    itemOptionsCount.textContent =
+      String(optionRows.length);
+  }
 }
 
 function updateOptionImageChoices() {
@@ -1439,7 +1463,9 @@ function updateOptionImageChoices() {
     selectedImageFiles.length;
 
   optionRows.forEach((row) => {
-    const select = row.querySelector(".item-option-image-index");
+    const select =
+      row.querySelector(".item-option-image-index");
+
     if (!select) return;
 
     const previousValue =
@@ -1447,12 +1473,17 @@ function updateOptionImageChoices() {
       select.dataset.selectedValue ||
       "";
 
-    select.innerHTML = `
-      <option value="">Use main image</option>
-    `;
+    select.innerHTML =
+      '<option value="">Use main image</option>';
 
-    for (let index = 0; index < totalImages; index += 1) {
-      const option = document.createElement("option");
+    for (
+      let index = 0;
+      index < totalImages;
+      index += 1
+    ) {
+      const option =
+        document.createElement("option");
+
       option.value = String(index);
       option.textContent = `Image ${index + 1}`;
       select.appendChild(option);
@@ -1468,173 +1499,277 @@ function updateOptionImageChoices() {
       select.value = "";
     }
 
-    select.dataset.selectedValue = select.value;
+    select.dataset.selectedValue =
+      select.value;
   });
 }
 
 function collectOptionData(finalImageUrls) {
   if (!enableItemOptions?.checked) return [];
 
+  if (sizeGroups.length === 0) {
+    throw new Error("Add at least one size.");
+  }
+
   if (optionRows.length === 0) {
-    throw new Error("Add at least one option.");
+    throw new Error(
+      "Add at least one colour under a size."
+    );
   }
 
-  const optionType = getCanonicalSellerOptionType();
-
-  if (itemOptionType) {
-    itemOptionType.value = optionType;
-  }
-
-  const usedOptionKeys = new Set();
+  const variants = [];
+  const usedVariantKeys = new Set();
   const usedProductCodes = new Set();
 
-  return optionRows.map((row, index) => {
-    const enteredName =
-      row.querySelector(".item-option-name")?.value.trim() || "";
+  sizeGroups.forEach((group, sizeIndex) => {
+    const sizeName =
+      group.querySelector(
+        ".item-size-name"
+      )?.value.trim() || "";
 
-    /*
-      New forms use item-option-value for the visible size/colour/value.
-      Older forms sometimes stored that value in item-option-name.
-    */
-    const value =
-      row.querySelector(".item-option-value")?.value.trim() ||
-      enteredName ||
-      "";
+    const sizeValue =
+      group.querySelector(
+        ".item-size-value"
+      )?.value.trim() || "";
 
-    const unit =
-      row.querySelector(".item-option-unit")?.value || "";
+    const sizeUnit =
+      group.querySelector(
+        ".item-size-unit"
+      )?.value || "";
 
-    if (!value) {
+    const sizeDisplayValue =
+      buildOptionDisplayValue(
+        sizeValue,
+        sizeUnit
+      ) || sizeName;
+
+    if (!sizeDisplayValue) {
       throw new Error(
-        `${optionType} option ${index + 1} needs a value.`
+        `Size ${sizeIndex + 1} needs a name or value.`
       );
     }
 
-    if (unit && !value) {
-      throw new Error(
-        `${optionType} option ${index + 1} has a unit but no value.`
-      );
-    }
-
-    const displayValue =
-      buildOptionDisplayValue(value, unit) ||
-      value;
-
-    const sellerPrice = Number(
-      row.querySelector(".item-option-price")?.value || 0
-    );
-
-    const stock = Math.floor(
-      Number(
-        row.querySelector(".item-option-stock")?.value || 0
+    const colourRows = Array.from(
+      group.querySelectorAll(
+        ".seller-colour-variant-row"
       )
     );
 
-    const productCode =
-      row.querySelector(".item-option-sku")?.value.trim() || "";
-
-    const rawImageIndex =
-      row.querySelector(".item-option-image-index")?.value ?? "";
-
-    const normalizedOptionKey =
-      `${displayValue}`.toLowerCase();
-
-    if (usedOptionKeys.has(normalizedOptionKey)) {
+    if (colourRows.length === 0) {
       throw new Error(
-        `The ${optionType.toLowerCase()} "${displayValue}" is duplicated.`
+        `${sizeDisplayValue} needs at least one colour.`
       );
     }
 
-    usedOptionKeys.add(normalizedOptionKey);
+    colourRows.forEach((row, colourIndex) => {
+      const colourName =
+        row.querySelector(
+          ".item-colour-name"
+        )?.value.trim() || "";
 
-    if (!Number.isFinite(sellerPrice) || sellerPrice <= 0) {
-      throw new Error(
-        `${optionType} ${displayValue} needs a valid seller price.`
-      );
-    }
-
-    if (!Number.isFinite(stock) || stock < 0) {
-      throw new Error(
-        `${optionType} ${displayValue} needs a valid stock quantity.`
-      );
-    }
-
-    if (productCode) {
-      const normalizedCode = productCode.toLowerCase();
-
-      if (usedProductCodes.has(normalizedCode)) {
+      if (!colourName) {
         throw new Error(
-          `The product code "${productCode}" is duplicated.`
+          `${sizeDisplayValue}, colour ${
+            colourIndex + 1
+          } needs a colour name.`
         );
       }
 
-      usedProductCodes.add(normalizedCode);
-    }
+      const colourCode =
+        row.querySelector(
+          ".item-colour-code"
+        )?.value.trim() ||
+        row.querySelector(
+          ".item-colour-hex"
+        )?.value ||
+        "";
 
-    let imageIndex = null;
+      const sellerPrice = Number(
+        row.querySelector(
+          ".item-option-price"
+        )?.value || 0
+      );
 
-    if (rawImageIndex !== "") {
-      const parsedIndex = Number(rawImageIndex);
+      const stock = Math.floor(
+        Number(
+          row.querySelector(
+            ".item-option-stock"
+          )?.value || 0
+        )
+      );
+
+      const productCode =
+        row.querySelector(
+          ".item-option-sku"
+        )?.value.trim() || "";
+
+      const rawImageIndex =
+        row.querySelector(
+          ".item-option-image-index"
+        )?.value ?? "";
+
+      const displayValue =
+        `${sizeDisplayValue} / ${colourName}`;
+
+      const normalizedVariantKey =
+        `${sizeDisplayValue}|${colourName}`
+          .toLowerCase();
 
       if (
-        Number.isInteger(parsedIndex) &&
-        parsedIndex >= 0 &&
-        parsedIndex < finalImageUrls.length
+        usedVariantKeys.has(
+          normalizedVariantKey
+        )
       ) {
-        imageIndex = parsedIndex;
+        throw new Error(
+          `The variant "${displayValue}" is duplicated.`
+        );
       }
-    }
 
-    const imageUrl =
-      imageIndex !== null
-        ? finalImageUrls[imageIndex] || finalImageUrls[0] || ""
-        : finalImageUrls[0] || "";
+      usedVariantKeys.add(
+        normalizedVariantKey
+      );
 
-    const prices = calculatePrices(sellerPrice);
+      if (
+        !Number.isFinite(sellerPrice) ||
+        sellerPrice <= 0
+      ) {
+        throw new Error(
+          `${displayValue} needs a valid seller price.`
+        );
+      }
 
-    return {
-      id: row.dataset.optionId || createUniqueId(),
+      if (
+        !Number.isFinite(stock) ||
+        stock < 0
+      ) {
+        throw new Error(
+          `${displayValue} needs a valid stock quantity.`
+        );
+      }
 
-      /*
-        Keep each option name unique for compatibility with the currently
-        deployed Cloud Function. The shared category stays in optionType.
+      if (productCode) {
+        const normalizedCode =
+          productCode.toLowerCase();
 
-        Example:
-        optionType: "Size"
-        name: "Medium"
-        value: "M"
-      */
-      name: enteredName || displayValue,
-      label: enteredName || displayValue,
-      optionType,
+        if (
+          usedProductCodes.has(
+            normalizedCode
+          )
+        ) {
+          throw new Error(
+            `The product code "${productCode}" is duplicated.`
+          );
+        }
 
-      value,
-      unit,
-      displayValue,
+        usedProductCodes.add(
+          normalizedCode
+        );
+      }
 
-      measurementValue: value,
-      measurementUnit: unit,
-      sizeValue: value,
-      sizeUnit: unit,
+      let imageIndex = null;
 
-      sellerPrice: prices.sellerPrice,
-      commissionRate: prices.commissionRate,
-      commissionPercent: prices.commissionPercent,
-      commissionAmount: prices.commissionAmount,
-      buyerPrice: prices.buyerPrice,
-      price: prices.buyerPrice,
+      if (rawImageIndex !== "") {
+        const parsedIndex =
+          Number(rawImageIndex);
 
-      stock,
-      sku: productCode,
-      productCode,
+        if (
+          Number.isInteger(parsedIndex) &&
+          parsedIndex >= 0 &&
+          parsedIndex < finalImageUrls.length
+        ) {
+          imageIndex = parsedIndex;
+        }
+      }
 
-      imageIndex,
-      image: imageUrl,
-      imageUrl,
+      const imageUrl =
+        imageIndex !== null
+          ? (
+              finalImageUrls[imageIndex] ||
+              finalImageUrls[0] ||
+              ""
+            )
+          : finalImageUrls[0] || "";
 
-      active: true
-    };
+      const prices =
+        calculatePrices(sellerPrice);
+
+      variants.push({
+        id:
+          row.dataset.optionId ||
+          createUniqueId(),
+
+        variantId:
+          row.dataset.optionId ||
+          createUniqueId(),
+
+        optionType: "Size / Colour",
+        name: displayValue,
+        label: displayValue,
+
+        value: sizeValue || sizeDisplayValue,
+        unit: sizeUnit,
+        displayValue,
+
+        sizeId:
+          group.dataset.sizeId ||
+          createUniqueId(),
+
+        sizeName:
+          sizeName || sizeDisplayValue,
+
+        sizeValue:
+          sizeValue || sizeDisplayValue,
+
+        sizeUnit,
+        sizeDisplayValue,
+
+        colourName,
+        colorName: colourName,
+        colourValue: colourName,
+        colorValue: colourName,
+
+        colourCode,
+        colorCode: colourCode,
+        colourHex: colourCode,
+        colorHex: colourCode,
+
+        measurementValue:
+          sizeValue || sizeDisplayValue,
+
+        measurementUnit: sizeUnit,
+
+        sellerPrice:
+          prices.sellerPrice,
+
+        commissionRate:
+          prices.commissionRate,
+
+        commissionPercent:
+          prices.commissionPercent,
+
+        commissionAmount:
+          prices.commissionAmount,
+
+        buyerPrice:
+          prices.buyerPrice,
+
+        price:
+          prices.buyerPrice,
+
+        stock,
+        sku: productCode,
+        productCode,
+
+        imageIndex,
+        image: imageUrl,
+        imageUrl,
+
+        active: true
+      });
+    });
   });
+
+  return variants;
 }
 
 function normalizeProductOptions(item) {
@@ -1645,85 +1780,136 @@ function normalizeProductOptions(item) {
         ? item.variants
         : [];
 
-  const inferredType = inferStoredProductOptionType(
-    item.optionType ||
-    item.variantType ||
-    "",
-    rawOptions
-  );
-
   return rawOptions.map((option, index) => {
-    const sellerPrice = getSellerPrice(option);
-    const prices = calculatePrices(sellerPrice);
+    const sellerPrice =
+      getSellerPrice(option);
 
-    const legacyName = String(
-      option.name ||
-      option.label ||
-      ""
-    ).trim();
+    const prices =
+      calculatePrices(sellerPrice);
 
-    const value = String(
-      option.value ??
-      option.measurementValue ??
-      option.sizeValue ??
-      option.displayValue ??
-      (
-        legacyName &&
-        legacyName.toLowerCase() !== inferredType.toLowerCase()
-          ? legacyName
-          : ""
-      ) ??
-      ""
-    ).trim();
+    const rawDisplay =
+      String(
+        option.displayValue ||
+        option.name ||
+        option.label ||
+        ""
+      ).trim();
 
-    const unit = String(
-      option.unit ??
-      option.measurementUnit ??
-      option.sizeUnit ??
-      ""
-    ).trim();
+    const displayParts =
+      rawDisplay.split("/").map(
+        (part) => part.trim()
+      );
+
+    const sizeName =
+      String(
+        option.sizeName ||
+        option.sizeLabel ||
+        displayParts[0] ||
+        option.sizeValue ||
+        option.value ||
+        `Size ${index + 1}`
+      ).trim();
+
+    const sizeValue =
+      String(
+        option.sizeValue ??
+        option.value ??
+        option.measurementValue ??
+        sizeName
+      ).trim();
+
+    const sizeUnit =
+      String(
+        option.sizeUnit ??
+        option.unit ??
+        option.measurementUnit ??
+        ""
+      ).trim();
+
+    const colourName =
+      String(
+        option.colourName ||
+        option.colorName ||
+        option.colour ||
+        option.color ||
+        displayParts[1] ||
+        "Default"
+      ).trim();
+
+    const sizeDisplayValue =
+      String(
+        option.sizeDisplayValue || ""
+      ).trim() ||
+      buildOptionDisplayValue(
+        sizeValue,
+        sizeUnit
+      ) ||
+      sizeName;
 
     const displayValue =
-      String(option.displayValue || "").trim() ||
-      buildOptionDisplayValue(value, unit) ||
-      value;
-
-    const imageUrl =
-      option.image ||
-      option.imageUrl ||
-      "";
+      `${sizeDisplayValue} / ${colourName}`;
 
     return {
-      id: option.id || `option-${index + 1}`,
+      ...option,
+      id:
+        option.id ||
+        option.variantId ||
+        `variant-${index + 1}`,
 
-      name: inferredType,
-      label: inferredType,
-      optionType: inferredType,
+      variantId:
+        option.variantId ||
+        option.id ||
+        `variant-${index + 1}`,
 
-      value,
-      unit,
+      optionType: "Size / Colour",
+      name: displayValue,
+      label: displayValue,
       displayValue,
 
-      measurementValue: value,
-      measurementUnit: unit,
-      sizeValue: value,
-      sizeUnit: unit,
+      sizeId:
+        option.sizeId ||
+        slugifyVariantPart(sizeDisplayValue),
 
-      sellerPrice,
-      commissionRate:
-        Number(option.commissionRate ?? COMMISSION_RATE),
-      commissionPercent:
-        Number(option.commissionPercent ?? 10),
-      commissionAmount:
-        Number(option.commissionAmount ?? prices.commissionAmount),
+      sizeName,
+      sizeValue,
+      sizeUnit,
+      sizeDisplayValue,
+
+      colourName,
+      colorName: colourName,
+
+      colourCode:
+        option.colourCode ||
+        option.colorCode ||
+        option.colourHex ||
+        option.colorHex ||
+        "",
+
+      sellerPrice:
+        prices.sellerPrice,
+
       buyerPrice:
-        Number(option.buyerPrice ?? option.price ?? prices.buyerPrice),
-      price:
-        Number(option.price ?? option.buyerPrice ?? prices.buyerPrice),
+        Number(
+          option.buyerPrice ||
+          option.price ||
+          prices.buyerPrice
+        ),
 
-      stock: Math.max(0, Number(option.stock || 0)),
-      sku: option.sku || option.productCode || "",
-      productCode: option.productCode || option.sku || "",
+      stock:
+        Math.max(
+          0,
+          Number(option.stock || 0)
+        ),
+
+      sku:
+        option.sku ||
+        option.productCode ||
+        "",
+
+      productCode:
+        option.productCode ||
+        option.sku ||
+        "",
 
       imageIndex:
         option.imageIndex !== undefined &&
@@ -1731,99 +1917,88 @@ function normalizeProductOptions(item) {
           ? Number(option.imageIndex)
           : null,
 
-      image: imageUrl,
-      imageUrl,
-      active: option.active !== false
+      image:
+        option.image ||
+        option.imageUrl ||
+        "",
+
+      imageUrl:
+        option.imageUrl ||
+        option.image ||
+        "",
+
+      active:
+        option.active !== false
     };
   });
 }
 
-function inferStoredProductOptionType(rawType, rawOptions = []) {
-  const normalizedType = normalizeOptionTypeLabel(rawType);
+function inferStoredProductOptionType() {
+  return "Size / Colour";
+}
 
-  const knownSpecificTypes = new Set([
-    "Size",
-    "Colour",
-    "Weight",
-    "Length",
-    "Width",
-    "Height",
-    "Volume",
-    "Capacity",
-    "Material",
-    "Style",
-    "Model",
-    "Flavour",
-    "Pack",
-    "Quantity",
-    "Measurement"
-  ]);
+function groupVariantsForEditing(options) {
+  const groups = new Map();
 
-  if (knownSpecificTypes.has(normalizedType)) {
-    return normalizedType;
-  }
+  options.forEach((option) => {
+    const key =
+      option.sizeId ||
+      `${option.sizeName}|${option.sizeValue}|${option.sizeUnit}`;
 
-  const values = rawOptions
-    .map((option) =>
-      String(
-        option?.value ??
-        option?.measurementValue ??
-        option?.sizeValue ??
-        option?.displayValue ??
-        option?.name ??
-        option?.label ??
-        ""
-      ).trim()
-    )
-    .filter(Boolean)
-    .map((value) =>
-      value.replace(/^size\s*[:\-]?\s*/i, "").trim()
+    if (!groups.has(key)) {
+      groups.set(key, {
+        id:
+          option.sizeId ||
+          createUniqueId(),
+
+        sizeName:
+          option.sizeName ||
+          option.sizeDisplayValue ||
+          option.sizeValue,
+
+        sizeValue:
+          option.sizeValue ||
+          option.sizeDisplayValue ||
+          option.sizeName,
+
+        sizeUnit:
+          option.sizeUnit || "",
+
+        colours: []
+      });
+    }
+
+    groups.get(key).colours.push(option);
+  });
+
+  return Array.from(groups.values());
+}
+
+function slugifyVariantPart(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") ||
+    createUniqueId();
+}
+
+function ensureSelectValue(select, value) {
+  if (!select || !value) return;
+
+  const exists =
+    Array.from(select.options).some(
+      (option) => option.value === value
     );
 
-  const units = rawOptions
-    .map((option) =>
-      String(
-        option?.unit ??
-        option?.measurementUnit ??
-        option?.sizeUnit ??
-        ""
-      ).trim().toLowerCase()
-    )
-    .filter(Boolean);
+  if (!exists) {
+    const option =
+      document.createElement("option");
 
-  if (units.some((unit) => ["g", "kg"].includes(unit))) {
-    return "Weight";
+    option.value = value;
+    option.textContent = capitalizeWords(value);
+    select.appendChild(option);
   }
-
-  if (
-    units.some((unit) =>
-      ["ml", "l", "litre", "liter"].includes(unit)
-    )
-  ) {
-    return "Capacity";
-  }
-
-  if (
-    units.some((unit) =>
-      ["mm", "cm", "m", "in", "ft"].includes(unit)
-    )
-  ) {
-    return "Size";
-  }
-
-  const allNumeric =
-    values.length > 0 &&
-    values.every((value) =>
-      /^-?\d+(?:[.,]\d+)?$/.test(value)
-    );
-
-  if (allNumeric) {
-    return "Size";
-  }
-
-  return normalizedType === "Option"
-    ? "Option"
-    : "Option";
 }
 
 function getOptionsSummary(options) {
@@ -2216,7 +2391,11 @@ saveItemBtn?.addEventListener("click", async () => {
 
       hasOptions: optionsEnabled,
       optionType: optionsEnabled
-        ? getCanonicalSellerOptionType()
+        ? "Size / Colour"
+        : "",
+
+      variantStructure: optionsEnabled
+        ? "size-colour"
         : "",
       options,
       variants: options,
@@ -2367,6 +2546,7 @@ function resetItemForm() {
   selectedImageFiles = [];
   removedExistingImageUrls = new Set();
   optionRows = [];
+  sizeGroups = [];
 
   if (formTitle) formTitle.textContent = "Add Product / Service";
   if (saveItemBtn) saveItemBtn.textContent = "Add Item";
@@ -2395,8 +2575,7 @@ function resetItemForm() {
   }
 
   if (enableItemOptions) enableItemOptions.checked = false;
-  if (itemOptionType) itemOptionType.value = "";
-  if (itemOptionsList) itemOptionsList.innerHTML = "";
+  if (itemSizesList) itemSizesList.innerHTML = "";
 
   setOptionsEnabled(false);
   refreshOptionCount();
@@ -2411,7 +2590,8 @@ function startEditingItem(itemId, item) {
   removedExistingImageUrls = new Set();
 
   optionRows = [];
-  if (itemOptionsList) itemOptionsList.innerHTML = "";
+  sizeGroups = [];
+  if (itemSizesList) itemSizesList.innerHTML = "";
 
   if (formTitle) formTitle.textContent = "Edit Product / Service";
   if (saveItemBtn) saveItemBtn.textContent = "Update Item";
@@ -2446,34 +2626,22 @@ function startEditingItem(itemId, item) {
     enableItemOptions.checked = hasOptions;
   }
 
-  if (itemOptionType) {
-    itemOptionType.value = hasOptions
-      ? inferStoredProductOptionType(
-          item.optionType ||
-          item.variantType ||
-          "",
-          Array.isArray(item.options)
-            ? item.options
-            : Array.isArray(item.variants)
-              ? item.variants
-              : []
-        )
-      : "";
-  }
-
   setOptionsEnabled(hasOptions);
 
-  normalizedOptions.forEach((option) => {
-    addOptionRow(option);
+  const groupedVariants =
+    groupVariantsForEditing(normalizedOptions);
+
+  groupedVariants.forEach((group) => {
+    addSizeGroup(group);
   });
 
-  if (hasOptions && normalizedOptions.length === 0) {
-    addOptionRow();
+  if (hasOptions && groupedVariants.length === 0) {
+    addSizeGroup();
   }
 
   updateOptionImageChoices();
   updatePricePreview();
-  refreshOptionRowTitles();
+  refreshSizeGroupTitles();
 
   document
     .querySelector('[data-seller-page="add-product"]')
@@ -2594,8 +2762,8 @@ function renderSellerItemCard(itemId, item) {
   const optionSummary = options.length
     ? `
       <div class="seller-item-options-summary">
-        <strong>${escapeHtml(item.optionType || "Options")}</strong>
-        <span>${options.length} option(s)</span>
+        <strong>${escapeHtml(item.optionType || "Size / Colour")}</strong>
+        <span>${options.length} size/colour variant(s)</span>
         <small>
           ${escapeHtml(
             options
