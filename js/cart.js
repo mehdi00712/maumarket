@@ -16,10 +16,11 @@ import {
    MAUMARKET CART.JS
    Supports:
    - Standard products
-   - Products with options / variants
-   - Option-specific size/measurement, unit, price, stock, SKU and image
-   - Separate cart rows for each selected option
+   - Size + Colour product variants
+   - Variant-specific price, stock, product code and image
+   - Separate cart rows for each Size + Colour combination
    - Firestore cart badge updates
+   - Backward compatibility with older flat product options
    ========================================================= */
 
 const COMMISSION_RATE = 0.10;
@@ -78,7 +79,7 @@ async function loadCart() {
   cartItems.innerHTML = `
     <div class="cart-loading-card">
       <strong>Loading your cart...</strong>
-      <p>MauMarket is retrieving your selected products and options.</p>
+      <p>MauMarket is retrieving your selected products, sizes and colours.</p>
     </div>
   `;
 
@@ -227,7 +228,7 @@ async function loadCart() {
     updateCheckoutState({
       canCheckout: itemCount > 0 && !hasInvalidItems,
       message: hasInvalidItems
-        ? "Review unavailable, out-of-stock or incomplete product options before checkout."
+        ? "Review unavailable, out-of-stock or incomplete size and colour selections before checkout."
         : ""
     });
 
@@ -293,43 +294,55 @@ function createCartItemCard(
     item.selectedOptionId ||
     "";
 
-  const hasOption =
-    Boolean(
-      item.optionId ||
-      item.selectedOptionId ||
-      item.optionName ||
-      item.selectedOptionName ||
-      item.optionDisplayValue ||
-      item.selectedOptionDisplayValue
-    );
-
-  const optionType =
-    item.optionType ||
-    "Option";
-
-  const optionName =
+  const hasOption = Boolean(
+    item.optionId ||
+    item.selectedOptionId ||
     item.optionName ||
     item.selectedOptionName ||
+    item.optionDisplayValue ||
+    item.selectedOptionDisplayValue ||
+    item.selectedSize ||
+    item.selectedColour
+  );
+
+  const selectedSize =
+    item.selectedSize ||
+    item.selectedSizeName ||
+    buildOptionDisplayValue(
+      item.selectedSizeValue ||
+      item.optionValue ||
+      item.selectedOptionValue ||
+      "",
+      item.selectedSizeUnit ||
+      item.optionUnit ||
+      item.selectedOptionUnit ||
+      ""
+    );
+
+  const selectedColour =
+    item.selectedColour ||
+    item.selectedColourName ||
+    item.colourName ||
+    item.colorName ||
     "";
 
-  const optionValue =
-    item.optionValue ||
-    item.selectedOptionValue ||
-    "";
-
-  const optionUnit =
-    item.optionUnit ||
-    item.selectedOptionUnit ||
+  const selectedColourCode =
+    item.selectedColourCode ||
+    item.colourCode ||
+    item.colorCode ||
     "";
 
   const optionDisplayValue =
     item.optionDisplayValue ||
     item.selectedOptionDisplayValue ||
-    buildOptionDisplayValue(
-      optionValue,
-      optionUnit
+    (
+      selectedSize && selectedColour
+        ? `${selectedSize} / ${selectedColour}`
+        : selectedSize || selectedColour
     ) ||
-    optionName;
+    item.optionName ||
+    item.selectedOptionName ||
+    "";
 
   const optionSku =
     item.productCode ||
@@ -349,8 +362,11 @@ function createCartItemCard(
       : "";
 
   const imageUrl =
-    item.imageUrl ||
     item.selectedOptionImageUrl ||
+    item.selectedOptionImage ||
+    item.optionImageUrl ||
+    item.optionImage ||
+    item.imageUrl ||
     "";
 
   const isUnavailable =
@@ -366,30 +382,38 @@ function createCartItemCard(
     isUnavailable || quantityTooHigh
   );
 
+  const colourSwatch =
+    /^#[0-9a-f]{6}$/i.test(selectedColourCode)
+      ? `
+          <span
+            class="cart-colour-swatch"
+            style="background:${escapeHtml(selectedColourCode)}"
+            aria-hidden="true"
+          ></span>
+        `
+      : "";
+
   card.innerHTML = `
     <div class="cart-item-img">
       ${
         imageUrl
           ? `
-            <img
-              src="${escapeHtml(imageUrl)}"
-              alt="${escapeHtml(
-                item.title || "Product"
-              )}"
-            >
-          `
+              <img
+                src="${escapeHtml(imageUrl)}"
+                alt="${escapeHtml(item.title || "Product")}"
+              >
+            `
           : `
-            <div class="no-img">
-              No Image
-            </div>
-          `
+              <div class="no-img">
+                No Image
+              </div>
+            `
       }
     </div>
 
     <div class="cart-info">
 
       <div class="cart-product-meta-row">
-
         <span class="badge">
           ${escapeHtml(item.type || "item")}
         </span>
@@ -397,17 +421,12 @@ function createCartItemCard(
         ${
           hasOption
             ? `
-              <span class="cart-option-badge">
-                ${escapeHtml(
-                  optionDisplayValue ||
-                  optionName ||
-                  "Selected option"
-                )}
-              </span>
-            `
+                <span class="cart-option-badge">
+                  ${escapeHtml(optionDisplayValue || "Selected variant")}
+                </span>
+              `
             : ""
         }
-
       </div>
 
       <h3>
@@ -425,99 +444,61 @@ function createCartItemCard(
       ${
         hasOption
           ? `
-            <div class="cart-selected-option-card">
+              <div class="cart-selected-option-card cart-size-colour-card">
 
-              <div class="cart-item-option">
+                <div class="cart-variant-summary">
+                  <span>Selected Variant</span>
+                  <strong>
+                    ${escapeHtml(optionDisplayValue || "Selected variant")}
+                  </strong>
+                </div>
 
-                <span>
-                  Selected ${escapeHtml(optionType)}
-                </span>
+                ${
+                  selectedSize
+                    ? `
+                        <div class="cart-item-size">
+                          <span>Size</span>
+                          <strong>${escapeHtml(selectedSize)}</strong>
+                        </div>
+                      `
+                    : ""
+                }
 
-                <strong>
-                  ${escapeHtml(
-                    optionDisplayValue ||
-                    optionName ||
-                    "Selected option"
-                  )}
-                </strong>
+                ${
+                  selectedColour
+                    ? `
+                        <div class="cart-item-colour">
+                          <span>Colour</span>
+                          <strong class="cart-colour-value">
+                            ${colourSwatch}
+                            ${escapeHtml(selectedColour)}
+                          </strong>
+                        </div>
+                      `
+                    : ""
+                }
+
+                ${
+                  optionSku
+                    ? `
+                        <div class="cart-item-product-code">
+                          <span>Product Code</span>
+                          <strong>${escapeHtml(optionSku)}</strong>
+                        </div>
+                      `
+                    : ""
+                }
 
               </div>
-
-              ${
-                optionValue || optionUnit
-                  ? `
-                    <div class="cart-item-measurement">
-
-                      <span>
-                        Size / Measurement
-                      </span>
-
-                      <strong>
-                        ${escapeHtml(
-                          buildOptionDisplayValue(
-                            optionValue,
-                            optionUnit
-                          ) ||
-                          optionDisplayValue
-                        )}
-                      </strong>
-
-                    </div>
-                  `
-                  : ""
-              }
-
-              ${
-                optionName &&
-                optionDisplayValue &&
-                optionName.toLowerCase() !==
-                  optionDisplayValue.toLowerCase()
-                  ? `
-                    <div>
-
-                      <span>
-                        Option Name
-                      </span>
-
-                      <strong>
-                        ${escapeHtml(optionName)}
-                      </strong>
-
-                    </div>
-                  `
-                  : ""
-              }
-
-              ${
-                optionSku
-                  ? `
-                    <div class="cart-item-product-code">
-
-                      <span>
-                        Product Code
-                      </span>
-
-                      <strong>
-                        ${escapeHtml(optionSku)}
-                      </strong>
-
-                    </div>
-                  `
-                  : ""
-              }
-
-            </div>
-          `
+            `
           : ""
       }
 
       <div class="cart-price-box">
-
         <p>
           <strong>Unit Price:</strong>
           ${formatRs(price)}
         </p>
-
       </div>
 
       <div class="cart-qty-row">
@@ -540,17 +521,17 @@ function createCartItemCard(
         ${
           isProduct
             ? `
-              <small
-                class="cart-item-stock-message
-                ${isUnavailable ? "error" : "muted"}"
-              >
-                ${
-                  isUnavailable
-                    ? "This option is out of stock"
-                    : `${optionStock} available`
-                }
-              </small>
-            `
+                <small
+                  class="cart-item-stock-message
+                  ${isUnavailable ? "error" : "muted"}"
+                >
+                  ${
+                    isUnavailable
+                      ? "This size and colour combination is out of stock"
+                      : `${optionStock} available`
+                  }
+                </small>
+              `
             : ""
         }
 
@@ -559,12 +540,12 @@ function createCartItemCard(
       ${
         quantityTooHigh
           ? `
-            <p class="cart-item-message error">
-              Only ${optionStock}
-              item${optionStock === 1 ? "" : "s"}
-              are available for this option.
-            </p>
-          `
+              <p class="cart-item-message error">
+                Only ${optionStock}
+                item${optionStock === 1 ? "" : "s"}
+                are available for this size and colour.
+              </p>
+            `
           : ""
       }
 
@@ -583,14 +564,12 @@ function createCartItemCard(
     </div>
 
     <div class="cart-actions-side">
-
       <button
         class="danger-btn remove-btn"
         type="button"
       >
         Remove
       </button>
-
     </div>
   `;
 
@@ -636,7 +615,7 @@ function createCartItemCard(
 
         setItemMessage(
           itemMessage,
-          "This product option is currently out of stock.",
+          "This size and colour combination is currently out of stock.",
           "error"
         );
 
@@ -656,8 +635,7 @@ function createCartItemCard(
             optionStock === 1 ? "" : "s"
           } are available for ${
             optionDisplayValue ||
-            optionName ||
-            "this option"
+            "this size and colour"
           }.`,
           "error"
         );
@@ -710,8 +688,7 @@ function createCartItemCard(
     async () => {
       const description =
         optionDisplayValue ||
-        optionName ||
-        "this option";
+        "this item";
 
       const confirmed = window.confirm(
         hasOption
@@ -818,19 +795,47 @@ function updateCartBadge(count) {
 }
 
 function normalizeCartItem(item) {
-  const optionValue = String(
+  const selectedSizeValue = String(
+    item?.selectedSizeValue ??
+    item?.sizeValue ??
     item?.optionValue ??
     item?.selectedOptionValue ??
     item?.measurementValue ??
-    item?.sizeValue ??
     ""
   ).trim();
 
-  const optionUnit = String(
+  const selectedSizeUnit = String(
+    item?.selectedSizeUnit ??
+    item?.sizeUnit ??
     item?.optionUnit ??
     item?.selectedOptionUnit ??
     item?.measurementUnit ??
-    item?.sizeUnit ??
+    ""
+  ).trim();
+
+  const selectedSize =
+    String(
+      item?.selectedSize ??
+      item?.selectedSizeName ??
+      ""
+    ).trim() ||
+    buildOptionDisplayValue(
+      selectedSizeValue,
+      selectedSizeUnit
+    );
+
+  const selectedColour = String(
+    item?.selectedColour ??
+    item?.selectedColourName ??
+    item?.colourName ??
+    item?.colorName ??
+    ""
+  ).trim();
+
+  const selectedColourCode = String(
+    item?.selectedColourCode ??
+    item?.colourCode ??
+    item?.colorCode ??
     ""
   ).trim();
 
@@ -840,9 +845,10 @@ function normalizeCartItem(item) {
       item?.selectedOptionDisplayValue ??
       ""
     ).trim() ||
-    buildOptionDisplayValue(
-      optionValue,
-      optionUnit
+    (
+      selectedSize && selectedColour
+        ? `${selectedSize} / ${selectedColour}`
+        : selectedSize || selectedColour
     ) ||
     String(
       item?.optionName ??
@@ -868,22 +874,39 @@ function normalizeCartItem(item) {
     item?.sku ||
     "";
 
-  const hasOptions =
-    Boolean(
-      item?.hasOptions ||
-      optionId ||
-      optionName ||
-      optionDisplayValue
-    );
+  const hasOptions = Boolean(
+    item?.hasOptions ||
+    optionId ||
+    optionName ||
+    optionDisplayValue ||
+    selectedSize ||
+    selectedColour
+  );
 
   return {
     ...item,
 
     optionId,
     optionName,
-    optionValue,
-    optionUnit,
+    optionValue: selectedSizeValue,
+    optionUnit: selectedSizeUnit,
     optionDisplayValue,
+
+    selectedSize,
+    selectedSizeName:
+      item?.selectedSizeName ||
+      selectedSize,
+
+    selectedSizeValue,
+    selectedSizeUnit,
+
+    selectedColour,
+    selectedColourName:
+      item?.selectedColourName ||
+      selectedColour,
+
+    selectedColourCode,
+
     optionStock:
       item?.optionStock ??
       item?.selectedOptionStock ??
@@ -892,21 +915,46 @@ function normalizeCartItem(item) {
 
     selectedOptionId:
       item?.selectedOptionId || optionId,
+
     selectedOptionName:
-      item?.selectedOptionName || optionName,
+      item?.selectedOptionName ||
+      optionName,
+
     selectedOptionValue:
-      item?.selectedOptionValue || optionValue,
+      item?.selectedOptionValue ||
+      selectedSizeValue,
+
     selectedOptionUnit:
-      item?.selectedOptionUnit || optionUnit,
+      item?.selectedOptionUnit ||
+      selectedSizeUnit,
+
     selectedOptionDisplayValue:
       item?.selectedOptionDisplayValue ||
       optionDisplayValue,
+
     selectedOptionSku:
       item?.selectedOptionSku ||
       productCode,
 
     productCode,
     sku: item?.sku || productCode,
+
+    optionType:
+      item?.optionType ||
+      (
+        selectedSize || selectedColour
+          ? "Size / Colour"
+          : "Option"
+      ),
+
+    variantStructure:
+      item?.variantStructure ||
+      (
+        selectedSize || selectedColour
+          ? "size-colour"
+          : ""
+      ),
+
     hasOptions
   };
 }
