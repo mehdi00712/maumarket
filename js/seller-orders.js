@@ -1,6 +1,6 @@
 /**
  * MauMarket Seller Orders
- * Updated for Size + Colour variants.
+ * Updated for Size + Colour variants and seller-query diagnostics.
  *
  * Supports:
  * - Legacy single sellerId orders
@@ -80,6 +80,19 @@ let currentUser = null;
 let currentSellerData = null;
 let allSellerOrders = [];
 
+let sellerOrderQueryState = {
+  direct: {
+    status: "idle",
+    count: 0,
+    error: null
+  },
+  array: {
+    status: "idle",
+    count: 0,
+    error: null
+  }
+};
+
 /* =========================================================
    MOBILE MENU
    ========================================================= */
@@ -151,78 +164,197 @@ onAuthStateChanged(auth, async (user) => {
 async function loadSellerOrders() {
   if (!sellerOrdersList || !currentUser) return;
 
-  sellerOrdersList.setAttribute("aria-busy", "true");
+  sellerOrdersList.setAttribute(
+    "aria-busy",
+    "true"
+  );
+
   hideSellerOrdersPageMessage();
 
   sellerOrdersList.innerHTML = `
     <div class="seller-orders-loading-state">
-      <div class="seller-orders-loading-spinner" aria-hidden="true"></div>
+      <div
+        class="seller-orders-loading-spinner"
+        aria-hidden="true">
+      </div>
 
       <div>
-        <strong>Loading merchant orders...</strong>
-        <p>MauMarket is retrieving your orders and selected Size + Colour variants.</p>
+        <strong>
+          Loading merchant orders...
+        </strong>
+
+        <p>
+          MauMarket is retrieving your orders and selected
+          Size + Colour variants.
+        </p>
       </div>
     </div>
   `;
 
   if (refreshSellerOrdersBtn) {
     refreshSellerOrdersBtn.disabled = true;
-    refreshSellerOrdersBtn.textContent = "Refreshing...";
+    refreshSellerOrdersBtn.textContent =
+      "Refreshing...";
   }
+
+  sellerOrderQueryState = {
+    direct: {
+      status: "loading",
+      count: 0,
+      error: null
+    },
+    array: {
+      status: "loading",
+      count: 0,
+      error: null
+    }
+  };
 
   try {
     /*
-      MauMarket has used two order ownership formats over time:
+      MauMarket has used two top-level seller ownership formats:
 
       1. sellerId: "uid"
       2. sellerIds: ["uid"]
 
-      Load both formats and merge the results. Promise.allSettled prevents one
-      legacy query from hiding orders returned by the other query.
+      Each query is executed independently so a denied legacy query cannot
+      hide results returned by the valid query.
     */
     const directSellerQuery = query(
       collection(db, "orders"),
-      where("sellerId", "==", currentUser.uid)
+      where(
+        "sellerId",
+        "==",
+        currentUser.uid
+      )
     );
 
     const sellerArrayQuery = query(
       collection(db, "orders"),
-      where("sellerIds", "array-contains", currentUser.uid)
+      where(
+        "sellerIds",
+        "array-contains",
+        currentUser.uid
+      )
     );
 
-    const queryResults = await Promise.allSettled([
+    const [
+      directResult,
+      arrayResult
+    ] = await Promise.allSettled([
       getDocs(directSellerQuery),
       getDocs(sellerArrayQuery)
     ]);
 
     const ordersById = new Map();
 
-    queryResults.forEach((result) => {
-      if (result.status !== "fulfilled") {
-        console.warn(
-          "One seller order compatibility query failed:",
-          result.reason
-        );
-        return;
-      }
+    if (directResult.status === "fulfilled") {
+      sellerOrderQueryState.direct = {
+        status: "fulfilled",
+        count: directResult.value.size,
+        error: null
+      };
 
-      result.value.docs.forEach((docSnap) => {
-        ordersById.set(docSnap.id, {
-          id: docSnap.id,
-          ...docSnap.data()
+      directResult.value.docs.forEach(
+        (docSnap) => {
+          ordersById.set(docSnap.id, {
+            id: docSnap.id,
+            ...docSnap.data()
+          });
+        }
+      );
+
+      console.info(
+        "sellerId order query succeeded:",
+        directResult.value.size,
+        "order(s)"
+      );
+    } else {
+      sellerOrderQueryState.direct = {
+        status: "rejected",
+        count: 0,
+        error: directResult.reason
+      };
+
+      console.error(
+        "sellerId order query failed:",
+        directResult.reason
+      );
+    }
+
+    if (arrayResult.status === "fulfilled") {
+      sellerOrderQueryState.array = {
+        status: "fulfilled",
+        count: arrayResult.value.size,
+        error: null
+      };
+
+      arrayResult.value.docs.forEach(
+        (docSnap) => {
+          ordersById.set(docSnap.id, {
+            id: docSnap.id,
+            ...docSnap.data()
+          });
+        }
+      );
+
+      console.info(
+        "sellerIds array order query succeeded:",
+        arrayResult.value.size,
+        "order(s)"
+      );
+    } else {
+      sellerOrderQueryState.array = {
+        status: "rejected",
+        count: 0,
+        error: arrayResult.reason
+      };
+
+      console.error(
+        "sellerIds array order query failed:",
+        arrayResult.reason
+      );
+    }
+
+    const bothQueriesFailed =
+      directResult.status === "rejected" &&
+      arrayResult.status === "rejected";
+
+    if (bothQueriesFailed) {
+      const directMessage =
+        getFriendlySellerOrderError(
+          directResult.reason,
+          "The sellerId order query was denied."
+        );
+
+      const arrayMessage =
+        getFriendlySellerOrderError(
+          arrayResult.reason,
+          "The sellerIds order query was denied."
+        );
+
+      throw new Error(
+        `${directMessage} ${arrayMessage}`
+      );
+    }
+
+    allSellerOrders =
+      Array.from(ordersById.values())
+        .filter((order) =>
+          orderBelongsToCurrentSeller(order)
+        )
+        .sort((a, b) => {
+          return (
+            getTimestampMilliseconds(
+              b.createdAt
+            ) -
+            getTimestampMilliseconds(
+              a.createdAt
+            )
+          );
         });
-      });
-    });
 
-    allSellerOrders = Array.from(ordersById.values())
-      .filter((order) => orderBelongsToCurrentSeller(order))
-      .sort((a, b) => {
-        return (
-          Number(b.createdAt?.seconds || 0) -
-          Number(a.createdAt?.seconds || 0)
-        );
-      });
-
+    showPartialQueryWarning();
     renderFilteredSellerOrders();
   } catch (error) {
     console.error(
@@ -230,51 +362,109 @@ async function loadSellerOrders() {
       error
     );
 
-    showSellerOrdersPageMessage(
+    const message =
+      error?.message ||
       getFriendlySellerOrderError(
         error,
         "Please refresh the page and try again."
-      ),
+      );
+
+    showSellerOrdersPageMessage(
+      message,
       "error"
     );
 
     sellerOrdersList.innerHTML = `
       <div class="order-card">
-        <h3>Could not load seller orders</h3>
+        <h3>
+          Could not load seller orders
+        </h3>
 
         <p>
-          ${escapeHtml(
-            getFriendlySellerOrderError(
-              error,
-              "Please refresh the page and try again."
-            )
-          )}
+          ${escapeHtml(message)}
         </p>
 
         <button
           id="retrySellerOrdersBtn"
           type="button"
-          class="btn"
-        >
+          class="btn">
           Try Again
         </button>
       </div>
     `;
 
     document
-      .getElementById("retrySellerOrdersBtn")
+      .getElementById(
+        "retrySellerOrdersBtn"
+      )
       ?.addEventListener(
         "click",
         loadSellerOrders
       );
   } finally {
-    sellerOrdersList.setAttribute("aria-busy", "false");
+    sellerOrdersList.setAttribute(
+      "aria-busy",
+      "false"
+    );
 
     if (refreshSellerOrdersBtn) {
       refreshSellerOrdersBtn.disabled = false;
-      refreshSellerOrdersBtn.textContent = "Refresh";
+      refreshSellerOrdersBtn.textContent =
+        "Refresh";
     }
   }
+}
+
+function showPartialQueryWarning() {
+  const directFailed =
+    sellerOrderQueryState.direct.status ===
+    "rejected";
+
+  const arrayFailed =
+    sellerOrderQueryState.array.status ===
+    "rejected";
+
+  if (!directFailed && !arrayFailed) {
+    hideSellerOrdersPageMessage();
+    return;
+  }
+
+  if (directFailed) {
+    showSellerOrdersPageMessage(
+      "Some legacy orders could not be checked because the sellerId query was denied. Orders stored with sellerIds are still shown.",
+      "info"
+    );
+    return;
+  }
+
+  if (arrayFailed) {
+    showSellerOrdersPageMessage(
+      "Some multi-seller orders could not be checked because the sellerIds query was denied. Orders stored with sellerId are still shown.",
+      "info"
+    );
+  }
+}
+
+function getTimestampMilliseconds(value) {
+  if (!value) return 0;
+
+  if (
+    typeof value.toMillis === "function"
+  ) {
+    return value.toMillis();
+  }
+
+  if (
+    Number.isFinite(value.seconds)
+  ) {
+    return value.seconds * 1000;
+  }
+
+  const parsed = new Date(value).getTime();
+
+  return Number.isFinite(parsed)
+    ? parsed
+    : 0;
 }
 
 function renderFilteredSellerOrders() {
@@ -340,14 +530,28 @@ function renderSellerOrderCollection(orders) {
       sellerOrdersCountText.textContent = "0 orders";
     }
 
+    const deniedQueryText =
+      sellerOrderQueryState.direct.status === "rejected" ||
+      sellerOrderQueryState.array.status === "rejected"
+        ? `
+            <p class="muted">
+              One compatibility query was denied, so some older or
+              multi-seller orders may not be visible yet. Check the
+              console to see whether sellerId or sellerIds failed.
+            </p>
+          `
+        : "";
+
     sellerOrdersList.innerHTML = `
       <div class="order-card">
-        <h3>No orders yet</h3>
+        <h3>No accessible orders found</h3>
 
         <p>
-          When customers place orders for your products,
-          they will appear here.
+          No order returned by the seller ownership queries contains
+          your current Firebase seller UID.
         </p>
+
+        ${deniedQueryText}
       </div>
     `;
 
@@ -1606,7 +1810,7 @@ function getFriendlySellerOrderError(
 
   const messages = {
     "permission-denied":
-      "MauMarket could not access your seller orders. Confirm that the deployed Firestore rules allow orders where sellerId matches your account or sellerIds contains your account.",
+      "MauMarket could not access this seller-order query. Confirm that the deployed Firestore rules match the exact queried field and that the order stores your current Firebase UID at the top level.",
 
     "unavailable":
       "MauMarket is temporarily unavailable. Please try again.",
