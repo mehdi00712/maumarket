@@ -1,3 +1,21 @@
+/**
+ * MauMarket Checkout
+ * Updated for Size + Colour variants.
+ *
+ * Preserves the exact selected variant through checkout, order creation,
+ * seller breakdown and pickup stops, including:
+ * - Size
+ * - Colour
+ * - Colour code
+ * - Product code
+ * - Variant image
+ * - Variant stock
+ * - Variant buyer/seller price
+ * - Variant commission
+ *
+ * Backward-compatible with older flat product options.
+ */
+
 import { auth, db, storage } from "./firebase-config.js";
 
 import {
@@ -179,12 +197,143 @@ onAuthStateChanged(auth, async (user) => {
   ]);
 });
 
+
+function normalizeVariantFields(item = {}) {
+  const selectedSizeValue = String(
+    item.selectedSizeValue ??
+    item.sizeValue ??
+    item.selectedOptionValue ??
+    item.optionValue ??
+    item.measurementValue ??
+    ""
+  ).trim();
+
+  const selectedSizeUnit = String(
+    item.selectedSizeUnit ??
+    item.sizeUnit ??
+    item.selectedOptionUnit ??
+    item.optionUnit ??
+    item.measurementUnit ??
+    ""
+  ).trim();
+
+  const selectedSize =
+    String(
+      item.selectedSize ??
+      item.selectedSizeName ??
+      item.sizeName ??
+      item.sizeDisplayValue ??
+      ""
+    ).trim() ||
+    buildOptionDisplayValue(
+      selectedSizeValue,
+      selectedSizeUnit
+    );
+
+  const selectedColour = String(
+    item.selectedColour ??
+    item.selectedColourName ??
+    item.colourName ??
+    item.colorName ??
+    item.colourValue ??
+    item.colorValue ??
+    ""
+  ).trim();
+
+  const selectedColourCode = String(
+    item.selectedColourCode ??
+    item.colourCode ??
+    item.colorCode ??
+    item.colourHex ??
+    item.colorHex ??
+    ""
+  ).trim();
+
+  const selectedOptionDisplayValue =
+    String(
+      item.selectedOptionDisplayValue ??
+      item.optionDisplayValue ??
+      item.displayValue ??
+      ""
+    ).trim() ||
+    (
+      selectedSize && selectedColour
+        ? `${selectedSize} / ${selectedColour}`
+        : selectedSize || selectedColour
+    ) ||
+    String(
+      item.selectedOptionName ??
+      item.optionName ??
+      item.name ??
+      item.label ??
+      ""
+    ).trim();
+
+  const productCode = String(
+    item.productCode ??
+    item.selectedOptionSku ??
+    item.optionSku ??
+    item.sku ??
+    ""
+  ).trim();
+
+  const variantStructure =
+    item.variantStructure ||
+    (
+      selectedSize || selectedColour
+        ? "size-colour"
+        : ""
+    );
+
+  return {
+    selectedSize,
+    selectedSizeName:
+      String(
+        item.selectedSizeName ??
+        item.sizeName ??
+        selectedSize
+      ).trim(),
+
+    selectedSizeValue,
+    selectedSizeUnit,
+
+    selectedColour,
+    selectedColourName:
+      String(
+        item.selectedColourName ??
+        item.colourName ??
+        item.colorName ??
+        selectedColour
+      ).trim(),
+
+    selectedColourCode,
+
+    selectedOptionDisplayValue,
+    productCode,
+    variantStructure
+  };
+}
+
+function buildVariantDisplayValue(item = {}) {
+  const variant = normalizeVariantFields(item);
+
+  return (
+    variant.selectedOptionDisplayValue ||
+    (
+      variant.selectedSize && variant.selectedColour
+        ? `${variant.selectedSize} / ${variant.selectedColour}`
+        : variant.selectedSize || variant.selectedColour
+    ) ||
+    "Selected variant"
+  );
+}
+
 async function loadCheckout() {
   if (!checkoutItems || !currentUser) return;
 
   checkoutItems.innerHTML = `
     <div class="order-card">
-      Loading your checkout...
+      Loading your checkout and selected variants...
     </div>
   `;
 
@@ -307,7 +456,10 @@ async function loadCheckout() {
             hydratedItem.selectedOptionId ||
             hydratedItem.selectedOptionName ||
             hydratedItem.optionId ||
-            hydratedItem.optionName
+            hydratedItem.optionName ||
+            hydratedItem.selectedSize ||
+            hydratedItem.selectedColour ||
+            hydratedItem.selectedColourName
           ),
 
         optionType:
@@ -363,6 +515,8 @@ async function loadCheckout() {
           hydratedItem.productCode ||
           "",
 
+        ...normalizeVariantFields(hydratedItem),
+
         selectedOptionImageIndex:
           hydratedItem.selectedOptionImageIndex ??
           hydratedItem.optionImageIndex ??
@@ -370,7 +524,9 @@ async function loadCheckout() {
 
         selectedOptionImageUrl:
           hydratedItem.selectedOptionImageUrl ||
+          hydratedItem.selectedOptionImage ||
           hydratedItem.optionImageUrl ||
+          hydratedItem.optionImage ||
           hydratedItem.imageUrl ||
           "",
 
@@ -466,19 +622,30 @@ async function loadCheckout() {
 }
 
 function createCheckoutItemElement(item) {
-  const div =
-    document.createElement("div");
+  const div = document.createElement("div");
+  div.className = "checkout-line checkout-pro-line";
 
-  div.className =
-    "checkout-line checkout-pro-line";
-
-  const optionDetails =
-    getItemOptionDetails(item);
+  const optionDetails = getItemOptionDetails(item);
 
   const checkoutImageUrl =
     optionDetails.imageUrl ||
     item.imageUrl ||
     "";
+
+  const colourSwatch =
+    /^#[0-9a-f]{6}$/i.test(
+      optionDetails.selectedColourCode || ""
+    )
+      ? `
+          <span
+            class="checkout-colour-swatch"
+            style="background:${escapeHtml(
+              optionDetails.selectedColourCode
+            )}"
+            aria-hidden="true"
+          ></span>
+        `
+      : "";
 
   div.innerHTML = `
     <div class="checkout-line-main">
@@ -486,15 +653,15 @@ function createCheckoutItemElement(item) {
       ${
         checkoutImageUrl
           ? `
-            <img
-              src="${escapeHtml(checkoutImageUrl)}"
-              alt="${escapeHtml(item.title || "Product")}">
-          `
+              <img
+                src="${escapeHtml(checkoutImageUrl)}"
+                alt="${escapeHtml(item.title || "Product")}">
+            `
           : `
-            <div class="checkout-no-img">
-              No Image
-            </div>
-          `
+              <div class="checkout-no-img">
+                No Image
+              </div>
+            `
       }
 
       <div>
@@ -510,65 +677,77 @@ function createCheckoutItemElement(item) {
         ${
           optionDetails.hasOption
             ? `
-              <div class="checkout-selected-option">
+                <div class="checkout-selected-option checkout-size-colour-option">
 
-                <span>
-                  Selected
-                  ${escapeHtml(optionDetails.optionType)}
-                </span>
+                  <span>
+                    Selected Variant
+                  </span>
 
-                <strong>
-                  ${escapeHtml(
-                    optionDetails.optionDisplayValue ||
-                    optionDetails.optionName
-                  )}
-                </strong>
+                  <strong>
+                    ${escapeHtml(
+                      optionDetails.optionDisplayValue ||
+                      "Selected variant"
+                    )}
+                  </strong>
 
-                ${
-                  optionDetails.optionValue ||
-                  optionDetails.optionUnit
-                    ? `
-                      <small class="checkout-option-measurement">
-                        Size / Measurement:
-                        ${escapeHtml(
-                          buildOptionDisplayValue(
-                            optionDetails.optionValue,
-                            optionDetails.optionUnit
-                          ) ||
-                          optionDetails.optionDisplayValue
-                        )}
-                      </small>
-                    `
-                    : ""
-                }
+                  ${
+                    optionDetails.selectedSize
+                      ? `
+                          <small>
+                            Size:
+                            <strong>
+                              ${escapeHtml(optionDetails.selectedSize)}
+                            </strong>
+                          </small>
+                        `
+                      : ""
+                  }
 
-                ${
-                  optionDetails.optionName &&
-                  optionDetails.optionDisplayValue &&
-                  normalizeText(optionDetails.optionName) !==
-                    normalizeText(optionDetails.optionDisplayValue)
-                    ? `
-                      <small>
-                        Option Name:
-                        ${escapeHtml(optionDetails.optionName)}
-                      </small>
-                    `
-                    : ""
-                }
+                  ${
+                    optionDetails.selectedColour
+                      ? `
+                          <small class="checkout-colour-line">
+                            Colour:
+                            <strong>
+                              ${colourSwatch}
+                              ${escapeHtml(
+                                optionDetails.selectedColour
+                              )}
+                            </strong>
+                          </small>
+                        `
+                      : ""
+                  }
 
-                ${
-                  optionDetails.optionSku
-                    ? `
-                      <small>
-                        Product Code:
-                        ${escapeHtml(optionDetails.optionSku)}
-                      </small>
-                    `
-                    : ""
-                }
+                  ${
+                    optionDetails.optionSku
+                      ? `
+                          <small>
+                            Product Code:
+                            <strong>
+                              ${escapeHtml(optionDetails.optionSku)}
+                            </strong>
+                          </small>
+                        `
+                      : ""
+                  }
 
-              </div>
-            `
+                  ${
+                    optionDetails.stock !== null &&
+                    optionDetails.stock !== undefined
+                      ? `
+                          <small>
+                            Available Stock:
+                            <strong>
+                              ${Number(optionDetails.stock || 0)}
+                            </strong>
+                          </small>
+                        `
+                      : ""
+                  }
+
+                </div>
+              `
             : ""
         }
 
@@ -795,6 +974,61 @@ placeOrderBtn?.addEventListener("click", async () => {
       selectedOptionSku:
         item.selectedOptionSku || "",
 
+      selectedSize:
+        item.selectedSize ||
+        item.selectedSizeName ||
+        buildOptionDisplayValue(
+          item.selectedSizeValue ||
+          item.selectedOptionValue ||
+          item.optionValue ||
+          "",
+          item.selectedSizeUnit ||
+          item.selectedOptionUnit ||
+          item.optionUnit ||
+          ""
+        ) ||
+        "",
+
+      selectedSizeName:
+        item.selectedSizeName ||
+        item.selectedSize ||
+        "",
+
+      selectedSizeValue:
+        item.selectedSizeValue ||
+        item.selectedOptionValue ||
+        item.optionValue ||
+        "",
+
+      selectedSizeUnit:
+        item.selectedSizeUnit ||
+        item.selectedOptionUnit ||
+        item.optionUnit ||
+        "",
+
+      selectedColour:
+        item.selectedColour ||
+        item.selectedColourName ||
+        "",
+
+      selectedColourName:
+        item.selectedColourName ||
+        item.selectedColour ||
+        "",
+
+      selectedColourCode:
+        item.selectedColourCode ||
+        "",
+
+      variantStructure:
+        item.variantStructure ||
+        (
+          item.selectedSize ||
+          item.selectedColour
+            ? "size-colour"
+            : ""
+        ),
+
       selectedOptionImageIndex:
         item.selectedOptionImageIndex ?? null,
 
@@ -867,6 +1101,56 @@ placeOrderBtn?.addEventListener("click", async () => {
 
       optionSku:
         item.selectedOptionSku || "",
+
+      size:
+        item.selectedSize ||
+        item.selectedSizeName ||
+        "",
+
+      sizeName:
+        item.selectedSizeName ||
+        item.selectedSize ||
+        "",
+
+      sizeValue:
+        item.selectedSizeValue ||
+        item.selectedOptionValue ||
+        item.optionValue ||
+        "",
+
+      sizeUnit:
+        item.selectedSizeUnit ||
+        item.selectedOptionUnit ||
+        item.optionUnit ||
+        "",
+
+      colour:
+        item.selectedColour ||
+        item.selectedColourName ||
+        "",
+
+      color:
+        item.selectedColour ||
+        item.selectedColourName ||
+        "",
+
+      colourName:
+        item.selectedColourName ||
+        item.selectedColour ||
+        "",
+
+      colorName:
+        item.selectedColourName ||
+        item.selectedColour ||
+        "",
+
+      colourCode:
+        item.selectedColourCode ||
+        "",
+
+      colorCode:
+        item.selectedColourCode ||
+        "",
 
       optionImageIndex:
         item.selectedOptionImageIndex ?? null,
@@ -941,6 +1225,20 @@ placeOrderBtn?.addEventListener("click", async () => {
 
       optionItemCount:
         orderItems.filter((item) => item.hasOptions === true).length,
+
+      hasSizeColourVariants:
+        orderItems.some(
+          (item) =>
+            item.variantStructure === "size-colour" ||
+            Boolean(item.selectedSize || item.selectedColour)
+        ),
+
+      sizeColourVariantCount:
+        orderItems.filter(
+          (item) =>
+            item.variantStructure === "size-colour" ||
+            Boolean(item.selectedSize || item.selectedColour)
+        ).length,
 
       itemsTotal,
       deliveryFee,
@@ -1115,6 +1413,52 @@ function buildSellerBreakdown(items) {
         item.optionName ||
         "",
       selectedOptionSku: item.selectedOptionSku || "",
+
+      selectedSize:
+        item.selectedSize ||
+        item.selectedSizeName ||
+        "",
+
+      selectedSizeName:
+        item.selectedSizeName ||
+        item.selectedSize ||
+        "",
+
+      selectedSizeValue:
+        item.selectedSizeValue ||
+        item.selectedOptionValue ||
+        item.optionValue ||
+        "",
+
+      selectedSizeUnit:
+        item.selectedSizeUnit ||
+        item.selectedOptionUnit ||
+        item.optionUnit ||
+        "",
+
+      selectedColour:
+        item.selectedColour ||
+        item.selectedColourName ||
+        "",
+
+      selectedColourName:
+        item.selectedColourName ||
+        item.selectedColour ||
+        "",
+
+      selectedColourCode:
+        item.selectedColourCode ||
+        "",
+
+      variantStructure:
+        item.variantStructure ||
+        (
+          item.selectedSize ||
+          item.selectedColour
+            ? "size-colour"
+            : ""
+        ),
+
       productCode:
         item.selectedOptionSku ||
         item.productCode ||
@@ -1203,6 +1547,52 @@ function buildPickupStops(items) {
         item.optionName ||
         "",
       selectedOptionSku: item.selectedOptionSku || "",
+
+      selectedSize:
+        item.selectedSize ||
+        item.selectedSizeName ||
+        "",
+
+      selectedSizeName:
+        item.selectedSizeName ||
+        item.selectedSize ||
+        "",
+
+      selectedSizeValue:
+        item.selectedSizeValue ||
+        item.selectedOptionValue ||
+        item.optionValue ||
+        "",
+
+      selectedSizeUnit:
+        item.selectedSizeUnit ||
+        item.selectedOptionUnit ||
+        item.optionUnit ||
+        "",
+
+      selectedColour:
+        item.selectedColour ||
+        item.selectedColourName ||
+        "",
+
+      selectedColourName:
+        item.selectedColourName ||
+        item.selectedColour ||
+        "",
+
+      selectedColourCode:
+        item.selectedColourCode ||
+        "",
+
+      variantStructure:
+        item.variantStructure ||
+        (
+          item.selectedSize ||
+          item.selectedColour
+            ? "size-colour"
+            : ""
+        ),
+
       productCode:
         item.selectedOptionSku ||
         item.productCode ||
@@ -1609,6 +1999,58 @@ async function hydrateCartItemPricing(rawItem) {
       option?.productCode ||
       "",
 
+    ...normalizeVariantFields({
+      ...option,
+      ...rawItem,
+
+      selectedSize:
+        rawItem.selectedSize ||
+        rawItem.selectedSizeName ||
+        option?.sizeDisplayValue ||
+        option?.sizeName ||
+        "",
+
+      selectedSizeName:
+        rawItem.selectedSizeName ||
+        option?.sizeName ||
+        "",
+
+      selectedSizeValue:
+        rawItem.selectedSizeValue ||
+        rawItem.sizeValue ||
+        option?.sizeValue ||
+        option?.value ||
+        "",
+
+      selectedSizeUnit:
+        rawItem.selectedSizeUnit ||
+        rawItem.sizeUnit ||
+        option?.sizeUnit ||
+        option?.unit ||
+        "",
+
+      selectedColour:
+        rawItem.selectedColour ||
+        rawItem.selectedColourName ||
+        option?.colourName ||
+        option?.colorName ||
+        "",
+
+      selectedColourName:
+        rawItem.selectedColourName ||
+        option?.colourName ||
+        option?.colorName ||
+        "",
+
+      selectedColourCode:
+        rawItem.selectedColourCode ||
+        option?.colourCode ||
+        option?.colorCode ||
+        option?.colourHex ||
+        option?.colorHex ||
+        ""
+    }),
+
     selectedOptionStock:
       rawItem.selectedOptionStock ??
       rawItem.optionStock ??
@@ -1617,8 +2059,11 @@ async function hydrateCartItemPricing(rawItem) {
 
     selectedOptionImageUrl:
       rawItem.selectedOptionImageUrl ||
+      rawItem.selectedOptionImage ||
       rawItem.optionImageUrl ||
+      rawItem.optionImage ||
       option?.imageUrl ||
+      option?.image ||
       getFirstImageUrl(option) ||
       rawItem.imageUrl ||
       product.imageUrl ||
@@ -1637,72 +2082,78 @@ function findSelectedProductOption(
     return null;
   }
 
-  const selectedId =
-    String(
-      cartItem.selectedOptionId ||
-      cartItem.optionId ||
-      ""
-    ).trim();
+  const selectedId = String(
+    cartItem.selectedOptionId ||
+    cartItem.optionId ||
+    ""
+  ).trim();
 
-  const selectedName =
-    normalizeText(
-      cartItem.selectedOptionName ||
-      cartItem.optionName ||
-      ""
-    );
+  const selectedSku = normalizeText(
+    cartItem.selectedOptionSku ||
+    cartItem.optionSku ||
+    cartItem.productCode ||
+    cartItem.sku ||
+    ""
+  );
 
-  const selectedSku =
-    normalizeText(
-      cartItem.selectedOptionSku ||
-      cartItem.optionSku ||
-      cartItem.sku ||
-      ""
-    );
+  const cartVariant = normalizeVariantFields(cartItem);
+
+  const selectedDisplay = normalizeText(
+    cartVariant.selectedOptionDisplayValue
+  );
+
+  const selectedSize = normalizeText(
+    cartVariant.selectedSize
+  );
+
+  const selectedColour = normalizeText(
+    cartVariant.selectedColour
+  );
 
   return (
     options.find((option) => {
-      const optionId =
-        String(
-          option.id ||
-          option.optionId ||
-          option.variantId ||
-          ""
-        ).trim();
+      const optionId = String(
+        option.id ||
+        option.optionId ||
+        option.variantId ||
+        ""
+      ).trim();
+
+      return selectedId && optionId === selectedId;
+    }) ||
+
+    options.find((option) => {
+      const optionSku = normalizeText(
+        option.sku ||
+        option.productCode ||
+        option.code ||
+        ""
+      );
+
+      return selectedSku && optionSku === selectedSku;
+    }) ||
+
+    options.find((option) => {
+      const optionVariant =
+        normalizeVariantFields(option);
 
       return (
-        selectedId &&
-        optionId === selectedId
+        selectedSize &&
+        selectedColour &&
+        normalizeText(optionVariant.selectedSize) === selectedSize &&
+        normalizeText(optionVariant.selectedColour) === selectedColour
       );
     }) ||
 
     options.find((option) => {
-      const optionSku =
-        normalizeText(
-          option.sku ||
-          option.productCode ||
-          option.code ||
-          ""
-        );
+      const optionVariant =
+        normalizeVariantFields(option);
 
       return (
-        selectedSku &&
-        optionSku === selectedSku
-      );
-    }) ||
-
-    options.find((option) => {
-      const optionName =
+        selectedDisplay &&
         normalizeText(
-          option.name ||
-          option.label ||
-          option.value ||
-          option.title ||
-          ""
-        );
-
-      return (
-        selectedName &&
-        optionName === selectedName
+          optionVariant.selectedOptionDisplayValue
+        ) === selectedDisplay
       );
     }) ||
 
@@ -1815,7 +2266,10 @@ function updateCheckoutCounts(items) {
         item.selectedOptionDisplayValue ||
         item.optionDisplayValue ||
         item.selectedOptionName ||
-        item.optionName
+        item.optionName ||
+        item.selectedSize ||
+        item.selectedColour ||
+        item.selectedColourName
       )
   ).length;
 
@@ -1860,9 +2314,12 @@ function toFiniteNumber(
 }
 
 function getItemOptionDetails(item) {
+  const variant = normalizeVariantFields(item);
+
   const optionName =
     item.selectedOptionName ||
     item.optionName ||
+    variant.selectedOptionDisplayValue ||
     "";
 
   const optionValue =
@@ -1870,6 +2327,7 @@ function getItemOptionDetails(item) {
     item.optionValue ||
     item.measurementValue ||
     item.sizeValue ||
+    variant.selectedSizeValue ||
     "";
 
   const optionUnit =
@@ -1877,11 +2335,11 @@ function getItemOptionDetails(item) {
     item.optionUnit ||
     item.measurementUnit ||
     item.sizeUnit ||
+    variant.selectedSizeUnit ||
     "";
 
   const optionDisplayValue =
-    item.selectedOptionDisplayValue ||
-    item.optionDisplayValue ||
+    variant.selectedOptionDisplayValue ||
     buildOptionDisplayValue(
       optionValue,
       optionUnit
@@ -1893,11 +2351,17 @@ function getItemOptionDetails(item) {
     item.optionSku ||
     item.productCode ||
     item.sku ||
+    variant.productCode ||
     "";
 
   const optionType =
     item.optionType ||
-    "Option";
+    (
+      variant.selectedSize ||
+      variant.selectedColour
+        ? "Size / Colour"
+        : "Option"
+    );
 
   const hasOption =
     item.hasOptions === true ||
@@ -1905,7 +2369,9 @@ function getItemOptionDetails(item) {
       item.selectedOptionId ||
       item.optionId ||
       optionName ||
-      optionDisplayValue
+      optionDisplayValue ||
+      variant.selectedSize ||
+      variant.selectedColour
     );
 
   return {
@@ -1917,9 +2383,35 @@ function getItemOptionDetails(item) {
     optionDisplayValue,
     optionSku,
 
+    selectedSize:
+      variant.selectedSize,
+
+    selectedSizeName:
+      variant.selectedSizeName,
+
+    selectedSizeValue:
+      variant.selectedSizeValue,
+
+    selectedSizeUnit:
+      variant.selectedSizeUnit,
+
+    selectedColour:
+      variant.selectedColour,
+
+    selectedColourName:
+      variant.selectedColourName,
+
+    selectedColourCode:
+      variant.selectedColourCode,
+
+    variantStructure:
+      variant.variantStructure,
+
     imageUrl:
       item.selectedOptionImageUrl ||
+      item.selectedOptionImage ||
       item.optionImageUrl ||
+      item.optionImage ||
       item.imageUrl ||
       "",
 
