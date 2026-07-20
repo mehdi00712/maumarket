@@ -158,11 +158,19 @@ async function loadSellerOrders() {
   }
 
   try {
+    /*
+      Use the root sellerId field for the Firestore query.
+
+      Every order created by the current checkout flow stores sellerId on the
+      root order document. An equality query is directly compatible with the
+      Firestore security rule and avoids the permission issue caused by the
+      previous sellerIds array-contains query.
+    */
     const ordersQuery = query(
       collection(db, "orders"),
       where(
-        "sellerIds",
-        "array-contains",
+        "sellerId",
+        "==",
         currentUser.uid
       )
     );
@@ -1332,7 +1340,7 @@ function getFriendlySellerOrderError(
 
   const messages = {
     "permission-denied":
-      "You do not have permission to update this order.",
+      "MauMarket could not access your seller orders. Confirm that the deployed Firestore rules allow orders where sellerId matches your account.",
 
     "unavailable":
       "MauMarket is temporarily unavailable. Please try again.",
