@@ -12,11 +12,65 @@
 
   <meta
     name="description"
-    content="Review your selected MauMarket products, sizes, measurements and options before completing secure checkout."
+    content="Review your selected MauMarket products, sizes, colours and quantities before completing secure checkout."
   >
 
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .cart-size-colour-card {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid #e6e7ef;
+      border-radius: 15px;
+      background: #fafaff;
+    }
+
+    .cart-size-colour-card > div {
+      display: grid;
+      gap: 4px;
+    }
+
+    .cart-size-colour-card span {
+      color: #6b7280;
+      font-size: 0.82rem;
+    }
+
+    .cart-variant-summary {
+      grid-column: 1 / -1;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ececf4;
+    }
+
+    .cart-colour-value {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cart-colour-swatch {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px #d1d5db;
+    }
+
+    @media (max-width: 700px) {
+      .cart-size-colour-card {
+        grid-template-columns: 1fr;
+      }
+
+      .cart-variant-summary {
+        grid-column: auto;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -25,14 +79,9 @@
 
 <main class="container cart-page premium-cart-page">
 
-  <!-- =====================================================
-       CART HERO
-  ====================================================== -->
-
   <section class="cart-hero">
 
     <div>
-
       <span class="hero-badge">
         Secure MauMarket Cart
       </span>
@@ -42,19 +91,16 @@
       </h1>
 
       <p>
-        Review your selected products, quantities, sizes, measurements
-        and variations before completing your secure checkout.
+        Review your selected products, quantities, sizes and colours before
+        completing your secure checkout.
       </p>
 
       <div class="cart-hero-points">
-
         <span>✓ Verified MauMarket Merchants</span>
         <span>✓ Protected Payment</span>
         <span>✓ Managed Delivery</span>
         <span>✓ Buyer Protection</span>
-
       </div>
-
     </div>
 
     <aside class="cart-hero-card">
@@ -76,67 +122,27 @@
 
   </section>
 
-
-  <!-- =====================================================
-       BUYER TRUST STRIP
-  ====================================================== -->
-
   <section class="buyer-trust-strip">
 
     <div class="trust-card">
-
-      <div class="trust-icon">
-        🔒
-      </div>
-
-      <strong>
-        Secure Payment
-      </strong>
-
-      <span>
-        Every payment is reviewed before processing.
-      </span>
-
+      <div class="trust-icon">🔒</div>
+      <strong>Secure Payment</strong>
+      <span>Every payment is reviewed before processing.</span>
     </div>
 
     <div class="trust-card">
-
-      <div class="trust-icon">
-        ✓
-      </div>
-
-      <strong>
-        Verified Merchants
-      </strong>
-
-      <span>
-        All merchants are verified by MauMarket.
-      </span>
-
+      <div class="trust-icon">✓</div>
+      <strong>Verified Merchants</strong>
+      <span>All merchants are verified by MauMarket.</span>
     </div>
 
     <div class="trust-card">
-
-      <div class="trust-icon">
-        🚚
-      </div>
-
-      <strong>
-        MauMarket Delivery
-      </strong>
-
-      <span>
-        Collection and delivery are managed by MauMarket.
-      </span>
-
+      <div class="trust-icon">🚚</div>
+      <strong>MauMarket Delivery</strong>
+      <span>Collection and delivery are managed by MauMarket.</span>
     </div>
 
   </section>
-
-
-  <!-- =====================================================
-       CART LAYOUT
-  ====================================================== -->
 
   <section class="cart-layout">
 
@@ -145,7 +151,6 @@
       <div class="cart-section-head">
 
         <div>
-
           <span class="section-kicker">
             Your Basket
           </span>
@@ -155,25 +160,16 @@
           </h2>
 
           <p>
-            Confirm the selected size, measurement, option and quantity
-            for every product before checkout.
+            Confirm the selected size, colour and quantity for every product
+            before checkout.
           </p>
-
         </div>
 
-        <a
-          href="products.html"
-          class="secondary-btn"
-        >
+        <a href="products.html" class="secondary-btn">
           Continue Shopping
         </a>
 
       </div>
-
-
-      <!-- ===================================================
-           PRIVATE MERCHANT NOTICE
-      ==================================================== -->
 
       <div class="private-merchant-cart-note">
 
@@ -182,7 +178,6 @@
         </div>
 
         <div>
-
           <strong>
             Verified MauMarket Merchants
           </strong>
@@ -191,15 +186,9 @@
             Merchant names, phone numbers and pickup addresses are kept
             private. MauMarket coordinates fulfilment for every order.
           </p>
-
         </div>
 
       </div>
-
-
-      <!-- ===================================================
-           PRODUCT OPTION NOTICE
-      ==================================================== -->
 
       <div
         id="cartOptionsNotice"
@@ -208,28 +197,21 @@
       >
 
         <div class="cart-options-notice-icon">
-          📏
+          🎨
         </div>
 
         <div>
-
           <strong>
-            Product options are saved with your order
+            Your selected size and colour are saved
           </strong>
 
           <p>
-            Sizes such as M or L and measurements such as 45 cm,
-            500 ml or 10 kg will appear below each matching item.
+            Every Size + Colour combination remains a separate cart item with
+            its own price, stock, product code and image.
           </p>
-
         </div>
 
       </div>
-
-
-      <!-- ===================================================
-           CART STATUS / ERROR MESSAGE
-      ==================================================== -->
 
       <p
         id="cartPageMessage"
@@ -238,21 +220,6 @@
         aria-live="assertive"
         hidden
       ></p>
-
-
-      <!-- ===================================================
-           CART ITEMS
-           Fully rendered by js/cart.js
-
-           Each rendered item should use:
-           - data-cart-item-id
-           - data-product-id
-           - data-option-id
-           - .cart-item-option
-           - .cart-item-measurement
-           - .cart-item-product-code
-           - .cart-item-stock-message
-      ==================================================== -->
 
       <div
         id="cartItems"
@@ -269,26 +236,18 @@
           ></div>
 
           <div>
-
             <strong>
               Loading your cart...
             </strong>
 
             <p>
-              MauMarket is retrieving your selected products and options.
+              MauMarket is retrieving your selected products, sizes and colours.
             </p>
-
           </div>
 
         </div>
 
       </div>
-
-
-      <!-- ===================================================
-           EMPTY CART FALLBACK
-           cart.js may show or hide this
-      ==================================================== -->
 
       <section
         id="emptyCartState"
@@ -305,25 +264,16 @@
         </h2>
 
         <p>
-          Browse MauMarket and add products, sizes or measurements
-          to continue.
+          Browse MauMarket and add a product with your preferred size and colour.
         </p>
 
-        <a
-          href="products.html"
-          class="btn"
-        >
+        <a href="products.html" class="btn">
           Browse Products
         </a>
 
       </section>
 
     </section>
-
-
-    <!-- =====================================================
-         CART SUMMARY
-    ====================================================== -->
 
     <aside class="cart-summary-card premium-cart-summary">
 
@@ -336,53 +286,29 @@
       </h2>
 
       <div class="summary-row">
-
-        <span>
-          Items
-        </span>
-
-        <span id="summaryItems">
-          0
-        </span>
-
+        <span>Items</span>
+        <span id="summaryItems">0</span>
       </div>
 
       <div class="summary-row">
-
-        <span>
-          Products Total
-        </span>
-
+        <span>Products Total</span>
         <strong>
           Rs <span id="productsTotal">0</span>
         </strong>
-
       </div>
 
       <div class="summary-row">
-
-        <span>
-          Delivery
-        </span>
-
-        <span>
-          Calculated at checkout
-        </span>
-
+        <span>Delivery</span>
+        <span>Calculated at checkout</span>
       </div>
 
       <hr>
 
       <div class="summary-total">
-
-        <span>
-          Total
-        </span>
-
+        <span>Total</span>
         <strong>
           Rs <span id="cartTotal">0</span>
         </strong>
-
       </div>
 
       <a
@@ -452,12 +378,12 @@
       <div class="cart-option-summary-card">
 
         <strong>
-          Selected Product Options
+          Selected Size and Colour
         </strong>
 
         <p>
-          Your chosen size, colour, measurement, product code and
-          option-specific price will be preserved during checkout.
+          Your chosen size, colour, product code, image and variant-specific
+          price will be preserved during checkout.
         </p>
 
       </div>
@@ -475,7 +401,7 @@
 
 <script
   type="module"
-  src="js/cart.js?v=6.1-product-options"
+  src="js/cart.js?v=10.0-size-colour-variants"
 ></script>
 
 <script src="js/footer.js"></script>
