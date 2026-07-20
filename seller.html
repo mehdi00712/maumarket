@@ -21,6 +21,114 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   >
+
+  <style>
+    .seller-size-groups-list {
+      display: grid;
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .seller-size-group {
+      border: 1px solid rgba(79, 53, 255, 0.18);
+      border-radius: 20px;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 12px 34px rgba(20, 23, 45, 0.07);
+    }
+
+    .seller-size-group-head,
+    .seller-colour-variant-head,
+    .seller-colour-variants-heading,
+    .seller-variant-builder-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .seller-size-fields,
+    .seller-colour-variant-fields {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .seller-colour-variants-heading {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid #ececf4;
+    }
+
+    .seller-colour-variants-heading p,
+    .seller-variant-builder-toolbar p {
+      margin: 4px 0 0;
+      color: #6b7280;
+    }
+
+    .seller-colour-variants-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .seller-colour-variant-row {
+      border: 1px solid #e6e7ef;
+      border-radius: 16px;
+      background: #fafaff;
+      padding: 16px;
+    }
+
+    .seller-remove-size-btn,
+    .seller-remove-colour-btn {
+      border: 0;
+      background: #fff0f0;
+      color: #b42318;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .seller-colour-code-row {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .seller-colour-code-row input[type="color"] {
+      width: 52px;
+      height: 44px;
+      padding: 3px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+      .seller-size-fields,
+      .seller-colour-variant-fields {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .seller-size-fields,
+      .seller-colour-variant-fields {
+        grid-template-columns: 1fr;
+      }
+
+      .seller-size-group-head,
+      .seller-colour-variant-head,
+      .seller-colour-variants-heading,
+      .seller-variant-builder-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+
 </head>
 
 <body>
@@ -1118,12 +1226,12 @@
     </div>
 
     <!-- ===================================================
-         PRODUCT OPTIONS / VARIANTS
+         SIZE + COLOUR VARIANTS
     ==================================================== -->
 
     <section
       id="itemOptionsBuilder"
-      class="seller-options-builder"
+      class="seller-options-builder seller-size-colour-builder"
     >
 
       <div class="seller-options-heading">
@@ -1131,17 +1239,17 @@
         <div>
 
           <span class="section-kicker">
-            Product Options
+            Product Variants
           </span>
 
           <h3>
-            Colours, Sizes and Other Choices
+            Sizes and Colours
           </h3>
 
           <p>
-            Add as many options as needed, such as Red, Blue, Green, Small,
-            Medium or Large. Each option can have its own price, stock,
-            product code and image.
+            Add a size, then add one or more colours under that same size.
+            Every size and colour combination can have its own seller price,
+            stock, product code and image.
           </p>
 
         </div>
@@ -1154,7 +1262,7 @@
           >
 
           <span>
-            This listing has options
+            This product has sizes and colours
           </span>
 
         </label>
@@ -1163,137 +1271,94 @@
 
       <div
         id="itemOptionsSection"
-        class="seller-options-section"
+        class="seller-options-section seller-size-colour-section"
         style="display:none;"
       >
 
-        <div class="seller-option-type-row">
+        <div class="seller-variant-builder-toolbar">
 
-          <div class="form-group">
-
-            <label for="itemOptionType">
-              Option Type
-            </label>
-
-            <input
-              id="itemOptionType"
-              type="text"
-              maxlength="60"
-              placeholder="Example: Colour, Size, Flavour"
-            >
-
+          <div>
+            <strong>Size groups</strong>
+            <p>
+              Example: Small with Red, Blue and Black; Medium with Red and White.
+            </p>
           </div>
 
           <div class="seller-options-summary">
-
-            <span>
-              Options Added
-            </span>
-
-            <strong id="itemOptionsCount">
-              0
-            </strong>
-
+            <span>Variants Added</span>
+            <strong id="itemOptionsCount">0</strong>
           </div>
-
-        </div>
-
-        <div class="seller-options-help">
-
-          <strong>
-            Example:
-          </strong>
-
-          <span>
-            Option type “Colour” with choices Red, Blue and Green.
-          </span>
 
         </div>
 
         <div
-          id="itemOptionsList"
-          class="seller-options-list"
+          id="itemSizesList"
+          class="seller-size-groups-list"
           aria-live="polite"
         ></div>
 
         <button
-          id="addItemOptionBtn"
+          id="addItemSizeBtn"
           type="button"
           class="secondary-btn seller-add-option-btn"
         >
-          + Add Another Option
+          + Add Size
         </button>
 
       </div>
 
     </section>
 
-    <!-- Template cloned by seller.js for unlimited option rows. -->
-    <template id="itemOptionTemplate">
+    <!-- One size group, containing several colour variants. -->
+    <template id="itemSizeGroupTemplate">
 
-      <article class="seller-option-row">
+      <article class="seller-size-group">
 
-        <div class="seller-option-row-head">
+        <div class="seller-size-group-head">
 
           <div>
-
-            <span class="seller-option-number">
-              Option
-            </span>
-
-            <strong class="seller-option-title">
-              New Option
-            </strong>
-
+            <span class="seller-size-number">Size</span>
+            <strong class="seller-size-title">New Size</strong>
           </div>
 
           <button
             type="button"
-            class="seller-remove-option-btn"
-            aria-label="Remove option"
+            class="seller-remove-size-btn"
           >
-            Remove
+            Remove Size
           </button>
 
         </div>
 
-        <div class="seller-option-fields">
+        <div class="seller-size-fields">
 
           <div class="form-group">
 
             <label>
-              Option Name
+              Size Name
             </label>
 
             <input
-              class="item-option-name"
+              class="item-size-name"
               type="text"
               maxlength="80"
-              placeholder="Example: Medium, Large, 45 cm"
+              placeholder="Example: Small, Medium, Large"
             >
-
-            <small class="muted">
-              A descriptive name such as Medium, Large, Red or 45 cm.
-            </small>
 
           </div>
 
           <div class="form-group">
 
             <label>
-              Size / Measurement
+              Size Value
             </label>
 
             <input
-              class="item-option-value"
+              class="item-size-value"
               type="text"
               maxlength="40"
-              placeholder="Example: M, L, 45, 500"
+              placeholder="Example: S, M, L, 42, 45"
             >
-
-            <small class="muted">
-              Enter the exact size, dimension, weight or volume value.
-            </small>
 
           </div>
 
@@ -1303,7 +1368,7 @@
               Unit
             </label>
 
-            <select class="item-option-unit">
+            <select class="item-size-unit">
               <option value="">No unit</option>
               <option value="mm">Millimetres (mm)</option>
               <option value="cm">Centimetres (cm)</option>
@@ -1320,9 +1385,91 @@
               <option value="pair">Pair</option>
             </select>
 
-            <small class="muted">
-              Leave as “No unit” for clothing sizes such as S, M, L or XL.
-            </small>
+          </div>
+
+        </div>
+
+        <div class="seller-colour-variants-heading">
+
+          <div>
+            <strong>Colours for this size</strong>
+            <p>Add each available colour as a separate stock item.</p>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-btn seller-add-colour-btn"
+          >
+            + Add Colour
+          </button>
+
+        </div>
+
+        <div class="seller-colour-variants-list"></div>
+
+      </article>
+
+    </template>
+
+    <!-- One purchasable Size + Colour combination. -->
+    <template id="itemColourVariantTemplate">
+
+      <article class="seller-colour-variant-row">
+
+        <div class="seller-colour-variant-head">
+
+          <strong class="seller-colour-variant-title">
+            New Colour
+          </strong>
+
+          <button
+            type="button"
+            class="seller-remove-colour-btn"
+            aria-label="Remove colour"
+          >
+            Remove
+          </button>
+
+        </div>
+
+        <div class="seller-colour-variant-fields">
+
+          <div class="form-group">
+
+            <label>
+              Colour Name
+            </label>
+
+            <input
+              class="item-colour-name"
+              type="text"
+              maxlength="80"
+              placeholder="Example: Red, Navy Blue, Black"
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Colour Code
+            </label>
+
+            <div class="seller-colour-code-row">
+              <input
+                class="item-colour-hex"
+                type="color"
+                value="#000000"
+                aria-label="Choose colour"
+              >
+
+              <input
+                class="item-colour-code"
+                type="text"
+                maxlength="30"
+                placeholder="#000000"
+              >
+            </div>
 
           </div>
 
@@ -1368,7 +1515,7 @@
               class="item-option-sku"
               type="text"
               maxlength="80"
-              placeholder="Example: SHIRT-M or WOOD-45CM"
+              placeholder="Example: SHIRT-M-RED"
             >
 
           </div>
@@ -1376,31 +1523,15 @@
           <div class="form-group seller-option-image-field">
 
             <label>
-              Option Image
+              Variant Image
             </label>
 
             <select class="item-option-image-index">
-
-              <option value="">
-                Use main image
-              </option>
-
-              <option value="0">
-                Image 1
-              </option>
-
-              <option value="1">
-                Image 2
-              </option>
-
-              <option value="2">
-                Image 3
-              </option>
-
+              <option value="">Use main image</option>
             </select>
 
             <small class="muted">
-              Choose one of the maximum 3 uploaded product images.
+              Choose one of the uploaded product images.
             </small>
 
           </div>
@@ -1660,7 +1791,7 @@
   src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ></script>
 
-<script type="module" src="js/seller-orders.js?v=5.3-dual-query-fix"></script>
+<script type="module" src="js/seller.js?v=10.0-size-colour-variants"></script>
 <script src="js/footer.js"></script>
 
 </body>
