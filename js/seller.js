@@ -2237,10 +2237,39 @@ saveItemBtn?.addEventListener("click", async () => {
     };
 
     if (editingItemId) {
+      /*
+       * Existing ownership fields must never be rewritten by the browser.
+       * Some older product documents contain only sellerId, only shopId,
+       * or only ownerId. Sending new ownership aliases during an update can
+       * cause Firestore Security Rules to reject an otherwise valid edit.
+       */
+      const {
+        sellerId: _ignoredSellerId,
+        shopId: _ignoredShopId,
+        ownerId: _ignoredOwnerId,
+        createdAt: _ignoredCreatedAt,
+        approved: _ignoredApproved,
+        approvalStatus: _ignoredApprovalStatus,
+        approvedAt: _ignoredApprovedAt,
+        approvedBy: _ignoredApprovedBy,
+        rejectedAt: _ignoredRejectedAt,
+        rejectedBy: _ignoredRejectedBy,
+        rejectReason: _ignoredRejectReason,
+        moderationStatus: _ignoredModerationStatus,
+        moderatedAt: _ignoredModeratedAt,
+        moderatedBy: _ignoredModeratedBy,
+        featured: _ignoredFeatured,
+        featuredAt: _ignoredFeaturedAt,
+        featuredBy: _ignoredFeaturedBy,
+        platformCommission: _ignoredPlatformCommission,
+        platformFee: _ignoredPlatformFee,
+        ...editableItemData
+      } = itemData;
+
       await updateDoc(
         doc(db, "products", editingItemId),
         {
-          ...itemData,
+          ...editableItemData,
           updatedAt: serverTimestamp()
         }
       );
@@ -2296,15 +2325,30 @@ saveItemBtn?.addEventListener("click", async () => {
     resetItemForm();
     await loadMyItems();
   } catch (error) {
-    console.error("Could not save item:", error);
+    console.error("Could not save item:", {
+      code: error?.code || "",
+      message: error?.message || String(error),
+      editingItemId,
+      sellerUid: currentUser?.uid || ""
+    });
+
+    const permissionDenied =
+      error?.code === "permission-denied" ||
+      String(error?.message || "").toLowerCase().includes(
+        "missing or insufficient permissions"
+      );
 
     setMessage(
       itemMessage,
-      error.message ||
-        getFriendlySellerError(
-          error,
-          "The item could not be saved."
-        ),
+      permissionDenied
+        ? "MauMarket could not update this item because its saved owner does not match your seller account. Refresh the page and try again after deploying the updated Firestore rules."
+        : (
+            error?.message ||
+            getFriendlySellerError(
+              error,
+              "The item could not be saved."
+            )
+          ),
       "error"
     );
   } finally {
