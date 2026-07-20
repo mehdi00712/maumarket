@@ -1,3 +1,16 @@
+/**
+ * MauMarket Seller Orders
+ * Updated for Size + Colour variants.
+ *
+ * Supports:
+ * - Legacy single sellerId orders
+ * - New sellerIds array orders
+ * - Size + Colour variant display
+ * - Variant image, product code, stock and pricing
+ * - Seller earnings and commission calculations
+ * - Seller preparation workflow
+ */
+
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -147,7 +160,7 @@ async function loadSellerOrders() {
 
       <div>
         <strong>Loading merchant orders...</strong>
-        <p>MauMarket is retrieving your orders and selected product options.</p>
+        <p>MauMarket is retrieving your orders and selected Size + Colour variants.</p>
       </div>
     </div>
   `;
@@ -293,6 +306,11 @@ function renderFilteredSellerOrders() {
           ${item.selectedOptionValue || item.optionValue || ""}
           ${item.selectedOptionUnit || item.optionUnit || ""}
           ${item.selectedOptionDisplayValue || item.optionDisplayValue || ""}
+          ${item.selectedSize || item.selectedSizeName || item.sizeName || ""}
+          ${item.selectedSizeValue || item.sizeValue || ""}
+          ${item.selectedSizeUnit || item.sizeUnit || ""}
+          ${item.selectedColour || item.selectedColourName || item.colourName || item.colorName || ""}
+          ${item.selectedColourCode || item.colourCode || item.colorCode || ""}
           ${item.selectedOptionSku || item.optionSku || item.productCode || item.sku || ""}
         `).join(" ")}
       `);
@@ -501,6 +519,144 @@ function getSellerItems(order) {
     : [];
 
   return pickupItems;
+}
+
+
+function normalizeSellerOrderVariant(item = {}) {
+  const selectedSizeValue = String(
+    item.selectedSizeValue ??
+    item.sizeValue ??
+    item.selectedOptionValue ??
+    item.optionValue ??
+    item.measurementValue ??
+    ""
+  ).trim();
+
+  const selectedSizeUnit = String(
+    item.selectedSizeUnit ??
+    item.sizeUnit ??
+    item.selectedOptionUnit ??
+    item.optionUnit ??
+    item.measurementUnit ??
+    ""
+  ).trim();
+
+  const selectedSize =
+    String(
+      item.selectedSize ??
+      item.selectedSizeName ??
+      item.sizeName ??
+      item.sizeDisplayValue ??
+      ""
+    ).trim() ||
+    buildOptionDisplayValue(
+      selectedSizeValue,
+      selectedSizeUnit
+    );
+
+  const selectedColour = String(
+    item.selectedColour ??
+    item.selectedColourName ??
+    item.colourName ??
+    item.colorName ??
+    item.colourValue ??
+    item.colorValue ??
+    item.colour ??
+    item.color ??
+    ""
+  ).trim();
+
+  const selectedColourCode = String(
+    item.selectedColourCode ??
+    item.colourCode ??
+    item.colorCode ??
+    item.colourHex ??
+    item.colorHex ??
+    ""
+  ).trim();
+
+  const optionDisplayValue =
+    String(
+      item.selectedOptionDisplayValue ??
+      item.optionDisplayValue ??
+      item.displayValue ??
+      ""
+    ).trim() ||
+    (
+      selectedSize && selectedColour
+        ? `${selectedSize} / ${selectedColour}`
+        : selectedSize || selectedColour
+    ) ||
+    String(
+      item.selectedOptionName ??
+      item.optionName ??
+      item.name ??
+      item.label ??
+      ""
+    ).trim();
+
+  const productCode = String(
+    item.selectedOptionSku ??
+    item.optionSku ??
+    item.productCode ??
+    item.sku ??
+    ""
+  ).trim();
+
+  return {
+    selectedSize,
+    selectedSizeName:
+      String(
+        item.selectedSizeName ??
+        item.sizeName ??
+        selectedSize
+      ).trim(),
+
+    selectedSizeValue,
+    selectedSizeUnit,
+
+    selectedColour,
+    selectedColourName:
+      String(
+        item.selectedColourName ??
+        item.colourName ??
+        item.colorName ??
+        selectedColour
+      ).trim(),
+
+    selectedColourCode,
+
+    optionDisplayValue,
+    productCode,
+
+    variantStructure:
+      item.variantStructure ||
+      (
+        selectedSize || selectedColour
+          ? "size-colour"
+          : ""
+      ),
+
+    imageUrl:
+      item.selectedOptionImageUrl ||
+      item.selectedOptionImage ||
+      item.optionImageUrl ||
+      item.optionImage ||
+      item.imageUrl ||
+      "",
+
+    stock:
+      item.selectedOptionStock ??
+      item.optionStock ??
+      item.variantStock ??
+      null
+  };
+}
+
+function isHexColour(value) {
+  return /^#[0-9a-f]{6}$/i.test(
+    String(value || "").trim()
+  );
 }
 
 /* =========================================================
@@ -865,98 +1021,60 @@ function createSellerOrderCard(
    ========================================================= */
 
 function renderSellerOrderItem(item) {
-  const quantity =
-    Math.max(
-      1,
-      Number(item.quantity || 1)
-    );
+  const quantity = Math.max(
+    1,
+    Number(item.quantity || 1)
+  );
 
-  const buyerPrice =
-    getBuyerPrice(item);
-
-  const sellerPrice =
-    getSellerPrice(item);
-
+  const buyerPrice = getBuyerPrice(item);
+  const sellerPrice = getSellerPrice(item);
   const commissionAmount =
     getCommissionAmount(item);
 
-  const buyerSubtotal =
-    roundMoney(
-      buyerPrice * quantity
-    );
+  const buyerSubtotal = roundMoney(
+    buyerPrice * quantity
+  );
 
-  const sellerSubtotal =
-    roundMoney(
-      sellerPrice * quantity
-    );
+  const sellerSubtotal = roundMoney(
+    sellerPrice * quantity
+  );
 
-  const commissionSubtotal =
-    roundMoney(
-      commissionAmount * quantity
-    );
+  const commissionSubtotal = roundMoney(
+    commissionAmount * quantity
+  );
 
-  const optionType =
-    item.optionType ||
-    "Option";
-
-  const optionName =
-    item.selectedOptionName ||
-    item.optionName ||
-    "";
-
-  const optionValue =
-    item.selectedOptionValue ||
-    item.optionValue ||
-    item.measurementValue ||
-    item.sizeValue ||
-    "";
-
-  const optionUnit =
-    item.selectedOptionUnit ||
-    item.optionUnit ||
-    item.measurementUnit ||
-    item.sizeUnit ||
-    "";
-
-  const optionDisplayValue =
-    item.selectedOptionDisplayValue ||
-    item.optionDisplayValue ||
-    buildOptionDisplayValue(
-      optionValue,
-      optionUnit
-    ) ||
-    optionName;
-
-  const optionSku =
-    item.selectedOptionSku ||
-    item.optionSku ||
-    item.productCode ||
-    item.sku ||
-    "";
+  const variant =
+    normalizeSellerOrderVariant(item);
 
   const hasOption =
     hasProductOption(item);
 
-  const imageUrl =
-    item.selectedOptionImageUrl ||
-    item.optionImageUrl ||
-    item.imageUrl ||
-    "";
-
-  const stockValue =
-    item.selectedOptionStock ??
-    item.optionStock ??
-    null;
+  const colourSwatch =
+    isHexColour(
+      variant.selectedColourCode
+    )
+      ? `
+          <span
+            class="seller-order-colour-swatch"
+            style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.2);background:${escapeHtml(
+              variant.selectedColourCode
+            )};vertical-align:-2px;margin-right:6px;"
+            aria-hidden="true"
+          ></span>
+        `
+      : "";
 
   const stockInfo =
-    stockValue !== null &&
-    stockValue !== undefined
+    variant.stock !== null &&
+    variant.stock !== undefined
       ? `
-        <span>
-          <strong>Option stock when ordered:</strong>
-          ${Number(stockValue || 0)}
-        </span>
-      `
+          <span>
+            <strong>
+              Variant stock when ordered:
+            </strong>
+            ${Number(variant.stock || 0)}
+          </span>
+        `
       : "";
 
   return `
@@ -965,21 +1083,21 @@ function renderSellerOrderItem(item) {
       <div class="seller-order-item-image">
 
         ${
-          imageUrl
+          variant.imageUrl
             ? `
-              <img
-                src="${escapeHtml(imageUrl)}"
-                alt="${escapeHtml(
-                  item.title ||
-                  "Product"
-                )}"
-              >
-            `
+                <img
+                  src="${escapeHtml(variant.imageUrl)}"
+                  alt="${escapeHtml(
+                    item.title ||
+                    "Product"
+                  )}"
+                >
+              `
             : `
-              <div class="no-img">
-                No Image
-              </div>
-            `
+                <div class="no-img">
+                  No Image
+                </div>
+              `
         }
 
       </div>
@@ -1015,89 +1133,86 @@ function renderSellerOrderItem(item) {
         ${
           hasOption
             ? `
-              <div class="seller-order-option-card">
+                <div class="seller-order-option-card seller-order-size-colour-card">
 
-                <div>
+                  <div>
 
-                  <span>
-                    Selected ${escapeHtml(optionType)}
-                  </span>
+                    <span>
+                      Selected Variant
+                    </span>
 
-                  <strong>
-                    ${escapeHtml(
-                      optionDisplayValue ||
-                      optionName ||
-                      "Selected option"
-                    )}
-                  </strong>
+                    <strong>
+                      ${escapeHtml(
+                        variant.optionDisplayValue ||
+                        "Selected variant"
+                      )}
+                    </strong>
+
+                  </div>
+
+                  ${
+                    variant.selectedSize
+                      ? `
+                          <div>
+
+                            <span>
+                              Size
+                            </span>
+
+                            <strong>
+                              ${escapeHtml(
+                                variant.selectedSize
+                              )}
+                            </strong>
+
+                          </div>
+                        `
+                      : ""
+                  }
+
+                  ${
+                    variant.selectedColour
+                      ? `
+                          <div>
+
+                            <span>
+                              Colour
+                            </span>
+
+                            <strong>
+                              ${colourSwatch}
+                              ${escapeHtml(
+                                variant.selectedColour
+                              )}
+                            </strong>
+
+                          </div>
+                        `
+                      : ""
+                  }
+
+                  ${
+                    variant.productCode
+                      ? `
+                          <div>
+
+                            <span>
+                              Product Code
+                            </span>
+
+                            <strong>
+                              ${escapeHtml(
+                                variant.productCode
+                              )}
+                            </strong>
+
+                          </div>
+                        `
+                      : ""
+                  }
 
                 </div>
-
-                ${
-                  optionValue || optionUnit
-                    ? `
-                      <div>
-
-                        <span>
-                          Size / Measurement
-                        </span>
-
-                        <strong>
-                          ${escapeHtml(
-                            buildOptionDisplayValue(
-                              optionValue,
-                              optionUnit
-                            ) ||
-                            optionDisplayValue
-                          )}
-                        </strong>
-
-                      </div>
-                    `
-                    : ""
-                }
-
-                ${
-                  optionName &&
-                  optionDisplayValue &&
-                  normalizeText(optionName) !==
-                    normalizeText(optionDisplayValue)
-                    ? `
-                      <div>
-
-                        <span>
-                          Option Name
-                        </span>
-
-                        <strong>
-                          ${escapeHtml(optionName)}
-                        </strong>
-
-                      </div>
-                    `
-                    : ""
-                }
-
-                ${
-                  optionSku
-                    ? `
-                      <div>
-
-                        <span>
-                          Product Code
-                        </span>
-
-                        <strong>
-                          ${escapeHtml(optionSku)}
-                        </strong>
-
-                      </div>
-                    `
-                    : ""
-                }
-
-              </div>
-            `
+              `
             : ""
         }
 
@@ -1132,6 +1247,9 @@ function renderSellerOrderItem(item) {
 }
 
 function hasProductOption(item) {
+  const variant =
+    normalizeSellerOrderVariant(item || {});
+
   return Boolean(
     item?.hasOptions === true ||
     item?.selectedOptionId ||
@@ -1139,7 +1257,11 @@ function hasProductOption(item) {
     item?.selectedOptionName ||
     item?.optionName ||
     item?.selectedOptionDisplayValue ||
-    item?.optionDisplayValue
+    item?.optionDisplayValue ||
+    variant.selectedSize ||
+    variant.selectedColour ||
+    variant.variantStructure ===
+      "size-colour"
   );
 }
 
@@ -1257,31 +1379,47 @@ function renderStats(
    ========================================================= */
 
 function getBuyerPrice(item) {
+  const selectedVariantBuyerPrice =
+    firstPositiveNumber([
+      item?.selectedOptionBuyerPrice,
+      item?.optionBuyerPrice,
+      item?.variantBuyerPrice,
+      item?.selectedOptionPrice,
+      item?.optionPrice,
+      item?.variantPrice
+    ]);
+
+  if (selectedVariantBuyerPrice > 0) {
+    return roundMoney(
+      selectedVariantBuyerPrice
+    );
+  }
+
   const buyerPrice =
-    Number(item?.buyerPrice || 0);
+    firstPositiveNumber([
+      item?.buyerPrice,
+      item?.price
+    ]);
 
   if (buyerPrice > 0) {
     return roundMoney(buyerPrice);
   }
 
-  const price =
-    Number(item?.price || 0);
-
-  if (price > 0) {
-    return roundMoney(price);
-  }
-
   const sellerPrice =
-    Number(item?.sellerPrice || 0);
+    firstPositiveNumber([
+      item?.selectedOptionSellerPrice,
+      item?.optionSellerPrice,
+      item?.variantSellerPrice,
+      item?.sellerPrice
+    ]);
 
   if (sellerPrice > 0) {
     return roundMoney(
       sellerPrice *
       (
         1 +
-        Number(
-          item?.commissionRate ??
-          COMMISSION_RATE
+        normalizeCommissionRate(
+          item?.commissionRate
         )
       )
     );
@@ -1291,8 +1429,23 @@ function getBuyerPrice(item) {
 }
 
 function getSellerPrice(item) {
+  const selectedVariantSellerPrice =
+    firstPositiveNumber([
+      item?.selectedOptionSellerPrice,
+      item?.optionSellerPrice,
+      item?.variantSellerPrice
+    ]);
+
+  if (selectedVariantSellerPrice > 0) {
+    return roundMoney(
+      selectedVariantSellerPrice
+    );
+  }
+
   const sellerPrice =
-    Number(item?.sellerPrice || 0);
+    firstPositiveNumber([
+      item?.sellerPrice
+    ]);
 
   if (sellerPrice > 0) {
     return roundMoney(sellerPrice);
@@ -1306,9 +1459,8 @@ function getSellerPrice(item) {
       buyerPrice /
       (
         1 +
-        Number(
-          item?.commissionRate ??
-          COMMISSION_RATE
+        normalizeCommissionRate(
+          item?.commissionRate
         )
       )
     );
@@ -1318,14 +1470,17 @@ function getSellerPrice(item) {
 }
 
 function getCommissionAmount(item) {
-  const commissionAmount =
-    Number(
-      item?.commissionAmount || 0
-    );
+  const explicitCommission =
+    firstPositiveNumber([
+      item?.selectedOptionCommissionAmount,
+      item?.optionCommissionAmount,
+      item?.variantCommissionAmount,
+      item?.commissionAmount
+    ]);
 
-  if (commissionAmount > 0) {
+  if (explicitCommission > 0) {
     return roundMoney(
-      commissionAmount
+      explicitCommission
     );
   }
 
@@ -1341,6 +1496,34 @@ function getCommissionAmount(item) {
       buyerPrice - sellerPrice
     )
   );
+}
+
+function normalizeCommissionRate(value) {
+  const rate = Number(value);
+
+  if (
+    !Number.isFinite(rate) ||
+    rate < 0
+  ) {
+    return COMMISSION_RATE;
+  }
+
+  return rate;
+}
+
+function firstPositiveNumber(values) {
+  for (const value of values) {
+    const number = Number(value);
+
+    if (
+      Number.isFinite(number) &&
+      number > 0
+    ) {
+      return number;
+    }
+  }
+
+  return 0;
 }
 
 /* =========================================================
@@ -1423,7 +1606,7 @@ function getFriendlySellerOrderError(
 
   const messages = {
     "permission-denied":
-      "MauMarket could not access your seller orders. Confirm that the deployed Firestore rules allow orders where sellerId matches your account.",
+      "MauMarket could not access your seller orders. Confirm that the deployed Firestore rules allow orders where sellerId matches your account or sellerIds contains your account.",
 
     "unavailable":
       "MauMarket is temporarily unavailable. Please try again.",
