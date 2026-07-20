@@ -1,7 +1,10 @@
 /**
  * MauMarket Product Details
- * Updated option labels and automatic size detection.
- * V4: polished option cards, cleaner selected-option display and option-image support.
+ * Size -> Colour variant selector.
+ *
+ * Customers choose a size first, then choose one of the colours available
+ * for that exact size. Price, stock, product code and image update from the
+ * selected Size + Colour variant.
  */
 
 import { auth, db } from "./firebase-config.js";
@@ -25,8 +28,8 @@ import {
 /* =========================================================
    MAUMARKET PRODUCT DETAILS
    - Up to 3 product images
-   - Unlimited product options
-   - Option-specific size/measurement, unit, price, stock, SKU and image
+   - Size groups with colours belonging to each size
+   - Variant-specific price, stock, product code and image
    - Wishlist, cart, reviews and related products
    - Backward-compatible with older products
    ========================================================= */
@@ -65,6 +68,7 @@ let isWishlisted = false;
 let productImages = [];
 let productOptions = [];
 let selectedOptionId = "";
+let selectedSizeKey = "";
 let selectedImageIndex = 0;
 
 onAuthStateChanged(auth, async (user) => {
@@ -110,7 +114,8 @@ async function loadDetails() {
 
     productImages = normalizeProductImages(currentItem);
     productOptions = normalizeProductOptions(currentItem);
-    selectedOptionId =
+
+    const firstAvailableVariant =
       productOptions.find(
         (option) =>
           option.active !== false &&
@@ -118,7 +123,16 @@ async function loadDetails() {
             currentItem.type !== "product" ||
             Number(option.stock || 0) > 0
           )
-      )?.id || "";
+      ) || productOptions[0] || null;
+
+    selectedSizeKey =
+      firstAvailableVariant
+        ? getVariantSizeKey(firstAvailableVariant)
+        : "";
+
+    selectedOptionId =
+      firstAvailableVariant?.id || "";
+
     selectedImageIndex = 0;
 
     await Promise.all([
@@ -203,51 +217,111 @@ function normalizeProductOptions(item) {
           ? Number(option.imageIndex)
           : null;
 
-      const value = String(
-        option.value ??
-        option.measurementValue ??
-        option.sizeValue ??
+      const rawDisplayValue = String(
+        option.displayValue ||
+        option.name ||
+        option.label ||
         ""
       ).trim();
 
-      const unit = String(
+      const displayParts = rawDisplayValue
+        .split("/")
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+      const sizeValue = String(
+        option.sizeValue ??
+        option.value ??
+        option.measurementValue ??
+        displayParts[0] ??
+        ""
+      ).trim();
+
+      const sizeUnit = String(
+        option.sizeUnit ??
         option.unit ??
         option.measurementUnit ??
-        option.sizeUnit ??
+        ""
+      ).trim();
+
+      const sizeName = String(
+        option.sizeName ||
+        option.sizeLabel ||
+        displayParts[0] ||
+        sizeValue ||
+        `Size ${index + 1}`
+      ).trim();
+
+      const sizeDisplayValue =
+        String(option.sizeDisplayValue || "").trim() ||
+        buildOptionDisplayValue(sizeValue, sizeUnit) ||
+        sizeName;
+
+      const colourName = String(
+        option.colourName ||
+        option.colorName ||
+        option.colour ||
+        option.color ||
+        displayParts[1] ||
+        (
+          String(option.optionType || "").toLowerCase().includes("colour")
+            ? option.value
+            : ""
+        ) ||
+        "Default"
+      ).trim();
+
+      const colourCode = String(
+        option.colourCode ||
+        option.colorCode ||
+        option.colourHex ||
+        option.colorHex ||
         ""
       ).trim();
 
       const displayValue =
-        String(option.displayValue || "").trim() ||
-        buildOptionDisplayValue(value, unit);
+        colourName && colourName !== "Default"
+          ? `${sizeDisplayValue} / ${colourName}`
+          : sizeDisplayValue;
 
-      const explicitName = String(
-        option.name ||
-        option.label ||
-        option.optionName ||
-        option.type ||
-        ""
-      ).trim();
-
-      const name = explicitName || `Option ${index + 1}`;
+      const id =
+        option.id ||
+        option.variantId ||
+        `variant-${index + 1}`;
 
       return {
-        id: option.id || `option-${index + 1}`,
-        name,
-        label: option.label || name,
-        optionType: String(
-          option.optionType ||
-          option.type ||
-          ""
-        ).trim(),
+        ...option,
+        id,
+        variantId: option.variantId || id,
 
-        value,
-        unit,
-        displayValue: displayValue || name,
-        measurementValue: value,
-        measurementUnit: unit,
-        sizeValue: value,
-        sizeUnit: unit,
+        name: displayValue,
+        label: displayValue,
+        optionType: "Size / Colour",
+
+        value: sizeValue,
+        unit: sizeUnit,
+        displayValue,
+
+        measurementValue: sizeValue,
+        measurementUnit: sizeUnit,
+
+        sizeId:
+          option.sizeId ||
+          sanitizeVariantKey(sizeDisplayValue),
+
+        sizeName,
+        sizeValue,
+        sizeUnit,
+        sizeDisplayValue,
+
+        colourName,
+        colorName: colourName,
+        colourValue: colourName,
+        colorValue: colourName,
+        colourCode,
+        colorCode: colourCode,
+        colourHex: colourCode,
+        colorHex: colourCode,
 
         sellerPrice,
         buyerPrice,
@@ -257,24 +331,102 @@ function normalizeProductOptions(item) {
           buyerPrice ||
           0
         ),
+
         commissionRate: Number(
           option.commissionRate ?? COMMISSION_RATE
         ),
+
         commissionAmount: Number(
           option.commissionAmount || 0
         ),
+
         stock: Math.max(0, Number(option.stock || 0)),
-        sku: option.sku || option.productCode || "",
-        productCode: option.productCode || option.sku || "",
+
+        sku:
+          option.sku ||
+          option.productCode ||
+          "",
+
+        productCode:
+          option.productCode ||
+          option.sku ||
+          "",
+
         imageIndex: Number.isInteger(imageIndex)
           ? imageIndex
           : null,
-        image: option.image || option.imageUrl || "",
-        imageUrl: option.imageUrl || option.image || "",
+
+        image:
+          option.image ||
+          option.imageUrl ||
+          "",
+
+        imageUrl:
+          option.imageUrl ||
+          option.image ||
+          "",
+
         active: option.active !== false
       };
     })
     .filter((option) => option.active !== false);
+}
+
+function getVariantSizeKey(option) {
+  return String(
+    option?.sizeId ||
+    option?.sizeDisplayValue ||
+    option?.sizeValue ||
+    option?.value ||
+    ""
+  ).trim().toLowerCase();
+}
+
+function sanitizeVariantKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getSizeGroups() {
+  const groups = new Map();
+
+  productOptions.forEach((option) => {
+    const key = getVariantSizeKey(option);
+    if (!key) return;
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        name:
+          option.sizeDisplayValue ||
+          buildOptionDisplayValue(
+            option.sizeValue,
+            option.sizeUnit
+          ) ||
+          option.sizeName ||
+          option.sizeValue ||
+          "Size",
+        options: []
+      });
+    }
+
+    groups.get(key).options.push(option);
+  });
+
+  return Array.from(groups.values());
+}
+
+function getSelectedSizeGroup() {
+  const groups = getSizeGroups();
+
+  return (
+    groups.find((group) => group.key === selectedSizeKey) ||
+    groups[0] ||
+    null
+  );
 }
 
 function getSelectedOption() {
@@ -482,6 +634,32 @@ async function toggleWishlist() {
           "",
         selectedOptionSku: selectedOption?.sku || "",
         productCode: selectedOption?.productCode || selectedOption?.sku || "",
+
+        selectedSize:
+          selectedOption?.sizeDisplayValue ||
+          selectedOption?.sizeName ||
+          selectedOption?.sizeValue ||
+          "",
+
+        selectedSizeName:
+          selectedOption?.sizeName || "",
+
+        selectedSizeValue:
+          selectedOption?.sizeValue || "",
+
+        selectedSizeUnit:
+          selectedOption?.sizeUnit || "",
+
+        selectedColour:
+          selectedOption?.colourName ||
+          selectedOption?.colorName ||
+          "",
+
+        selectedColourCode:
+          selectedOption?.colourCode ||
+          selectedOption?.colorCode ||
+          "",
+
         publicMerchantLabel: "Verified MauMarket Merchant",
         addedAt: serverTimestamp()
       }, { merge: true });
@@ -702,98 +880,168 @@ function renderGalleryHtml() {
 function renderOptionsHtml() {
   if (productOptions.length === 0) return "";
 
-  const type = getEffectiveOptionType();
+  const sizeGroups = getSizeGroups();
+  const selectedSizeGroup = getSelectedSizeGroup();
+  const colours = selectedSizeGroup?.options || [];
 
   return `
-    <section class="product-options-panel">
+    <section class="product-options-panel product-size-colour-panel">
+
       <div class="product-options-panel-head">
         <div>
           <span class="section-kicker">
-            Choose ${escapeHtml(type)}
+            Choose your variant
           </span>
 
           <h3>
-            Available ${escapeHtml(type)}${type.toLowerCase().endsWith("option") ? "s" : " Options"}
+            Select Size and Colour
           </h3>
 
           <p class="muted">
-            Select the exact size, measurement, colour or variation you want.
+            Choose a size first. MauMarket will then show only the colours
+            available for that size.
           </p>
         </div>
 
         <span>
           ${productOptions.length}
-          choice${productOptions.length === 1 ? "" : "s"}
+          variant${productOptions.length === 1 ? "" : "s"}
         </span>
       </div>
 
-      <div
-        id="productOptionChoices"
-        class="product-option-choices"
-        role="radiogroup"
-        aria-label="${escapeHtml(type)} options"
-      >
-        ${productOptions.map((option) => {
-          const active = option.id === selectedOptionId;
-          const outOfStock =
-            currentItem.type === "product" &&
-            Number(option.stock || 0) <= 0;
+      <div class="product-variant-step">
 
-          const displayLabel = getOptionCardPrimaryLabel(option);
-          const secondaryLabel = getOptionCardSecondaryLabel(option);
+        <div class="product-variant-step-head">
+          <strong>1. Choose Size</strong>
+          <span>
+            ${selectedSizeGroup
+              ? escapeHtml(selectedSizeGroup.name)
+              : "Not selected"}
+          </span>
+        </div>
 
-          return `
-            <button
-              type="button"
-              role="radio"
-              aria-checked="${active ? "true" : "false"}"
-              aria-label="${escapeHtml(
-                `${displayLabel}, ${
-                  outOfStock
-                    ? "out of stock"
-                    : formatRs(getBuyerPrice(option))
-                }`
-              )}"
-              class="product-option-choice
-                ${active ? "active selected-option-choice" : ""}
-                ${outOfStock ? "out-of-stock" : ""}"
-              data-option-id="${escapeHtml(option.id)}"
-              ${outOfStock ? "disabled" : ""}
-            >
-              <span class="product-option-choice-name">
-                ${escapeHtml(displayLabel)}
-              </span>
+        <div
+          id="productSizeChoices"
+          class="product-size-choices"
+          role="radiogroup"
+          aria-label="Available sizes"
+        >
+          ${sizeGroups.map((group) => {
+            const active = group.key === selectedSizeKey;
+            const availableCount = group.options.filter(
+              (option) =>
+                currentItem.type !== "product" ||
+                Number(option.stock || 0) > 0
+            ).length;
 
-              ${
-                secondaryLabel
-                  ? `
-                    <span class="product-option-choice-measurement">
-                      ${escapeHtml(secondaryLabel)}
-                    </span>
-                  `
-                  : ""
-              }
+            const unavailable = availableCount === 0;
 
-              <small>
-                ${
-                  outOfStock
+            return `
+              <button
+                type="button"
+                role="radio"
+                aria-checked="${active ? "true" : "false"}"
+                class="product-size-choice
+                  ${active ? "active selected-size-choice" : ""}
+                  ${unavailable ? "out-of-stock" : ""}"
+                data-size-key="${escapeHtml(group.key)}"
+                ${unavailable ? "disabled" : ""}
+              >
+                <strong>${escapeHtml(group.name)}</strong>
+                <small>
+                  ${unavailable
                     ? "Out of stock"
-                    : `${formatRs(getBuyerPrice(option))} · ${getStockText(option.stock)}`
-                }
-              </small>
+                    : `${availableCount} colour${availableCount === 1 ? "" : "s"}`}
+                </small>
+              </button>
+            `;
+          }).join("")}
+        </div>
 
-              ${
-                option.productCode || option.sku
-                  ? `
-                    <small class="product-option-choice-code">
-                      Code: ${escapeHtml(option.productCode || option.sku)}
-                    </small>
-                  `
-                  : ""
-              }
-            </button>
-          `;
-        }).join("")}
+      </div>
+
+      <div class="product-variant-step">
+
+        <div class="product-variant-step-head">
+          <strong>2. Choose Colour</strong>
+          <span>
+            ${selectedSizeGroup
+              ? `${colours.length} available`
+              : "Choose a size first"}
+          </span>
+        </div>
+
+        <div
+          id="productColourChoices"
+          class="product-colour-choices"
+          role="radiogroup"
+          aria-label="Available colours"
+        >
+          ${selectedSizeGroup
+            ? colours.map((option) => {
+                const active =
+                  option.id === selectedOptionId;
+
+                const outOfStock =
+                  currentItem.type === "product" &&
+                  Number(option.stock || 0) <= 0;
+
+                const swatchStyle =
+                  /^#[0-9a-f]{6}$/i.test(
+                    option.colourCode || ""
+                  )
+                    ? `style="background:${escapeHtml(option.colourCode)}"`
+                    : "";
+
+                return `
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="${active ? "true" : "false"}"
+                    class="product-colour-choice
+                      ${active ? "active selected-colour-choice" : ""}
+                      ${outOfStock ? "out-of-stock" : ""}"
+                    data-colour-option-id="${escapeHtml(option.id)}"
+                    ${outOfStock ? "disabled" : ""}
+                  >
+                    <span
+                      class="product-colour-swatch"
+                      ${swatchStyle}
+                      aria-hidden="true"
+                    ></span>
+
+                    <span class="product-colour-choice-copy">
+                      <strong>
+                        ${escapeHtml(option.colourName || "Default")}
+                      </strong>
+
+                      <small>
+                        ${outOfStock
+                          ? "Out of stock"
+                          : `${formatRs(getBuyerPrice(option))} · ${getStockText(option.stock)}`}
+                      </small>
+
+                      ${option.productCode || option.sku
+                        ? `
+                            <small class="product-option-choice-code">
+                              Code: ${escapeHtml(
+                                option.productCode ||
+                                option.sku
+                              )}
+                            </small>
+                          `
+                        : ""}
+                    </span>
+                  </button>
+                `;
+              }).join("")
+            : `
+                <p class="muted">
+                  Select a size to view its available colours.
+                </p>
+              `}
+        </div>
+
       </div>
 
       <p
@@ -802,26 +1050,82 @@ function renderOptionsHtml() {
         role="alert"
         hidden
       ></p>
+
     </section>
   `;
 }
 
 function wireRenderedEvents() {
-  document.getElementById("addToCartBtn")?.addEventListener("click", addToCart);
-  document.getElementById("wishlistBtn")?.addEventListener("click", toggleWishlist);
-  document.getElementById("productRatingButton")?.addEventListener("click", scrollToReviews);
+  document
+    .getElementById("addToCartBtn")
+    ?.addEventListener("click", addToCart);
 
-  document.querySelectorAll("[data-image-index]").forEach((button) => {
-    button.addEventListener("click", () => {
-      selectGalleryImage(Number(button.dataset.imageIndex));
-    });
-  });
+  document
+    .getElementById("wishlistBtn")
+    ?.addEventListener("click", toggleWishlist);
 
-  document.querySelectorAll("[data-option-id]").forEach((button) => {
-    button.addEventListener("click", () => {
-      selectProductOption(button.dataset.optionId || "");
+  document
+    .getElementById("productRatingButton")
+    ?.addEventListener("click", scrollToReviews);
+
+  document
+    .querySelectorAll("[data-image-index]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        selectGalleryImage(
+          Number(button.dataset.imageIndex)
+        );
+      });
     });
-  });
+
+  document
+    .querySelectorAll("[data-size-key]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        selectProductSize(
+          button.dataset.sizeKey || ""
+        );
+      });
+    });
+
+  document
+    .querySelectorAll("[data-colour-option-id]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        selectProductOption(
+          button.dataset.colourOptionId || ""
+        );
+      });
+    });
+}
+
+function selectProductSize(sizeKey) {
+  const group = getSizeGroups().find(
+    (entry) => entry.key === sizeKey
+  );
+
+  if (!group) return;
+
+  selectedSizeKey = group.key;
+
+  const firstAvailable =
+    group.options.find(
+      (option) =>
+        currentItem.type !== "product" ||
+        Number(option.stock || 0) > 0
+    ) ||
+    group.options[0] ||
+    null;
+
+  selectedOptionId =
+    firstAvailable?.id || "";
+
+  if (firstAvailable) {
+    synchronizeVariantImage(firstAvailable);
+  }
+
+  hideOptionError();
+  renderDetails();
 }
 
 function selectProductOption(optionId) {
@@ -835,13 +1139,21 @@ function selectProductOption(optionId) {
     currentItem.type === "product" &&
     Number(option.stock || 0) <= 0
   ) {
-    showOptionError("This option is currently out of stock.");
+    showOptionError(
+      "This colour is currently out of stock for the selected size."
+    );
     return;
   }
 
+  selectedSizeKey = getVariantSizeKey(option);
   selectedOptionId = option.id;
-  hideOptionError();
 
+  synchronizeVariantImage(option);
+  hideOptionError();
+  renderDetails();
+}
+
+function synchronizeVariantImage(option) {
   if (
     option.imageIndex !== null &&
     option.imageIndex >= 0 &&
@@ -855,9 +1167,6 @@ function selectProductOption(optionId) {
     selectedImageIndex =
       productImages.indexOf(option.imageUrl);
   }
-
-  renderDetails();
-  renderStaticOptionsFallback();
 }
 
 function selectGalleryImage(index) {
@@ -877,334 +1186,51 @@ function selectGalleryImage(index) {
 }
 
 function renderStaticOptionsFallback() {
+  /*
+    The complete Size -> Colour selector is rendered inside the main product
+    card. Keep the old external container hidden for compatibility with older
+    product-details.html versions.
+  */
   if (!productOptionsFallback) return;
 
-  if (productOptions.length === 0) {
-    productOptionsFallback.hidden = true;
-    productOptionsFallback.style.display = "none";
-    return;
-  }
-
-  const type = getEffectiveOptionType();
-  const selectedOption = getSelectedOption();
-
-  productOptionsFallback.hidden = false;
-  productOptionsFallback.style.display = "block";
-
-  if (productOptionTypeTitle) {
-    productOptionTypeTitle.textContent =
-      `Choose ${type}`;
-  }
-
-  if (productOptionsHelpText) {
-    productOptionsHelpText.textContent =
-      `Select the exact ${type.toLowerCase()}, size, measurement or variation before adding this item to your cart.`;
-  }
-
-  if (productOptionsList) {
-    productOptionsList.innerHTML = productOptions
-      .map((option) => {
-        const active = option.id === selectedOptionId;
-        const outOfStock =
-          currentItem?.type === "product" &&
-          Number(option.stock || 0) <= 0;
-
-        return `
-          <button
-            type="button"
-            role="radio"
-            aria-checked="${active ? "true" : "false"}"
-            class="product-option-choice
-              ${active ? "active selected-option-choice" : ""}
-              ${outOfStock ? "out-of-stock" : ""}"
-            data-fallback-option-id="${escapeHtml(option.id)}"
-            ${outOfStock ? "disabled" : ""}
-          >
-            <span class="product-option-choice-name">
-              ${escapeHtml(getOptionCardPrimaryLabel(option))}
-            </span>
-
-            ${
-              getOptionCardSecondaryLabel(option)
-                ? `
-                    <span class="product-option-choice-measurement">
-                      ${escapeHtml(getOptionCardSecondaryLabel(option))}
-                    </span>
-                  `
-                : ""
-            }
-
-            <small>
-              ${
-                outOfStock
-                  ? "Out of stock"
-                  : `${formatRs(getBuyerPrice(option))} · ${getStockText(option.stock)}`
-              }
-            </small>
-
-            ${
-              option.productCode || option.sku
-                ? `
-                    <small class="product-option-choice-code">
-                      Code: ${escapeHtml(option.productCode || option.sku)}
-                    </small>
-                  `
-                : ""
-            }
-          </button>
-        `;
-      })
-      .join("");
-
-    productOptionsList
-      .querySelectorAll("[data-fallback-option-id]")
-      .forEach((button) => {
-        button.addEventListener("click", () => {
-          selectProductOption(
-            button.dataset.fallbackOptionId || ""
-          );
-        });
-      });
-  }
-
-  if (productSelectedOptionSummary) {
-    productSelectedOptionSummary.hidden = !selectedOption;
-  }
-
-  if (selectedOptionText) {
-    selectedOptionText.textContent = selectedOption
-      ? getOptionDisplayLabel(selectedOption)
-      : "None";
-  }
-
-  if (selectedOptionDetails) {
-    selectedOptionDetails.hidden = !selectedOption;
-  }
-
-  if (selectedOptionPrice) {
-    selectedOptionPrice.textContent = selectedOption
-      ? formatRs(getBuyerPrice(selectedOption))
-      : "—";
-  }
-
-  if (selectedOptionStock) {
-    selectedOptionStock.textContent = selectedOption
-      ? getStockText(selectedOption.stock)
-      : "—";
-  }
-
-  if (selectedOptionCodeRow) {
-    selectedOptionCodeRow.hidden =
-      !(selectedOption?.productCode || selectedOption?.sku);
-  }
-
-  if (selectedOptionCode) {
-    selectedOptionCode.textContent =
-      selectedOption?.productCode || selectedOption?.sku || "—";
-  }
-
-  const measurement =
-    selectedOption
-      ? buildOptionDisplayValue(
-          selectedOption.value,
-          selectedOption.unit
-        )
-      : "";
-
-  if (selectedOptionMeasurementRow) {
-    selectedOptionMeasurementRow.hidden =
-      !measurement;
-  }
-
-  if (selectedOptionMeasurement) {
-    selectedOptionMeasurement.textContent =
-      measurement || "—";
-  }
+  productOptionsFallback.hidden = true;
+  productOptionsFallback.style.display = "none";
 }
 
 function getEffectiveOptionType() {
-  const rawType = String(
-    currentItem?.optionType ||
-    currentItem?.variationType ||
-    currentItem?.optionName ||
-    ""
-  ).trim();
-
-  const aliases = {
-    size: "Size",
-    sizes: "Size",
-    colour: "Colour",
-    color: "Colour",
-    colours: "Colour",
-    colors: "Colour",
-    weight: "Weight",
-    weights: "Weight",
-    length: "Length",
-    width: "Width",
-    height: "Height",
-    volume: "Volume",
-    capacity: "Capacity",
-    material: "Material",
-    style: "Style",
-    model: "Model",
-    pack: "Pack",
-    quantity: "Quantity",
-    measurement: "Measurement",
-    measurements: "Measurement",
-    variation: "Option",
-    variant: "Option",
-    option: "Option"
-  };
-
-  const normalizedRawType = rawType.toLowerCase();
-
-  /*
-    "Option", "Variant" and "Variation" are generic labels.
-    Do not return them before inspecting the real option values.
-    Otherwise numeric values such as 50 and 100 remain displayed as
-    generic options instead of being recognised as sizes.
-  */
-  const genericTypes = new Set([
-    "",
-    "option",
-    "options",
-    "variant",
-    "variants",
-    "variation",
-    "variations"
-  ]);
-
-  if (
-    normalizedRawType &&
-    !genericTypes.has(normalizedRawType) &&
-    aliases[normalizedRawType]
-  ) {
-    return aliases[normalizedRawType];
-  }
-
-  const declaredTypes = productOptions
-    .map((option) => String(option.optionType || "").trim().toLowerCase())
-    .filter(Boolean);
-
-  const specificDeclaredType = declaredTypes.find(
-    (value) =>
-      !genericTypes.has(value) &&
-      aliases[value]
-  );
-
-  if (specificDeclaredType) {
-    return aliases[specificDeclaredType];
-  }
-
-  const units = productOptions
-    .map((option) => String(option.unit || "").trim().toLowerCase())
-    .filter(Boolean);
-
-  if (units.some((unit) => ["g", "kg"].includes(unit))) return "Weight";
-  if (units.some((unit) => ["ml", "l", "litre", "liter"].includes(unit))) return "Capacity";
-  if (units.some((unit) => ["mm", "cm", "m", "in", "ft"].includes(unit))) return "Size";
-
-  /*
-    Older MauMarket products sometimes saved the visible size in option.name
-    instead of option.value. Inspect every usable visible field so values such
-    as "50" and "100" are still recognised as sizes.
-  */
-  const values = productOptions
-    .map((option) => {
-      return String(
-        option.value ||
-        option.displayValue ||
-        option.name ||
-        option.label ||
-        ""
-      ).trim();
-    })
-    .filter(Boolean)
-    .map((value) => value.replace(/^size\s*[:\-]?\s*/i, "").trim());
-
-  const allNumeric =
-    values.length > 0 &&
-    values.every((value) => /^-?\d+(?:[.,]\d+)?$/.test(value));
-
-  if (allNumeric) return "Size";
-
-  const commonColours = new Set([
-    "red", "blue", "green", "black", "white", "yellow", "orange",
-    "purple", "pink", "grey", "gray", "brown", "gold", "silver",
-    "beige", "navy", "maroon", "teal", "turquoise"
-  ]);
-
-  if (
-    values.length > 0 &&
-    values.every((value) => commonColours.has(value.toLowerCase()))
-  ) {
-    return "Colour";
-  }
-
-  return "Option";
+  return productOptions.length > 0
+    ? "Size and Colour"
+    : "Option";
 }
 
 function getOptionCardPrimaryLabel(option) {
-  const type = getEffectiveOptionType();
-
-  const displayValue = String(
-    option?.value ||
+  return String(
+    option?.colourName ||
+    option?.colorName ||
     option?.displayValue ||
     option?.name ||
-    option?.label ||
-    getOptionDisplayLabel(option) ||
-    ""
+    "Colour"
   ).trim();
-
-  if (!displayValue) return type;
-
-  if (
-    type === "Option" ||
-    displayValue.toLowerCase().startsWith(type.toLowerCase())
-  ) {
-    return displayValue;
-  }
-
-  return `${type}: ${displayValue}`;
 }
 
 function getSelectedOptionValueLabel(option) {
   return String(
     option?.displayValue ||
-    buildOptionDisplayValue(
-      option?.value,
-      option?.unit
-    ) ||
-    option?.value ||
-    option?.name ||
-    option?.label ||
-    "Selected option"
-  ).trim();
+    `${option?.sizeDisplayValue || option?.sizeValue || ""} / ${option?.colourName || option?.colorName || ""}` ||
+    "Selected variant"
+  ).replace(/\s*\/\s*$/, "").trim();
 }
 
 function getOptionCardSecondaryLabel(option) {
-  const type = getEffectiveOptionType();
-  const explicitName = String(option?.name || option?.label || "").trim();
-
-  const genericNames = [
-    "option", "size", "colour", "color", "weight", "length",
-    "width", "height", "volume", "capacity", "measurement"
-  ];
-
-  if (
-    explicitName &&
-    !genericNames.includes(explicitName.toLowerCase()) &&
-    !/^option\s+\d+$/i.test(explicitName) &&
-    explicitName.toLowerCase() !== getOptionDisplayLabel(option).toLowerCase()
-  ) {
-    return explicitName;
-  }
-
-  /*
-    Do not show redundant labels such as "Size option".
-    Only return genuinely useful extra information.
-  */
-  return "";
+  return String(
+    option?.sizeDisplayValue ||
+    buildOptionDisplayValue(
+      option?.sizeValue,
+      option?.sizeUnit
+    ) ||
+    option?.sizeName ||
+    ""
+  ).trim();
 }
 
 function buildOptionDisplayValue(value, unit) {
@@ -1321,7 +1347,7 @@ async function addToCart() {
 
   if (productOptions.length > 0 && !selectedOption) {
     const errorText =
-      `Please choose a ${getEffectiveOptionType().toLowerCase()} first.`;
+      "Please choose a size and colour first.";
 
     setMessage(message, errorText, "error");
     showOptionError(errorText);
@@ -1405,6 +1431,41 @@ async function addToCart() {
           "",
         selectedOptionSku: selectedOption?.sku || "",
         sku: selectedOption?.sku || "",
+
+        selectedSize:
+          selectedOption?.sizeDisplayValue ||
+          selectedOption?.sizeName ||
+          selectedOption?.sizeValue ||
+          "",
+
+        selectedSizeName:
+          selectedOption?.sizeName || "",
+
+        selectedSizeValue:
+          selectedOption?.sizeValue || "",
+
+        selectedSizeUnit:
+          selectedOption?.sizeUnit || "",
+
+        selectedColour:
+          selectedOption?.colourName ||
+          selectedOption?.colorName ||
+          "",
+
+        selectedColourName:
+          selectedOption?.colourName ||
+          selectedOption?.colorName ||
+          "",
+
+        selectedColourCode:
+          selectedOption?.colourCode ||
+          selectedOption?.colorCode ||
+          "",
+
+        variantStructure: selectedOption
+          ? "size-colour"
+          : "",
+
         productCode:
           selectedOption?.productCode ||
           selectedOption?.sku ||
@@ -1429,7 +1490,7 @@ async function addToCart() {
     setMessage(
       message,
       selectedOption
-        ? `${getEffectiveOptionType()}: ${getSelectedOptionValueLabel(selectedOption)} added to your cart.`
+        ? `${getSelectedOptionValueLabel(selectedOption)} added to your cart.`
         : "Product added to your cart.",
       "success"
     );
@@ -1579,7 +1640,7 @@ function createRelatedCard(item) {
         : `<div class="no-img">No Image</div>`}
 
       ${options.length > 0
-        ? `<span class="product-options-count-badge">${options.length} options</span>`
+        ? `<span class="product-options-count-badge">${options.length} variants</span>`
         : ""}
     </div>
 
@@ -1591,7 +1652,7 @@ function createRelatedCard(item) {
         ${rating > 0 ? `⭐ ${rating.toFixed(1)} (${totalReviews})` : "⭐ No reviews yet"}
       </p>
       <p class="pro-price">${options.length > 0 ? `From ${formatRs(buyerPrice)}` : formatRs(buyerPrice)}</p>
-      <a class="btn" href="product-detail.html?id=${encodeURIComponent(item.id)}">View Details</a>
+      <a class="btn" href="product-details.html?id=${encodeURIComponent(item.id)}">View Details</a>
     </div>
   `;
 
