@@ -159,35 +159,50 @@ async function loadSellerOrders() {
 
   try {
     /*
-      Use the root sellerId field for the Firestore query.
+      MauMarket has used two order ownership formats over time:
 
-      Every order created by the current checkout flow stores sellerId on the
-      root order document. An equality query is directly compatible with the
-      Firestore security rule and avoids the permission issue caused by the
-      previous sellerIds array-contains query.
+      1. sellerId: "uid"
+      2. sellerIds: ["uid"]
+
+      Load both formats and merge the results. Promise.allSettled prevents one
+      legacy query from hiding orders returned by the other query.
     */
-    const ordersQuery = query(
+    const directSellerQuery = query(
       collection(db, "orders"),
-      where(
-        "sellerId",
-        "==",
-        currentUser.uid
-      )
+      where("sellerId", "==", currentUser.uid)
     );
 
-    const snapshot = await getDocs(ordersQuery);
+    const sellerArrayQuery = query(
+      collection(db, "orders"),
+      where("sellerIds", "array-contains", currentUser.uid)
+    );
 
-    allSellerOrders = snapshot.docs
-      .map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      }))
-      .filter((order) => {
-        return Array.isArray(order.items) &&
-          order.items.some(
-            (item) => item.sellerId === currentUser.uid
-          );
-      })
+    const queryResults = await Promise.allSettled([
+      getDocs(directSellerQuery),
+      getDocs(sellerArrayQuery)
+    ]);
+
+    const ordersById = new Map();
+
+    queryResults.forEach((result) => {
+      if (result.status !== "fulfilled") {
+        console.warn(
+          "One seller order compatibility query failed:",
+          result.reason
+        );
+        return;
+      }
+
+      result.value.docs.forEach((docSnap) => {
+        ordersById.set(docSnap.id, {
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+    });
+
+    allSellerOrders = Array.from(ordersById.values())
+      .filter((order) => orderBelongsToCurrentSeller(order))
       .sort((a, b) => {
         return (
           Number(b.createdAt?.seconds || 0) -
@@ -412,12 +427,80 @@ function renderSellerOrderCollection(orders) {
   }
 }
 
+function orderBelongsToCurrentSeller(order) {
+  if (!currentUser || !order) return false;
+
+  const uid = currentUser.uid;
+
+  if (order.sellerId === uid) return true;
+
+  if (
+    Array.isArray(order.sellerIds) &&
+    order.sellerIds.includes(uid)
+  ) {
+    return true;
+  }
+
+  if (
+    Array.isArray(order.items) &&
+    order.items.some((item) => item?.sellerId === uid)
+  ) {
+    return true;
+  }
+
+  if (
+    Array.isArray(order.pickupStops) &&
+    order.pickupStops.some((stop) => stop?.sellerId === uid)
+  ) {
+    return true;
+  }
+
+  if (
+    Array.isArray(order.sellerBreakdown) &&
+    order.sellerBreakdown.some(
+      (entry) => entry?.sellerId === uid
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function getSellerItems(order) {
-  return Array.isArray(order?.items)
-    ? order.items.filter(
-        (item) => item.sellerId === currentUser.uid
-      )
+  const uid = currentUser?.uid || "";
+
+  if (!Array.isArray(order?.items)) return [];
+
+  const directItems = order.items.filter(
+    (item) => item?.sellerId === uid
+  );
+
+  if (directItems.length > 0) {
+    return directItems;
+  }
+
+  const breakdownItems = Array.isArray(order.sellerBreakdown)
+    ? order.sellerBreakdown
+        .filter((entry) => entry?.sellerId === uid)
+        .flatMap((entry) =>
+          Array.isArray(entry.items) ? entry.items : []
+        )
     : [];
+
+  if (breakdownItems.length > 0) {
+    return breakdownItems;
+  }
+
+  const pickupItems = Array.isArray(order.pickupStops)
+    ? order.pickupStops
+        .filter((stop) => stop?.sellerId === uid)
+        .flatMap((stop) =>
+          Array.isArray(stop.items) ? stop.items : []
+        )
+    : [];
+
+  return pickupItems;
 }
 
 /* =========================================================
