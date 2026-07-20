@@ -12,18 +12,137 @@
 
   <meta
     name="description"
-    content="View MauMarket product details, available sizes and options, secure payment information, verified reviews and island-wide delivery protection."
+    content="View MauMarket product details, choose an available size and colour, review buyer feedback and shop with MauMarket delivery protection."
   >
 
   <meta name="theme-color" content="#4f35ff">
 
-  <!--
-    The previous favicon.ico reference was removed because no favicon.ico
-    currently exists at https://maumarket.mu/favicon.ico.
-    Add it back after uploading a real favicon file to the website root.
-  -->
-
   <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .product-size-colour-panel {
+      display: grid;
+      gap: 20px;
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid rgba(79, 53, 255, 0.16);
+      border-radius: 20px;
+      background: #fafaff;
+    }
+
+    .product-variant-step {
+      display: grid;
+      gap: 12px;
+    }
+
+    .product-variant-step-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .product-variant-step-head > span {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+
+    .product-size-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .product-size-choice {
+      min-width: 92px;
+      display: grid;
+      gap: 3px;
+      padding: 12px 16px;
+      border: 1px solid #dedfec;
+      border-radius: 13px;
+      background: #fff;
+      color: #111827;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.2s ease;
+    }
+
+    .product-size-choice:hover:not(:disabled),
+    .product-size-choice.active {
+      border-color: #4f35ff;
+      box-shadow: 0 0 0 3px rgba(79, 53, 255, 0.11);
+      transform: translateY(-1px);
+    }
+
+    .product-size-choice small {
+      color: #6b7280;
+    }
+
+    .product-colour-choices {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .product-colour-choice {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 74px;
+      padding: 13px;
+      border: 1px solid #dedfec;
+      border-radius: 15px;
+      background: #fff;
+      color: #111827;
+      cursor: pointer;
+      text-align: left;
+      transition: 0.2s ease;
+    }
+
+    .product-colour-choice:hover:not(:disabled),
+    .product-colour-choice.active {
+      border-color: #4f35ff;
+      box-shadow: 0 0 0 3px rgba(79, 53, 255, 0.11);
+      transform: translateY(-1px);
+    }
+
+    .product-colour-swatch {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ececf4, #c9cad7);
+      box-shadow: 0 0 0 1px #d1d5db;
+    }
+
+    .product-colour-choice-copy {
+      display: grid;
+      gap: 3px;
+    }
+
+    .product-colour-choice-copy small {
+      color: #6b7280;
+    }
+
+    .product-size-choice.out-of-stock,
+    .product-colour-choice.out-of-stock {
+      opacity: 0.48;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+
+    @media (max-width: 680px) {
+      .product-colour-choices {
+        grid-template-columns: 1fr;
+      }
+
+      .product-variant-step-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -31,10 +150,6 @@
 <!-- Navigation is injected automatically by nav.js -->
 
 <main class="product-page private-merchant-product-page premium-product-details-page">
-
-  <!-- =====================================================
-       COMPACT PAGE INTRO
-  ====================================================== -->
 
   <section class="product-page-hero private-product-hero premium-product-hero">
 
@@ -49,50 +164,26 @@
       </h1>
 
       <p>
-        Review product information, available sizes and options, buyer
-        feedback, secure payment details and MauMarket delivery protection.
+        Review product information, choose your size and colour, read verified
+        buyer feedback and shop with MauMarket delivery protection.
       </p>
 
       <div class="private-product-hero-points">
-
-        <span>
-          ✓ Verified MauMarket Merchant
-        </span>
-
-        <span>
-          ✓ Secure payment review
-        </span>
-
-        <span>
-          ✓ MauMarket-managed delivery
-        </span>
-
-        <span>
-          ✓ Buyer support included
-        </span>
-
+        <span>✓ Verified MauMarket Merchant</span>
+        <span>✓ Secure payment review</span>
+        <span>✓ MauMarket-managed delivery</span>
+        <span>✓ Buyer support included</span>
       </div>
 
     </div>
 
     <div class="premium-product-hero-actions">
-
-      <a
-        href="products.html"
-        class="secondary-btn"
-      >
+      <a href="products.html" class="secondary-btn">
         ← Back to Marketplace
       </a>
-
     </div>
 
   </section>
-
-
-  <!-- =====================================================
-       PRODUCT DETAILS ROOT
-       Fully rendered by product-details.js
-  ====================================================== -->
 
   <section
     id="detailsBox"
@@ -100,91 +191,40 @@
     aria-live="polite"
     aria-busy="true"
   >
-
     <div class="product-details-loading">
-
       <div
         class="product-details-spinner"
         aria-hidden="true"
       ></div>
 
       <div>
-
-        <strong>
-          Loading product...
-        </strong>
-
+        <strong>Loading product...</strong>
         <p>
-          Please wait while MauMarket retrieves the product information,
-          images, available sizes, options and reviews.
+          Please wait while MauMarket retrieves the product, available sizes,
+          colours, prices, stock and reviews.
         </p>
-
       </div>
-
     </div>
-
   </section>
 
-
-  <!-- =====================================================
-       PRODUCT OPTIONS FALLBACK / DYNAMIC HOOKS
-
-       product-details.js uses these elements when the option
-       selector is rendered outside the main product card.
-  ====================================================== -->
-
+  <!-- Kept only for compatibility with older JavaScript versions. -->
   <section
     id="productOptionsFallback"
     class="homepage-section product-options-fallback"
     hidden
     aria-live="polite"
-    aria-labelledby="productOptionTypeTitle"
   >
+    <h2 id="productOptionTypeTitle">Choose Size and Colour</h2>
+    <p id="productOptionsHelpText">
+      Select a size and then an available colour.
+    </p>
 
-    <div class="section-row-title">
-
-      <div>
-
-        <span class="section-kicker">
-          Available Options
-        </span>
-
-        <h2 id="productOptionTypeTitle">
-          Choose an Option
-        </h2>
-
-        <p id="productOptionsHelpText">
-          Select your preferred size, colour, measurement, flavour or
-          variation before adding the item to your cart.
-        </p>
-
-      </div>
-
+    <div id="productSelectedOptionSummary" hidden>
+      <span>Selected:</span>
+      <strong id="selectedOptionText">None</strong>
     </div>
 
-    <div
-      id="productSelectedOptionSummary"
-      class="product-selected-option-summary"
-      hidden
-      aria-live="polite"
-    >
-
-      <span>
-        Selected:
-      </span>
-
-      <strong id="selectedOptionText">
-        None
-      </strong>
-
-    </div>
-
-    <div
-      id="productOptionsList"
-      class="product-options-list"
-      role="radiogroup"
-      aria-label="Product options"
-    ></div>
+    <div id="productOptionsList"></div>
 
     <p
       id="productOptionError"
@@ -193,77 +233,19 @@
       hidden
     ></p>
 
-    <div
-      id="selectedOptionDetails"
-      class="selected-option-details"
-      hidden
-    >
+    <div id="selectedOptionDetails" hidden>
+      <strong id="selectedOptionPrice">—</strong>
+      <strong id="selectedOptionStock">—</strong>
 
-      <div class="selected-option-detail">
-
-        <span>
-          Price
-        </span>
-
-        <strong id="selectedOptionPrice">
-          —
-        </strong>
-
+      <div id="selectedOptionCodeRow" hidden>
+        <strong id="selectedOptionCode">—</strong>
       </div>
 
-      <div class="selected-option-detail">
-
-        <span>
-          Stock
-        </span>
-
-        <strong id="selectedOptionStock">
-          —
-        </strong>
-
+      <div id="selectedOptionMeasurementRow" hidden>
+        <strong id="selectedOptionMeasurement">—</strong>
       </div>
-
-      <div
-        id="selectedOptionCodeRow"
-        class="selected-option-detail"
-        hidden
-      >
-
-        <span>
-          Product Code
-        </span>
-
-        <strong id="selectedOptionCode">
-          —
-        </strong>
-
-      </div>
-
-      <div
-        id="selectedOptionMeasurementRow"
-        class="selected-option-detail"
-        hidden
-      >
-
-        <span>
-          Size / Measurement
-        </span>
-
-        <strong id="selectedOptionMeasurement">
-          —
-        </strong>
-
-      </div>
-
     </div>
-
   </section>
-
-
-  <!-- =====================================================
-       REVIEWS
-       product-details.js populates these containers.
-  ====================================================== -->
 
   <section
     id="productReviewsSection"
@@ -271,9 +253,7 @@
   >
 
     <div class="section-row-title">
-
       <div>
-
         <span class="section-kicker">
           Buyer Feedback
         </span>
@@ -285,13 +265,11 @@
         <p id="productReviewsSummaryText">
           Verified buyer reviews for this item.
         </p>
-
       </div>
 
       <a href="reviews.html">
         View All Reviews
       </a>
-
     </div>
 
     <div
@@ -305,34 +283,18 @@
       class="product-reviews-list"
       aria-live="polite"
     >
-
       <div class="product-reviews-placeholder">
-
-        <strong>
-          Loading reviews...
-        </strong>
-
-        <p>
-          Verified buyer feedback will appear here.
-        </p>
-
+        <strong>Loading reviews...</strong>
+        <p>Verified buyer feedback will appear here.</p>
       </div>
-
     </div>
 
   </section>
 
-
-  <!-- =====================================================
-       RELATED PRODUCTS
-  ====================================================== -->
-
   <section class="homepage-section related-section private-related-section">
 
     <div class="section-row-title">
-
       <div>
-
         <span class="section-kicker">
           You May Also Like
         </span>
@@ -344,13 +306,11 @@
         <p>
           Discover similar products available on MauMarket.
         </p>
-
       </div>
 
       <a href="products.html">
         View All Products
       </a>
-
     </div>
 
     <div
@@ -358,23 +318,12 @@
       class="pro-product-grid private-related-products-grid"
       aria-live="polite"
     >
-
       <div class="product-related-loading">
-
-        <strong>
-          Loading related products...
-        </strong>
-
+        <strong>Loading related products...</strong>
       </div>
-
     </div>
 
   </section>
-
-
-  <!-- =====================================================
-       FINAL TRUST MESSAGE
-  ====================================================== -->
 
   <section class="product-final-trust-card">
 
@@ -386,7 +335,6 @@
     </div>
 
     <div>
-
       <span class="section-kicker">
         MauMarket Protection
       </span>
@@ -399,13 +347,9 @@
         Merchant identity, phone numbers and pickup details stay private.
         Buyers complete payment, delivery and support through MauMarket.
       </p>
-
     </div>
 
-    <a
-      href="products.html"
-      class="btn"
-    >
+    <a href="products.html" class="btn">
       Continue Shopping
     </a>
 
@@ -420,7 +364,7 @@
 
 <script
   type="module"
-  src="js/product-details.js?v=8.4-option-polish"
+  src="js/product-details.js?v=10.0-size-colour-variants"
 ></script>
 
 <script src="js/footer.js?v=2.0"></script>
