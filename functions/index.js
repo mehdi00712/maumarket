@@ -1,11 +1,19 @@
 /**
  * MauMarket Cloud Functions
- * Updated canonical product-option handling.
+ * Updated canonical Size + Colour variant handling.
  *
- * Product options are now stored with:
- * name, value, unit, displayValue, sellerPrice, buyerPrice,
- * stock, sku, productCode, image, imageUrl,
- * measurementValue, measurementUnit, sizeValue and sizeUnit.
+ * Product variants are stored as flattened Size + Colour combinations.
+ * Every variant preserves:
+ * - sizeName, sizeValue, sizeUnit, sizeDisplayValue
+ * - colourName, colourCode
+ * - sellerPrice, buyerPrice, commissionAmount
+ * - stock, sku, productCode
+ * - image, imageUrl
+ *
+ * Backward-compatible fields are retained:
+ * name, value, unit, displayValue,
+ * measurementValue, measurementUnit,
+ * sizeValue and sizeUnit.
  */
 
 "use strict";
@@ -267,6 +275,75 @@ function buildOptionDisplayValue(value, unit) {
   return `${cleanValue} ${unitLabel}`.trim();
 }
 
+
+function cleanColourCode(value, name) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return "";
+  }
+
+  const cleaned = cleanText(
+    String(value),
+    name,
+    1,
+    30
+  );
+
+  if (
+    !/^#[0-9a-fA-F]{6}$/.test(cleaned) &&
+    !/^[a-zA-Z][a-zA-Z0-9 -]{0,29}$/.test(cleaned)
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} must be a valid hexadecimal colour such as #FF0000 or a colour name.`
+    );
+  }
+
+  return cleaned;
+}
+
+function slugifyVariantPart(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalizeSizeDisplayValue(
+  sizeName,
+  sizeValue,
+  sizeUnit
+) {
+  return (
+    buildOptionDisplayValue(
+      sizeValue,
+      sizeUnit
+    ) ||
+    String(sizeName || "").trim()
+  );
+}
+
+function buildVariantDisplayValue(
+  sizeDisplayValue,
+  colourName
+) {
+  const cleanSize =
+    String(sizeDisplayValue || "").trim();
+
+  const cleanColour =
+    String(colourName || "").trim();
+
+  if (cleanSize && cleanColour) {
+    return `${cleanSize} / ${cleanColour}`;
+  }
+
+  return cleanSize || cleanColour;
+}
+
 function normalizeOptionTypeLabel(value) {
   const raw = String(value ?? "").trim();
   const normalized = raw.toLowerCase();
@@ -304,7 +381,29 @@ function normalizeOptionTypeLabel(value) {
 }
 
 function inferProductOptionType(rawType, rawOptions = []) {
-  const normalizedType = normalizeOptionTypeLabel(rawType);
+  const normalizedType =
+    normalizeOptionTypeLabel(rawType);
+
+  const hasSizeColourData =
+    rawOptions.some((option) => {
+      if (!option || typeof option !== "object") {
+        return false;
+      }
+
+      return Boolean(
+        option.sizeName ||
+        option.sizeValue ||
+        option.sizeDisplayValue ||
+        option.colourName ||
+        option.colorName ||
+        option.colour ||
+        option.color
+      );
+    });
+
+  if (hasSizeColourData) {
+    return "Size / Colour";
+  }
 
   const genericTypes = new Set([
     "",
@@ -313,13 +412,18 @@ function inferProductOptionType(rawType, rawOptions = []) {
     "Variation"
   ]);
 
-  if (normalizedType && !genericTypes.has(normalizedType)) {
+  if (
+    normalizedType &&
+    !genericTypes.has(normalizedType)
+  ) {
     return normalizedType;
   }
 
   const values = rawOptions
     .map((option) => {
-      if (!option || typeof option !== "object") return "";
+      if (!option || typeof option !== "object") {
+        return "";
+      }
 
       return String(
         option.value ??
@@ -333,7 +437,10 @@ function inferProductOptionType(rawType, rawOptions = []) {
     })
     .filter(Boolean)
     .map((value) =>
-      value.replace(/^size\s*[:\-]?\s*/i, "").trim()
+      value.replace(
+        /^size\s*[:\-]?\s*/i,
+        ""
+      ).trim()
     );
 
   const units = rawOptions
@@ -347,7 +454,11 @@ function inferProductOptionType(rawType, rawOptions = []) {
     )
     .filter(Boolean);
 
-  if (units.some((unit) => ["g", "kg"].includes(unit))) {
+  if (
+    units.some((unit) =>
+      ["g", "kg"].includes(unit)
+    )
+  ) {
     return "Weight";
   }
 
@@ -377,37 +488,6 @@ function inferProductOptionType(rawType, rawOptions = []) {
     return "Size";
   }
 
-  const commonColours = new Set([
-    "red",
-    "blue",
-    "green",
-    "black",
-    "white",
-    "yellow",
-    "orange",
-    "purple",
-    "pink",
-    "grey",
-    "gray",
-    "brown",
-    "gold",
-    "silver",
-    "beige",
-    "navy",
-    "maroon",
-    "teal",
-    "turquoise"
-  ]);
-
-  if (
-    values.length > 0 &&
-    values.every((value) =>
-      commonColours.has(value.toLowerCase())
-    )
-  ) {
-    return "Colour";
-  }
-
   return normalizedType || "Option";
 }
 
@@ -432,53 +512,113 @@ function buildProductOption(
     );
   }
 
-  const rawValue =
+  const rawDisplayValue = String(
+    rawOption.displayValue ||
+    rawOption.name ||
+    rawOption.label ||
+    ""
+  ).trim();
+
+  const displayParts = rawDisplayValue
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const rawSizeValue =
+    rawOption.sizeValue ??
     rawOption.value ??
     rawOption.measurementValue ??
-    rawOption.sizeValue ??
-    rawOption.displayValue ??
-    rawOption.name ??
-    rawOption.label ??
+    displayParts[0] ??
     "";
 
-  const value = cleanText(
-    String(rawValue),
-    `options[${index}].value`,
+  const sizeValue = cleanText(
+    String(rawSizeValue),
+    `options[${index}].sizeValue`,
     1,
     150
   );
 
-  const unit = cleanOptionalText(
+  const sizeUnit = cleanOptionalText(
+    rawOption.sizeUnit ??
     rawOption.unit ??
     rawOption.measurementUnit ??
-    rawOption.sizeUnit ??
     "",
-    `options[${index}].unit`,
+    `options[${index}].sizeUnit`,
     50
+  );
+
+  const sizeName = cleanOptionalText(
+    rawOption.sizeName ??
+    rawOption.sizeLabel ??
+    displayParts[0] ??
+    sizeValue,
+    `options[${index}].sizeName`,
+    150
+  ) || sizeValue;
+
+  const sizeDisplayValue =
+    cleanOptionalText(
+      rawOption.sizeDisplayValue ?? "",
+      `options[${index}].sizeDisplayValue`,
+      200
+    ) ||
+    normalizeSizeDisplayValue(
+      sizeName,
+      sizeValue,
+      sizeUnit
+    );
+
+  const colourName = cleanOptionalText(
+    rawOption.colourName ??
+    rawOption.colorName ??
+    rawOption.colour ??
+    rawOption.color ??
+    displayParts[1] ??
+    "",
+    `options[${index}].colourName`,
+    100
+  );
+
+  const colourCode = cleanColourCode(
+    rawOption.colourCode ??
+    rawOption.colorCode ??
+    rawOption.colourHex ??
+    rawOption.colorHex ??
+    "",
+    `options[${index}].colourCode`
   );
 
   const displayValue =
     cleanOptionalText(
       rawOption.displayValue ?? "",
       `options[${index}].displayValue`,
-      200
+      250
     ) ||
-    buildOptionDisplayValue(value, unit);
+    buildVariantDisplayValue(
+      sizeDisplayValue,
+      colourName
+    );
 
   const canonicalName =
-    normalizeOptionTypeLabel(
-      rawOption.optionType ||
-      rawOption.type ||
-      optionType ||
-      "Option"
-    ) || "Option";
+    optionType === "Size / Colour" ||
+    colourName
+      ? "Size / Colour"
+      : (
+          normalizeOptionTypeLabel(
+            rawOption.optionType ||
+            rawOption.type ||
+            optionType ||
+            "Option"
+          ) || "Option"
+        );
 
   const rawSellerPrice =
     rawOption.sellerPrice ??
     rawOption.basePrice ??
     rawOption.price;
 
-  const prices = calculatePrices(rawSellerPrice);
+  const prices =
+    calculatePrices(rawSellerPrice);
 
   const stock = cleanNumber(
     rawOption.stock ?? 0,
@@ -489,13 +629,15 @@ function buildProductOption(
   );
 
   const sku = cleanOptionalText(
-    rawOption.sku || rawOption.productCode,
+    rawOption.sku ||
+    rawOption.productCode,
     `options[${index}].sku`,
     150
   );
 
   const productCode = cleanOptionalText(
-    rawOption.productCode || rawOption.sku,
+    rawOption.productCode ||
+    rawOption.sku,
     `options[${index}].productCode`,
     150
   );
@@ -535,37 +677,82 @@ function buildProductOption(
     directImageUrl ||
     (
       imageIndex !== null
-        ? imageUrls[imageIndex] || imageUrls[0] || ""
+        ? imageUrls[imageIndex] ||
+          imageUrls[0] ||
+          ""
         : imageUrls[0] || ""
     );
 
-  return {
-    id:
-      typeof rawOption.id === "string" &&
-      rawOption.id.trim()
-        ? cleanId(
-            rawOption.id,
-            `options[${index}].id`
-          )
-        : `option-${index + 1}`,
+  const generatedId = [
+    slugifyVariantPart(sizeDisplayValue),
+    slugifyVariantPart(colourName)
+  ]
+    .filter(Boolean)
+    .join("-");
 
-    name: canonicalName,
-    label: canonicalName,
+  const id =
+    typeof rawOption.id === "string" &&
+    rawOption.id.trim()
+      ? cleanId(
+          rawOption.id,
+          `options[${index}].id`
+        )
+      : generatedId ||
+        `variant-${index + 1}`;
+
+  return {
+    id,
+    variantId:
+      typeof rawOption.variantId === "string" &&
+      rawOption.variantId.trim()
+        ? cleanId(
+            rawOption.variantId,
+            `options[${index}].variantId`
+          )
+        : id,
+
+    name: displayValue,
+    label: displayValue,
     optionType: canonicalName,
 
-    value,
-    unit,
+    value: sizeValue,
+    unit: sizeUnit,
     displayValue,
 
-    measurementValue: value,
-    measurementUnit: unit,
-    sizeValue: value,
-    sizeUnit: unit,
+    measurementValue: sizeValue,
+    measurementUnit: sizeUnit,
+
+    sizeId:
+      typeof rawOption.sizeId === "string" &&
+      rawOption.sizeId.trim()
+        ? cleanId(
+            rawOption.sizeId,
+            `options[${index}].sizeId`
+          )
+        : slugifyVariantPart(sizeDisplayValue) ||
+          `size-${index + 1}`,
+
+    sizeName,
+    sizeValue,
+    sizeUnit,
+    sizeDisplayValue,
+
+    colourName,
+    colorName: colourName,
+    colourValue: colourName,
+    colorValue: colourName,
+
+    colourCode,
+    colorCode: colourCode,
+    colourHex: colourCode,
+    colorHex: colourCode,
 
     sellerPrice: prices.sellerPrice,
     commissionRate: prices.commissionRate,
-    commissionPercent: prices.commissionPercent,
-    commissionAmount: prices.commissionAmount,
+    commissionPercent:
+      prices.commissionPercent,
+    commissionAmount:
+      prices.commissionAmount,
     buyerPrice: prices.buyerPrice,
     price: prices.price,
 
@@ -577,7 +764,8 @@ function buildProductOption(
     image: imageUrl,
     imageUrl,
 
-    active: rawOption.active !== false
+    active:
+      rawOption.active !== false
   };
 }
 
@@ -586,7 +774,10 @@ function buildProductOptions(
   imageUrls,
   optionType
 ) {
-  if (rawOptions === undefined || rawOptions === null) {
+  if (
+    rawOptions === undefined ||
+    rawOptions === null
+  ) {
     return [];
   }
 
@@ -597,86 +788,181 @@ function buildProductOptions(
     );
   }
 
-  if (rawOptions.length > MAX_PRODUCT_OPTIONS) {
+  if (
+    rawOptions.length >
+    MAX_PRODUCT_OPTIONS
+  ) {
     throw new HttpsError(
       "invalid-argument",
       `options can contain no more than ${MAX_PRODUCT_OPTIONS} items.`
     );
   }
 
-  const usedValues = new Set();
+  const usedCombinations = new Set();
+  const usedIds = new Set();
   const usedSkus = new Set();
 
-  return rawOptions.map((rawOption, index) => {
-    const option = buildProductOption(
-      rawOption,
-      index,
-      imageUrls,
-      optionType
-    );
+  return rawOptions.map(
+    (rawOption, index) => {
+      const option =
+        buildProductOption(
+          rawOption,
+          index,
+          imageUrls,
+          optionType
+        );
 
-    const normalizedValue =
-      option.displayValue.toLowerCase();
+      const combinationKey =
+        [
+          option.sizeDisplayValue,
+          option.colourName
+        ]
+          .map((value) =>
+            String(value || "")
+              .trim()
+              .toLowerCase()
+          )
+          .join("::");
 
-    if (usedValues.has(normalizedValue)) {
-      throw new HttpsError(
-        "invalid-argument",
-        `The option value "${option.displayValue}" is duplicated.`
-      );
-    }
-
-    usedValues.add(normalizedValue);
-
-    const codeForUniqueness =
-      option.productCode ||
-      option.sku;
-
-    if (codeForUniqueness) {
-      const normalizedCode =
-        codeForUniqueness.toLowerCase();
-
-      if (usedSkus.has(normalizedCode)) {
+      if (
+        usedCombinations.has(
+          combinationKey
+        )
+      ) {
         throw new HttpsError(
           "invalid-argument",
-          `The product code "${codeForUniqueness}" is duplicated.`
+          `The Size + Colour combination "${option.displayValue}" is duplicated.`
         );
       }
 
-      usedSkus.add(normalizedCode);
-    }
+      usedCombinations.add(
+        combinationKey
+      );
 
-    return option;
-  });
+      if (usedIds.has(option.id)) {
+        throw new HttpsError(
+          "invalid-argument",
+          `The variant id "${option.id}" is duplicated.`
+        );
+      }
+
+      usedIds.add(option.id);
+
+      const codeForUniqueness =
+        option.productCode ||
+        option.sku;
+
+      if (codeForUniqueness) {
+        const normalizedCode =
+          codeForUniqueness.toLowerCase();
+
+        if (
+          usedSkus.has(normalizedCode)
+        ) {
+          throw new HttpsError(
+            "invalid-argument",
+            `The product code "${codeForUniqueness}" is duplicated.`
+          );
+        }
+
+        usedSkus.add(normalizedCode);
+      }
+
+      return option;
+    }
+  );
 }
 
 function getOptionsSummary(options) {
-  if (!Array.isArray(options) || options.length === 0) {
+  if (
+    !Array.isArray(options) ||
+    options.length === 0
+  ) {
     return {
       minSellerPrice: 0,
       maxSellerPrice: 0,
       minBuyerPrice: 0,
       maxBuyerPrice: 0,
-      totalStock: 0
+      totalStock: 0,
+      sizeCount: 0,
+      colourCount: 0,
+      availableVariantCount: 0
     };
   }
 
-  const sellerPrices = options.map(
-    (option) => option.sellerPrice
+  const sellerPrices =
+    options.map(
+      (option) =>
+        option.sellerPrice
+    );
+
+  const buyerPrices =
+    options.map(
+      (option) =>
+        option.buyerPrice
+    );
+
+  const sizeKeys = new Set(
+    options
+      .map((option) =>
+        String(
+          option.sizeId ||
+          option.sizeDisplayValue ||
+          option.sizeValue ||
+          ""
+        )
+          .trim()
+          .toLowerCase()
+      )
+      .filter(Boolean)
   );
 
-  const buyerPrices = options.map(
-    (option) => option.buyerPrice
+  const colourKeys = new Set(
+    options
+      .map((option) =>
+        String(
+          option.colourName ||
+          option.colorName ||
+          ""
+        )
+          .trim()
+          .toLowerCase()
+      )
+      .filter(Boolean)
   );
 
   return {
-    minSellerPrice: Math.min(...sellerPrices),
-    maxSellerPrice: Math.max(...sellerPrices),
-    minBuyerPrice: Math.min(...buyerPrices),
-    maxBuyerPrice: Math.max(...buyerPrices),
-    totalStock: options.reduce(
-      (sum, option) => sum + option.stock,
-      0
-    )
+    minSellerPrice:
+      Math.min(...sellerPrices),
+
+    maxSellerPrice:
+      Math.max(...sellerPrices),
+
+    minBuyerPrice:
+      Math.min(...buyerPrices),
+
+    maxBuyerPrice:
+      Math.max(...buyerPrices),
+
+    totalStock:
+      options.reduce(
+        (sum, option) =>
+          sum + option.stock,
+        0
+      ),
+
+    sizeCount:
+      sizeKeys.size,
+
+    colourCount:
+      colourKeys.size,
+
+    availableVariantCount:
+      options.filter(
+        (option) =>
+          option.active !== false &&
+          option.stock > 0
+      ).length
   };
 }
 
@@ -777,7 +1063,7 @@ function buildProduct(raw, sellerId, shopData = {}) {
 
   const safeOptionType = hasOptions
     ? cleanText(
-        optionType || "Option",
+        optionType || "Size / Colour",
         "optionType",
         1,
         100
@@ -795,7 +1081,7 @@ function buildProduct(raw, sellerId, shopData = {}) {
   if (hasOptions && options.length === 0) {
     throw new HttpsError(
       "invalid-argument",
-      "At least one product option is required."
+      "At least one Size + Colour variant is required."
     );
   }
 
@@ -873,6 +1159,26 @@ function buildProduct(raw, sellerId, shopData = {}) {
     options,
     variants: options,
     variantCount: options.length,
+
+    variantStructure:
+      hasOptions
+        ? "size-colour"
+        : "",
+
+    sizeCount:
+      hasOptions
+        ? optionSummary.sizeCount
+        : 0,
+
+    colourCount:
+      hasOptions
+        ? optionSummary.colourCount
+        : 0,
+
+    availableVariantCount:
+      hasOptions
+        ? optionSummary.availableVariantCount
+        : 0,
 
     minSellerPrice: hasOptions
       ? optionSummary.minSellerPrice
