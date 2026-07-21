@@ -1,6 +1,6 @@
 /**
  * MauMarket Seller Orders
- * Updated for Size + Colour variants and clean production logging.
+ * Updated for Size + Colour variants, seller-query diagnostics and UID verification.
  *
  * Supports:
  * - Legacy single sellerId orders
@@ -40,6 +40,14 @@ import {
 
 const COMMISSION_RATE = 0.10;
 
+/*
+  Diagnostic UID from the order document currently being checked.
+  This does not grant access or change Firestore permissions.
+  It only helps identify whether the signed-in seller account matches
+  the seller UID stored in the order.
+*/
+const DEBUG_EXPECTED_SELLER_UID =
+  "ObKUqG18YcOTjj4emcgccjHwwQc2";
 
 const sellerOrdersList =
   document.getElementById("sellerOrdersList");
@@ -130,6 +138,26 @@ onAuthStateChanged(auth, async (user) => {
 
   currentUser = user;
 
+  console.group("MauMarket Seller Orders Authentication");
+  console.log(
+    "Logged in seller UID:",
+    currentUser.uid
+  );
+  console.log(
+    "Logged in seller email:",
+    currentUser.email || "(no email)"
+  );
+  console.log(
+    "Expected seller UID from test order:",
+    DEBUG_EXPECTED_SELLER_UID
+  );
+  console.log(
+    "UID matches test order:",
+    currentUser.uid ===
+      DEBUG_EXPECTED_SELLER_UID
+  );
+  console.groupEnd();
+
   try {
     const userSnap = await getDoc(
       doc(db, "users", user.uid)
@@ -146,6 +174,31 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     currentSellerData = userSnap.data();
+
+    console.group(
+      "MauMarket Seller Profile Verification"
+    );
+    console.log(
+      "Seller profile document ID:",
+      userSnap.id
+    );
+    console.log(
+      "Seller profile role:",
+      currentSellerData.role
+    );
+    console.log(
+      "Seller approved:",
+      currentSellerData.approved === true
+    );
+    console.log(
+      "Seller blocked:",
+      currentSellerData.blocked === true
+    );
+    console.log(
+      "Seller profile UID matches auth UID:",
+      userSnap.id === currentUser.uid
+    );
+    console.groupEnd();
 
     await loadSellerOrders();
   } catch (error) {
@@ -212,6 +265,23 @@ async function loadSellerOrders() {
   };
 
   try {
+    console.group(
+      "MauMarket Seller Order Query Diagnostics"
+    );
+    console.log(
+      "Querying sellerId ==",
+      currentUser.uid
+    );
+    console.log(
+      "Querying sellerIds array-contains",
+      currentUser.uid
+    );
+    console.log(
+      "UID matches known test order:",
+      currentUser.uid ===
+        DEBUG_EXPECTED_SELLER_UID
+    );
+    console.groupEnd();
 
     /*
       MauMarket has used two top-level seller ownership formats:
@@ -265,6 +335,27 @@ async function loadSellerOrders() {
           });
         }
       );
+
+      console.info(
+        "sellerId order query succeeded:",
+        directResult.value.size,
+        "order(s)",
+        "| queried UID:",
+        currentUser.uid
+      );
+
+      if (
+        directResult.value.size === 0 &&
+        currentUser.uid !==
+          DEBUG_EXPECTED_SELLER_UID
+      ) {
+        console.warn(
+          "The sellerId query returned 0 because the signed-in UID does not match the seller UID stored in the known test order.",
+          {
+            signedInUid: currentUser.uid,
+            expectedOrderSellerUid:
+              DEBUG_EXPECTED_SELLER_UID
+          }
         );
       }
     } else {
@@ -295,6 +386,12 @@ async function loadSellerOrders() {
           });
         }
       );
+
+      console.info(
+        "sellerIds array order query succeeded:",
+        arrayResult.value.size,
+        "order(s)"
+      );
     } else {
       sellerOrderQueryState.array = {
         status: "rejected",
@@ -304,7 +401,15 @@ async function loadSellerOrders() {
 
       console.error(
         "sellerIds array order query failed:",
-        arrayResult.reason
+        arrayResult.reason,
+        {
+          queriedUid: currentUser.uid,
+          expectedOrderSellerUid:
+            DEBUG_EXPECTED_SELLER_UID,
+          uidMatchesKnownOrder:
+            currentUser.uid ===
+              DEBUG_EXPECTED_SELLER_UID
+        }
       );
     }
 
@@ -528,7 +633,8 @@ function renderSellerOrderCollection(orders) {
         ? `
             <p class="muted">
               One compatibility query was denied, so some older or
-              multi-seller orders may not be visible yet.
+              multi-seller orders may not be visible yet. Check the
+              console to see whether sellerId or sellerIds failed.
             </p>
           `
         : "";
