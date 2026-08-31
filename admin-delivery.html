@@ -42,8 +42,8 @@
       </h1>
 
       <p>
-        Assign drivers, schedule deliveries, review selected product options,
-        track pinned locations, print delivery notes and export delivery reports.
+        Assign drivers, schedule deliveries, review customer signatures,
+        validate completed deliveries, track pinned locations and export delivery reports.
       </p>
 
       <div class="delivery-admin-hero-points">
@@ -52,6 +52,7 @@
         <span>✓ Selected size and measurement details</span>
         <span>✓ Product code visibility</span>
         <span>✓ Pinned customer locations</span>
+        <span>✓ Signature validation and approval</span>
 
       </div>
 
@@ -152,6 +153,22 @@
 
       <small>
         Currently in transit
+      </small>
+
+    </article>
+
+    <article class="delivery-stat-card">
+
+      <span>
+        Pending Validation
+      </span>
+
+      <strong id="deliveryPendingValidationCount">
+        0
+      </strong>
+
+      <small>
+        Driver submissions awaiting review
       </small>
 
     </article>
@@ -578,7 +595,7 @@
 
 <script
   type="module"
-  src="js/admin-delivery.js?v=6.1-product-options"
+  src="js/admin-delivery.js?v=6.2-delivery-validation"
 ></script>
 
 <script src="js/footer.js"></script>
