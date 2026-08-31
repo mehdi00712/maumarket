@@ -67,6 +67,7 @@ onAuthStateChanged(auth, async (user) => {
     if (
       !userSnap.exists() ||
       userSnap.data().role !== "delivery" ||
+      userSnap.data().approved !== true ||
       userSnap.data().blocked === true
     ) {
       window.location.href = "dashboard.html";
@@ -632,8 +633,6 @@ function setupSignature(orderId, jobId, card) {
         deliveryStatus: "awaiting_admin_validation",
         orderStatus: "Delivery Submitted",
         deliverySubmittedAt: serverTimestamp(),
-        adminDeliveryValidated: false,
-        adminDeliveryRejectReason: "",
         active: true,
         updatedAt: serverTimestamp()
       });
@@ -663,17 +662,26 @@ async function updateDelivery(jobId, orderId, data) {
     throw new Error("Order ID is missing.");
   }
 
-  // Update the existing delivery job document assigned by the admin.
-  // Drivers are not allowed to create deliveryJobs documents.
+  console.log("Updating delivery job:", jobId, data);
+
+  // Primary source of truth for the driver workflow.
+  // If this fails, surface the real Firestore error to the user.
   await updateDoc(doc(db, "deliveryJobs", jobId), data);
 
-  // Keep the main order in sync when the driver is assigned to it.
-  // If the order does not permit the driver update, do not undo the
-  // successful deliveryJobs update.
+  console.log("Delivery job updated successfully:", jobId);
+
+  // Secondary sync to the main order.
+  // A permission problem here must NOT make the driver submission look failed
+  // because deliveryJobs was already saved successfully.
   try {
     await updateDoc(doc(db, "orders", orderId), data);
+    console.log("Order synced successfully:", orderId);
   } catch (error) {
-    console.warn("Order update skipped:", error.code || error.message, error);
+    console.warn(
+      "Order sync skipped after successful delivery job update:",
+      error?.code || error?.message,
+      error
+    );
   }
 }
 
