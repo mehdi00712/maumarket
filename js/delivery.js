@@ -29,7 +29,6 @@ import {
   doc,
   getDoc,
   updateDoc,
-  setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -254,9 +253,10 @@ function renderJobs(jobs) {
 
   deliveryOrdersList.querySelectorAll(".signature-canvas").forEach((canvas) => {
     const orderId = canvas.dataset.orderId;
+    const jobId = canvas.dataset.jobId;
     const card = canvas.closest(".driver-delivery-card");
 
-    setupSignature(orderId, card);
+    setupSignature(orderId, jobId, card);
   });
 
   deliveryOrdersList.querySelector('[data-empty-action="clear"]')?.addEventListener("click", clearDriverFilters);
@@ -265,6 +265,7 @@ function renderJobs(jobs) {
 
 function deliveryCardHtml(order) {
   const orderId = order.orderId || order.id;
+  const jobId = order.id;
   const status = order.orderStatus || "Ready for Pickup";
   const deliveryStatus = order.deliveryStatus || "assigned";
   const isCompleted = status === "Delivered" || order.active === false;
@@ -491,7 +492,8 @@ function deliveryCardHtml(order) {
 
               <canvas
                 class="signature-canvas"
-                data-order-id="${escapeHtml(orderId)}">
+                data-order-id="${escapeHtml(orderId)}"
+                data-job-id="${escapeHtml(jobId)}">
               </canvas>
 
               <div class="driver-signature-fields">
@@ -531,12 +533,15 @@ async function handleDriverAction(event) {
     return;
   }
 
+  const jobId = job.id;
+  const actualOrderId = job.orderId || job.id;
+
   if (action === "pickup") {
     if (!confirm("Confirm that all items, selected options and product codes have been collected from the seller(s)?")) {
       return;
     }
 
-    await updateDelivery(orderId, {
+    await updateDelivery(jobId, actualOrderId, {
       orderStatus: "Picked Up",
       deliveryStatus: "picked_up",
       pickedUpAt: serverTimestamp(),
@@ -552,7 +557,7 @@ async function handleDriverAction(event) {
       return;
     }
 
-    await updateDelivery(orderId, {
+    await updateDelivery(jobId, actualOrderId, {
       orderStatus: "Out for Delivery",
       deliveryStatus: "out_for_delivery",
       outForDeliveryAt: serverTimestamp(),
@@ -568,7 +573,7 @@ async function handleDriverAction(event) {
   }
 }
 
-function setupSignature(orderId, card) {
+function setupSignature(orderId, jobId, card) {
   const canvas = card.querySelector(".signature-canvas");
 
   if (!canvas || typeof SignaturePad === "undefined") {
@@ -618,7 +623,7 @@ function setupSignature(orderId, card) {
     try {
       const signature = signaturePad.toDataURL("image/png");
 
-      await updateDelivery(orderId, {
+      await updateDelivery(jobId, orderId, {
         deliverySignature: signature,
         deliverySignedBy: customerName,
         deliveryNote,
@@ -636,20 +641,39 @@ function setupSignature(orderId, card) {
       alert("Delivery submitted for admin validation.");
       await loadOrders();
     } catch (error) {
-      alert(error.message);
+      console.error("Delivery submission failed:", error);
+      alert(
+        getFriendlyDeliveryError(
+          error,
+          error?.message || "The delivery could not be submitted. Please try again."
+        )
+      );
       submitBtn.disabled = false;
       submitBtn.textContent = "Submit Delivery";
     }
   });
 }
 
-async function updateDelivery(orderId, data) {
-  await setDoc(doc(db, "deliveryJobs", orderId), data, { merge: true });
+async function updateDelivery(jobId, orderId, data) {
+  if (!jobId) {
+    throw new Error("Delivery job ID is missing.");
+  }
 
+  if (!orderId) {
+    throw new Error("Order ID is missing.");
+  }
+
+  // Update the existing delivery job document assigned by the admin.
+  // Drivers are not allowed to create deliveryJobs documents.
+  await updateDoc(doc(db, "deliveryJobs", jobId), data);
+
+  // Keep the main order in sync when the driver is assigned to it.
+  // If the order does not permit the driver update, do not undo the
+  // successful deliveryJobs update.
   try {
     await updateDoc(doc(db, "orders", orderId), data);
   } catch (error) {
-    console.warn("Order update skipped:", error.message);
+    console.warn("Order update skipped:", error.code || error.message, error);
   }
 }
 
