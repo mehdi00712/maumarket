@@ -33,6 +33,7 @@ const deliveryTotalCount = document.getElementById("deliveryTotalCount");
 const deliveryTodayCount = document.getElementById("deliveryTodayCount");
 const deliveryAssignedCount = document.getElementById("deliveryAssignedCount");
 const deliveryOutCount = document.getElementById("deliveryOutCount");
+const deliveryPendingValidationCount = document.getElementById("deliveryPendingValidationCount");
 const deliveryDoneCount = document.getElementById("deliveryDoneCount");
 
 const deliverySearchInput = document.getElementById("deliverySearchInput");
@@ -191,20 +192,83 @@ async function loadDeliveryDrivers() {
 }
 
 async function loadDeliveryOrders() {
-  const ordersQuery = query(
-    collection(db, "orders"),
-    where("paymentStatus", "==", "verified")
-  );
+  /*
+    The driver writes the signature and "Delivery Submitted" state to
+    deliveryJobs first. The secondary /orders sync can legitimately be
+    unavailable, so the admin page must merge the latest deliveryJobs data
+    into its matching order before rendering validation controls.
+  */
+  const [ordersSnapshot, jobsSnapshot] = await Promise.all([
+    getDocs(
+      query(
+        collection(db, "orders"),
+        where("paymentStatus", "==", "verified")
+      )
+    ),
+    getDocs(collection(db, "deliveryJobs"))
+  ]);
 
-  const snapshot = await getDocs(ordersQuery);
+  const jobsByOrderId = new Map();
+
+  jobsSnapshot.forEach((jobSnap) => {
+    const job = {
+      id: jobSnap.id,
+      ...jobSnap.data()
+    };
+
+    const orderId = job.orderId || jobSnap.id;
+    jobsByOrderId.set(orderId, job);
+  });
 
   allOrders = [];
 
-  snapshot.forEach((docSnap) => {
-    allOrders.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
+  ordersSnapshot.forEach((orderSnap) => {
+    const order = {
+      id: orderSnap.id,
+      ...orderSnap.data()
+    };
+
+    const job = jobsByOrderId.get(orderSnap.id);
+
+    if (job) {
+      const deliveryFields = [
+        "driverId",
+        "driverName",
+        "deliveryGuyId",
+        "deliveryGuyName",
+        "deliveryDate",
+        "deliveryDateText",
+        "deliveryTimeSlot",
+        "deliveryPriority",
+        "deliveryNotes",
+        "deliveryStatus",
+        "orderStatus",
+        "pickedUpAt",
+        "outForDeliveryAt",
+        "deliverySubmittedAt",
+        "deliverySignature",
+        "deliverySignedBy",
+        "deliveryNote",
+        "deliveryProofUrl",
+        "deliveryProofUrls",
+        "deliveryPhotoUrl",
+        "adminDeliveryValidated",
+        "adminDeliveryRejectReason",
+        "active",
+        "assignedAt",
+        "updatedAt"
+      ];
+
+      deliveryFields.forEach((field) => {
+        if (job[field] !== undefined) {
+          order[field] = job[field];
+        }
+      });
+
+      order._deliveryJobId = job.id;
+    }
+
+    allOrders.push(order);
   });
 
   allOrders.sort((a, b) => {
@@ -363,6 +427,13 @@ function updateStats() {
     return order.orderStatus === "Out for Delivery";
   }).length;
 
+  const pendingValidation = allOrders.filter((order) => {
+    return (
+      order.orderStatus === "Delivery Submitted" ||
+      order.deliveryStatus === "awaiting_admin_validation"
+    );
+  }).length;
+
   const delivered = allOrders.filter((order) => {
     return order.orderStatus === "Delivered";
   }).length;
@@ -371,6 +442,9 @@ function updateStats() {
   if (deliveryTodayCount) deliveryTodayCount.textContent = todayCount;
   if (deliveryAssignedCount) deliveryAssignedCount.textContent = assigned;
   if (deliveryOutCount) deliveryOutCount.textContent = out;
+  if (deliveryPendingValidationCount) {
+    deliveryPendingValidationCount.textContent = pendingValidation;
+  }
   if (deliveryDoneCount) deliveryDoneCount.textContent = delivered;
 
   if (deliveryResultCount) {
@@ -607,7 +681,10 @@ function orderCardHtml(order) {
         }
 
         ${
-          status === "Delivery Submitted"
+          (
+            status === "Delivery Submitted" ||
+            deliveryStatus === "awaiting_admin_validation"
+          )
             ? `
               <button
                 type="button"
@@ -726,6 +803,8 @@ async function saveDeliverySchedule() {
     await updateDoc(doc(db, "orders", orderId), {
       deliveryGuyId: driverId,
       deliveryGuyName: driverName,
+      driverId,
+      driverName,
       deliveryDate: date,
       deliveryDateText: date,
       deliveryTimeSlot: timeSlot,
@@ -780,26 +859,65 @@ async function saveDeliverySchedule() {
 }
 
 async function validateDelivery(order) {
-  if (!confirm("Validate this delivery as completed?")) return;
+  if (!confirm("Approve this submitted delivery and mark it as Delivered?")) {
+    return;
+  }
 
-  await updateDoc(doc(db, "orders", order.id), {
-    orderStatus: "Delivered",
-    deliveryStatus: "validated",
-    adminDeliveryValidated: true,
-    deliveredAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
+  const jobId = order._deliveryJobId || order.id;
 
-  await setDoc(doc(db, "deliveryJobs", order.id), {
-    orderStatus: "Delivered",
-    deliveryStatus: "validated",
-    adminDeliveryValidated: true,
-    deliveredAt: serverTimestamp(),
-    active: false,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  try {
+    const orderUpdate = {
+      orderStatus: "Delivered",
+      deliveryStatus: "validated",
+      adminDeliveryValidated: true,
+      adminDeliveryRejectReason: "",
+      deliveredAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
 
-  await loadPage();
+    // Keep the signed proof permanently on the main order as well.
+    if (order.deliverySignature) {
+      orderUpdate.deliverySignature = order.deliverySignature;
+    }
+
+    if (order.deliverySignedBy) {
+      orderUpdate.deliverySignedBy = order.deliverySignedBy;
+    }
+
+    if (order.deliveryNote !== undefined) {
+      orderUpdate.deliveryNote = order.deliveryNote || "";
+    }
+
+    if (order.deliverySubmittedAt) {
+      orderUpdate.deliverySubmittedAt = order.deliverySubmittedAt;
+    }
+
+    if (order.deliveryGuyName) {
+      orderUpdate.deliveryGuyName = order.deliveryGuyName;
+    }
+
+    if (order.driverName) {
+      orderUpdate.driverName = order.driverName;
+    }
+
+    await updateDoc(doc(db, "orders", order.id), orderUpdate);
+
+    await setDoc(doc(db, "deliveryJobs", jobId), {
+      orderStatus: "Delivered",
+      deliveryStatus: "validated",
+      adminDeliveryValidated: true,
+      adminDeliveryRejectReason: "",
+      deliveredAt: serverTimestamp(),
+      active: false,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    alert("Delivery approved and marked as Delivered.");
+    await loadPage();
+  } catch (error) {
+    console.error("Unable to validate delivery:", error);
+    alert(error?.message || "Unable to validate delivery.");
+  }
 }
 
 async function rejectDelivery(order) {
@@ -807,28 +925,45 @@ async function rejectDelivery(order) {
 
   if (reason === null) return;
 
-  await updateDoc(doc(db, "orders", order.id), {
-    orderStatus: "Out for Delivery",
-    deliveryStatus: "rejected",
-    adminDeliveryValidated: false,
-    adminDeliveryRejectReason: reason || "",
-    updatedAt: serverTimestamp()
-  });
+  const cleanReason = String(reason || "").trim();
 
-  await setDoc(doc(db, "deliveryJobs", order.id), {
-    orderStatus: "Out for Delivery",
-    deliveryStatus: "rejected",
-    adminDeliveryValidated: false,
-    adminDeliveryRejectReason: reason || "",
-    active: true,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  if (!cleanReason) {
+    alert("Please enter a rejection reason.");
+    return;
+  }
 
-  await loadPage();
+  const jobId = order._deliveryJobId || order.id;
+
+  try {
+    await updateDoc(doc(db, "orders", order.id), {
+      orderStatus: "Out for Delivery",
+      deliveryStatus: "rejected",
+      adminDeliveryValidated: false,
+      adminDeliveryRejectReason: cleanReason,
+      updatedAt: serverTimestamp()
+    });
+
+    await setDoc(doc(db, "deliveryJobs", jobId), {
+      orderStatus: "Out for Delivery",
+      deliveryStatus: "rejected",
+      adminDeliveryValidated: false,
+      adminDeliveryRejectReason: cleanReason,
+      active: true,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    alert("Delivery rejected and returned to the driver.");
+    await loadPage();
+  } catch (error) {
+    console.error("Unable to reject delivery:", error);
+    alert(error?.message || "Unable to reject delivery.");
+  }
 }
 
 async function markOutForDelivery(order) {
   if (!confirm("Mark this order as Out for Delivery?")) return;
+
+  const jobId = order._deliveryJobId || order.id;
 
   await updateDoc(doc(db, "orders", order.id), {
     orderStatus: "Out for Delivery",
@@ -837,7 +972,7 @@ async function markOutForDelivery(order) {
     updatedAt: serverTimestamp()
   });
 
-  await setDoc(doc(db, "deliveryJobs", order.id), {
+  await setDoc(doc(db, "deliveryJobs", jobId), {
     orderStatus: "Out for Delivery",
     deliveryStatus: "out_for_delivery",
     outForDeliveryAt: serverTimestamp(),
