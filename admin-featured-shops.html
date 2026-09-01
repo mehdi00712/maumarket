@@ -1,130 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Featured Shop Requests | MauMarket</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Featured Shop Requests | MauMarket</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <main class="admin-page">
 
-<header class="admin-page-header">
-<h1>Featured Shop Management</h1>
-<p>Review, approve and manage Featured Shop subscriptions.</p>
-</header>
+  <header class="admin-page-header">
+    <h1>Featured Shop Management</h1>
+    <p>
+      Review requests, grant Featured Shop access, reject applications
+      and revoke active Featured Shop access.
+    </p>
+  </header>
 
-<section class="admin-stats-grid">
+  <section class="admin-stats-grid">
 
-<div class="admin-stat-card">
-<h3 id="pendingFeaturedCount">0</h3>
-<p>Pending Requests</p>
-</div>
+    <div class="admin-stat-card">
+      <h3 id="pendingFeaturedCount">0</h3>
+      <p>Pending Requests</p>
+    </div>
 
-<div class="admin-stat-card">
-<h3 id="activeFeaturedCount">0</h3>
-<p>Active Featured Shops</p>
-</div>
+    <div class="admin-stat-card">
+      <h3 id="activeFeaturedCount">0</h3>
+      <p>Active Featured Shops</p>
+    </div>
 
-<div class="admin-stat-card">
-<h3 id="expiringFeaturedCount">0</h3>
-<p>Expiring Soon</p>
-</div>
+    <div class="admin-stat-card">
+      <h3 id="expiringFeaturedCount">0</h3>
+      <p>Expiring Soon</p>
+    </div>
 
-<div class="admin-stat-card">
-<h3 id="featuredRevenue">Rs 0</h3>
-<p>Revenue</p>
-</div>
+    <div class="admin-stat-card">
+      <h3 id="featuredRevenue">Rs 0</h3>
+      <p>Revenue</p>
+    </div>
 
-</section>
+  </section>
 
-<section class="admin-toolbar">
+  <section class="admin-toolbar">
 
-<input
-id="featuredSearch"
-type="search"
-placeholder="Search seller or shop">
+    <input
+      id="featuredSearch"
+      type="search"
+      placeholder="Search seller or shop"
+    >
 
-<select id="featuredStatusFilter">
-<option value="">All Status</option>
-<option value="pending">Pending</option>
-<option value="approved">Approved</option>
-<option value="rejected">Rejected</option>
-<option value="expired">Expired</option>
-</select>
+    <select id="featuredStatusFilter">
+      <option value="">All Status</option>
+      <option value="pending">Pending</option>
+      <option value="approved">Active</option>
+      <option value="rejected">Rejected</option>
+      <option value="revoked">Revoked</option>
+      <option value="expired">Expired</option>
+    </select>
 
-<button id="refreshFeaturedBtn" class="btn">
-Refresh
-</button>
+    <button
+      id="refreshFeaturedBtn"
+      class="btn"
+      type="button"
+    >
+      Refresh
+    </button>
 
-</section>
+  </section>
 
-<section>
+  <section>
 
-<div id="featuredRequestsContainer">
-Loading Featured Shop requests...
-</div>
+    <div id="featuredRequestsContainer">
+      Loading Featured Shop requests...
+    </div>
 
-<div
-id="featuredEmptyState"
-style="display:none"
-class="empty-market-card">
+    <div
+      id="featuredEmptyState"
+      style="display:none"
+      class="empty-market-card"
+    >
+      <h2>No requests found</h2>
 
-<h2>No requests found</h2>
+      <p>
+        There are currently no Featured Shop requests matching
+        the selected filters.
+      </p>
+    </div>
 
-<p>
-There are currently no Featured Shop requests matching
-the selected filters.
-</p>
+  </section>
 
-</div>
+  <dialog id="featuredRequestModal">
 
-</section>
+    <h2>Featured Shop Request</h2>
 
-<dialog id="featuredRequestModal">
+    <div id="featuredRequestDetails"></div>
 
-<h2>Featured Shop Request</h2>
+    <div class="dialog-actions">
 
-<div id="featuredRequestDetails"></div>
+      <button
+        id="approveFeaturedBtn"
+        class="btn"
+        type="button"
+      >
+        Grant Access
+      </button>
 
-<div class="dialog-actions">
+      <button
+        id="rejectFeaturedBtn"
+        class="danger-btn"
+        type="button"
+      >
+        Reject
+      </button>
 
-<button
-id="approveFeaturedBtn"
-class="btn">
+      <button
+        id="revokeFeaturedBtn"
+        class="danger-btn"
+        type="button"
+        style="display:none"
+      >
+        Revoke Access
+      </button>
 
-Approve
+      <button
+        id="closeFeaturedModal"
+        class="secondary-btn"
+        type="button"
+      >
+        Close
+      </button>
 
-</button>
+    </div>
 
-<button
-id="rejectFeaturedBtn"
-class="danger-btn">
+  </dialog>
 
-Reject
+  <script
+    type="module"
+    src="js/nav.js?v=5.9-featured-shop"
+  ></script>
 
-</button>
-
-<button
-id="closeFeaturedModal"
-class="secondary-btn">
-
-Close
-
-</button>
-
-</div>
-
-</dialog>
-
-<script
-type="module"
-src="js/nav.js?v=5.9-featured-shop"></script>
-
-<script
-type="module"
-src="js/admin-featured-shops.js?v=1.0"></script>
+  <script
+    type="module"
+    src="js/admin-featured-shops.js?v=1.1-grant-reject-revoke"
+  ></script>
 
 </main>
 
