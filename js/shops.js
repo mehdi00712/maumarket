@@ -134,10 +134,13 @@ async function loadShopsDirectory() {
 
     featuredShops = [...allShops];
 
-      updateHeroStats();
+    hideLoadingState();
+    updateHeroStats();
     renderShops();
   } catch (error) {
     console.error("Could not load shops directory:", error);
+
+    hideLoadingState();
 
     if (shopsGrid) {
       shopsGrid.innerHTML = `
@@ -514,7 +517,17 @@ function updateUrlState() {
    DISPLAY HELPERS
    ========================================================= */
 
+function hideLoadingState() {
+  if (shopsLoadingState) {
+    shopsLoadingState.style.display = "none";
+  }
+}
+
 function showLoadingState() {
+  if (shopsLoadingState) {
+    shopsLoadingState.style.display = "block";
+  }
+
   if (shopsGrid) {
     shopsGrid.style.display = "grid";
 
@@ -535,6 +548,10 @@ function showLoadingState() {
 
   if (shopsEmptyState) {
     shopsEmptyState.style.display = "none";
+  }
+
+  if (shopsErrorState) {
+    shopsErrorState.style.display = "none";
   }
 }
 
