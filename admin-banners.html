@@ -4,12 +4,132 @@
   <meta charset="UTF-8">
   <title>Ad Banners | MauMarket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .banner-builder-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .banner-builder-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .banner-builder-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .banner-builder-field label {
+      font-weight: 700;
+    }
+
+    .banner-target-preview {
+      display: none;
+      grid-template-columns: 120px minmax(0, 1fr);
+      gap: 18px;
+      align-items: center;
+      margin-top: 18px;
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      background: #fafafa;
+    }
+
+    .banner-target-preview.show {
+      display: grid;
+    }
+
+    .banner-target-preview img {
+      width: 120px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 12px;
+      background: #f3f4f6;
+    }
+
+    .banner-target-preview h3,
+    .banner-target-preview p {
+      margin: 0 0 6px;
+    }
+
+    .banner-image-preview {
+      display: none;
+      margin-top: 12px;
+      width: 100%;
+      max-height: 280px;
+      object-fit: cover;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .banner-image-preview.show {
+      display: block;
+    }
+
+    .banner-helper {
+      margin: 4px 0 0;
+      color: #667085;
+      font-size: 14px;
+    }
+
+    .banner-current-card {
+      overflow: hidden;
+    }
+
+    .banner-current-card .banner-preview {
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+
+    .banner-current-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 14px;
+    }
+
+    .banner-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f2f0ff;
+      color: #5438e8;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 720px) {
+      .banner-builder-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .banner-target-preview {
+        grid-template-columns: 1fr;
+      }
+
+      .banner-target-preview img {
+        width: 100%;
+        height: 180px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
 <header class="navbar">
   <h2>Ad Banners</h2>
+
   <nav>
     <a href="admin.html">Admin</a>
     <a href="products.html">Marketplace</a>
@@ -20,26 +140,126 @@
 <main class="container">
 
   <section class="form-card">
+    <span class="section-kicker">Banner Builder</span>
     <h1>Create Banner</h1>
 
-    <input id="bannerTitle" placeholder="Banner title">
-    <input id="shopId" placeholder="Seller UID / Shop ID">
-    <input id="bannerSubtitle" placeholder="Subtitle optional">
+    <p class="banner-helper">
+      Choose a shop or product below. MauMarket will automatically fill the target details for you.
+    </p>
 
-    <label>Banner Image</label>
-    <input id="bannerImage" type="file" accept="image/*">
+    <div class="banner-builder-grid">
 
-    <button id="saveBannerBtn">Save Banner</button>
-    <p id="bannerMessage"></p>
+      <div class="banner-builder-field">
+        <label for="bannerTargetType">Banner links to</label>
+
+        <select id="bannerTargetType">
+          <option value="shop">Shop</option>
+          <option value="product">Product</option>
+        </select>
+      </div>
+
+      <div class="banner-builder-field">
+        <label for="bannerTargetSearch">Search</label>
+
+        <input
+          id="bannerTargetSearch"
+          type="search"
+          placeholder="Search shops..."
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="banner-builder-field full">
+        <label for="bannerTargetSelect">Choose from available items</label>
+
+        <select id="bannerTargetSelect">
+          <option value="">Loading shops...</option>
+        </select>
+
+        <p id="bannerTargetCount" class="banner-helper"></p>
+      </div>
+
+    </div>
+
+    <div id="bannerTargetPreview" class="banner-target-preview">
+      <img id="bannerTargetPreviewImage" alt="Selected target preview">
+
+      <div>
+        <span id="bannerTargetPreviewType" class="banner-chip">Shop</span>
+        <h3 id="bannerTargetPreviewTitle">Selected target</h3>
+        <p id="bannerTargetPreviewMeta"></p>
+      </div>
+    </div>
+
+    <div class="banner-builder-grid">
+
+      <div class="banner-builder-field full">
+        <label for="bannerTitle">Banner title</label>
+
+        <input
+          id="bannerTitle"
+          placeholder="Banner title"
+        >
+      </div>
+
+      <div class="banner-builder-field full">
+        <label for="bannerSubtitle">Subtitle</label>
+
+        <input
+          id="bannerSubtitle"
+          placeholder="Subtitle optional"
+        >
+      </div>
+
+      <div class="banner-builder-field full">
+        <label for="bannerImage">Banner image</label>
+
+        <input
+          id="bannerImage"
+          type="file"
+          accept="image/*"
+        >
+
+        <p class="banner-helper">
+          Optional when the selected shop/product already has an image. Upload a custom wide banner if you prefer.
+        </p>
+
+        <img
+          id="bannerImagePreview"
+          class="banner-image-preview"
+          alt="Banner image preview"
+        >
+      </div>
+
+    </div>
+
+    <button id="saveBannerBtn" type="button">
+      Save Banner
+    </button>
+
+    <p id="bannerMessage" aria-live="polite"></p>
   </section>
 
+
   <section>
-    <h1>Current Banners</h1>
-    <div id="bannersList">Loading...</div>
+    <div class="section-header">
+      <div>
+        <span class="section-kicker">Advertising</span>
+        <h1>Current Banners</h1>
+      </div>
+    </div>
+
+    <div id="bannersList">
+      Loading...
+    </div>
   </section>
 
 </main>
 
-<script type="module" src="js/admin-banners.js"></script>
+<script
+  type="module"
+  src="js/admin-banners.js?v=2.0-easy-selector"
+></script>
+
 </body>
 </html>
