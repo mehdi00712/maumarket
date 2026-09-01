@@ -10,6 +10,73 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+
+/* =========================================================
+   SHOP PAGE ONLY — REMOVE "SHOP CATEGORIES" PANEL
+   =========================================================
+   The categories panel is not part of this shop.js file itself.
+   It can be injected by shared navigation/layout code, so this
+   removes it whenever it appears on the individual shop page.
+*/
+function removeShopCategoriesPanel() {
+  const knownSelectors = [
+    "#shopsCategoryList",
+    ".shops-directory-sidebar",
+    ".shop-categories-sidebar",
+    ".shop-category-sidebar",
+    ".shops-category-sidebar",
+    ".category-sidebar",
+    ".categories-sidebar",
+    ".shop-categories-panel",
+    ".shops-categories-panel"
+  ];
+
+  knownSelectors.forEach((selector) => {
+    document.querySelectorAll(selector).forEach((element) => {
+      const panel =
+        element.closest(".filter-card") ||
+        element.closest(".shops-directory-sidebar") ||
+        element.closest("aside") ||
+        element;
+
+      if (panel && panel.isConnected) {
+        panel.remove();
+      }
+    });
+  });
+
+  // Fallback for a shared component whose class/id may be different.
+  document.querySelectorAll("aside, section, .filter-card").forEach((element) => {
+    if (!element.isConnected) return;
+
+    const text = String(element.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+    const hasShopCategoriesHeading =
+      text.startsWith("browse shop categories") ||
+      text.startsWith("shop categories");
+
+    if (hasShopCategoriesHeading) {
+      element.remove();
+    }
+  });
+}
+
+removeShopCategoriesPanel();
+
+const shopCategoriesObserver = new MutationObserver(() => {
+  removeShopCategoriesPanel();
+});
+
+shopCategoriesObserver.observe(document.documentElement, {
+  childList: true,
+  subtree: true
+});
+
+window.addEventListener("load", removeShopCategoriesPanel);
+
 const shopHeader = document.getElementById("shopHeader");
 const shopItems = document.getElementById("shopItems");
 const breadcrumbShop = document.getElementById("breadcrumbShop");
