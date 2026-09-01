@@ -13,6 +13,8 @@ import {
 
 const registerBtn = document.getElementById("registerBtn");
 const message = document.getElementById("message");
+const passwordInput = document.getElementById("password");
+const togglePasswordBtn = document.getElementById("togglePassword");
 
 const roleSelect = document.getElementById("role");
 
@@ -23,9 +25,16 @@ const buyerTermsCheck = document.getElementById("buyerTermsCheck");
 const sellerTermsCheck = document.getElementById("sellerTermsCheck");
 const sellerAccuracyCheck = document.getElementById("sellerAccuracyCheck");
 
-/* =========================================================
-   EVENT LISTENERS
-========================================================= */
+togglePasswordBtn?.addEventListener("click", () => {
+  const isHidden = passwordInput?.type === "password";
+
+  if (!passwordInput) return;
+
+  passwordInput.type = isHidden ? "text" : "password";
+  togglePasswordBtn.textContent = isHidden ? "🙈" : "👁";
+  togglePasswordBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+  togglePasswordBtn.setAttribute("title", isHidden ? "Hide password" : "Show password");
+});
 
 roleSelect?.addEventListener("change", updateAgreementView);
 
@@ -35,22 +44,14 @@ sellerAccuracyCheck?.addEventListener("change", updateRegisterButton);
 
 updateAgreementView();
 
-/* =========================================================
-   REGISTER
-========================================================= */
-
 registerBtn?.addEventListener("click", async () => {
   clearMessage();
 
   const name = document.getElementById("name")?.value.trim();
   const phone = document.getElementById("phone")?.value.trim();
   const email = document.getElementById("email")?.value.trim().toLowerCase();
-  const password = document.getElementById("password")?.value || "";
+  const password = passwordInput?.value || "";
   const role = roleSelect?.value || "customer";
-
-  /* -------------------------------------------------------
-     VALIDATION
-  ------------------------------------------------------- */
 
   if (!name || !phone || !email || !password) {
     showMessage("Please fill in all fields.", "error");
@@ -63,10 +64,7 @@ registerBtn?.addEventListener("click", async () => {
   }
 
   if (password.length < 6) {
-    showMessage(
-      "Your password must contain at least 6 characters.",
-      "error"
-    );
+    showMessage("Your password must contain at least 6 characters.", "error");
     return;
   }
 
@@ -88,10 +86,6 @@ registerBtn?.addEventListener("click", async () => {
   try {
     setLoading(true);
 
-    /* -------------------------------------------------------
-       STEP 1: CREATE FIREBASE AUTH ACCOUNT
-    ------------------------------------------------------- */
-
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -100,51 +94,23 @@ registerBtn?.addEventListener("click", async () => {
 
     createdUser = userCredential.user;
 
-    /* -------------------------------------------------------
-       STEP 2: CREATE FIRESTORE PROFILE
-
-       IMPORTANT:
-       Your Firestore rules only allow a user to CREATE their
-       profile when approved is false or missing.
-
-       Therefore:
-       - Customer = approved false
-       - Seller   = approved false
-
-       Customer access does not depend on approved=true.
-       Seller access requires admin approval.
-    ------------------------------------------------------- */
-
     const userData = {
       uid: createdUser.uid,
-
       name,
       fullName: name,
-
       phone,
       email,
-
       role,
-
       approved: false,
       blocked: false,
-
       acceptedTerms: true,
-
-      acceptedTermsType:
-        role === "seller"
-          ? "seller"
-          : "buyer",
-
+      acceptedTermsType: role === "seller" ? "seller" : "buyer",
       acceptedTermsVersion: "1.0",
-
       acceptedTermsAt: serverTimestamp(),
-
       sellerAccuracyConfirmed:
         role === "seller"
           ? sellerAccuracyCheck?.checked === true
           : false,
-
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -154,21 +120,12 @@ registerBtn?.addEventListener("click", async () => {
       userData
     );
 
-    /* -------------------------------------------------------
-       SUCCESS
-    ------------------------------------------------------- */
-
     showMessage(
       role === "seller"
         ? "Seller account created successfully. Your account is awaiting approval."
         : "Account created successfully.",
       "success"
     );
-
-    /*
-      Seller dashboard can display pending approval.
-      Customer goes directly to normal dashboard.
-    */
 
     setTimeout(() => {
       window.location.href = "dashboard.html";
@@ -177,31 +134,15 @@ registerBtn?.addEventListener("click", async () => {
   } catch (error) {
     console.error("Registration error:", error);
 
-    /*
-      If Firebase Authentication was successfully created but
-      Firestore profile creation failed, delete the newly
-      created Auth account.
-
-      This prevents orphan accounts that cause:
-      auth/email-already-in-use
-      on the next registration attempt.
-    */
-
     if (
       createdUser &&
       error?.code !== "auth/email-already-in-use"
     ) {
       try {
         await deleteUser(createdUser);
-
-        console.warn(
-          "Registration rolled back because Firestore profile creation failed."
-        );
+        console.warn("Registration rolled back because Firestore profile creation failed.");
       } catch (rollbackError) {
-        console.error(
-          "Could not roll back Firebase Auth user:",
-          rollbackError
-        );
+        console.error("Could not roll back Firebase Auth user:", rollbackError);
       }
     }
 
@@ -212,10 +153,6 @@ registerBtn?.addEventListener("click", async () => {
     updateRegisterButton();
   }
 });
-
-/* =========================================================
-   AGREEMENT DISPLAY
-========================================================= */
 
 function updateAgreementView() {
   const role = roleSelect?.value || "customer";
@@ -245,10 +182,6 @@ function updateAgreementView() {
   updateRegisterButton();
 }
 
-/* =========================================================
-   BUTTON STATE
-========================================================= */
-
 function updateRegisterButton() {
   if (!registerBtn) return;
 
@@ -256,10 +189,6 @@ function updateRegisterButton() {
 
   registerBtn.disabled = !hasAcceptedRequiredTerms(role);
 }
-
-/* =========================================================
-   REQUIRED AGREEMENTS
-========================================================= */
 
 function hasAcceptedRequiredTerms(role) {
   if (role === "seller") {
@@ -272,15 +201,10 @@ function hasAcceptedRequiredTerms(role) {
   return buyerTermsCheck?.checked === true;
 }
 
-/* =========================================================
-   ERROR HANDLING
-========================================================= */
-
 function handleRegistrationError(error) {
   const code = error?.code || "";
 
   switch (code) {
-
     case "auth/email-already-in-use":
       showMessage(
         "An account already exists with this email address. Please log in instead.",
@@ -289,10 +213,7 @@ function handleRegistrationError(error) {
       break;
 
     case "auth/invalid-email":
-      showMessage(
-        "Please enter a valid email address.",
-        "error"
-      );
+      showMessage("Please enter a valid email address.", "error");
       break;
 
     case "auth/weak-password":
@@ -325,11 +246,7 @@ function handleRegistrationError(error) {
       break;
 
     default:
-      console.error(
-        "Unhandled registration error:",
-        error
-      );
-
+      console.error("Unhandled registration error:", error);
       showMessage(
         "We could not create your account. Please try again.",
         "error"
@@ -337,17 +254,9 @@ function handleRegistrationError(error) {
   }
 }
 
-/* =========================================================
-   EMAIL VALIDATION
-========================================================= */
-
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
-
-/* =========================================================
-   LOADING STATE
-========================================================= */
 
 function setLoading(loading) {
   if (!registerBtn) return;
@@ -359,10 +268,6 @@ function setLoading(loading) {
     registerBtn.textContent = "Create Account";
   }
 }
-
-/* =========================================================
-   MESSAGE
-========================================================= */
 
 function showMessage(text, type = "error") {
   if (!message) return;
