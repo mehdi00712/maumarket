@@ -4884,3 +4884,76 @@ a.mm-footer-contact-item:hover {
     cursor: pointer;
   }
 }
+
+/* =========================================
+   PASSWORD SHOW / HIDE EYE
+========================================= */
+
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 55px !important;
+  box-sizing: border-box;
+}
+
+.password-field .password-toggle {
+  position: absolute !important;
+  top: 50% !important;
+  right: 14px !important;
+  transform: translateY(-50%) !important;
+
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 0 !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border: none !important;
+  outline: none !important;
+  border-radius: 50% !important;
+
+  background: transparent !important;
+  box-shadow: none !important;
+
+  color: #667085 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  cursor: pointer !important;
+  z-index: 5;
+
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
+.password-field .password-toggle:hover {
+  background: rgba(103, 71, 255, 0.08) !important;
+  color: #6747ff !important;
+}
+
+.password-field .password-toggle:active {
+  transform: translateY(-50%) scale(0.94) !important;
+}
+
+.password-field .password-toggle:focus {
+  outline: none !important;
+}
+
+.password-field .password-toggle svg {
+  width: 21px;
+  height: 21px;
+
+  display: block;
+
+  stroke: currentColor;
+  fill: none;
+
+  pointer-events: none;
+}
