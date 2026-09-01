@@ -5,7 +5,24 @@
   <title>Shop | MauMarket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Browse verified MauMarket seller products, reviews, shop information and ratings.">
-  <link rel="stylesheet" href="styles.css?v=6.1">
+
+  <link rel="stylesheet" href="styles.css?v=6.2-shop-sidebar-fix">
+
+  <style>
+    /* =========================================================
+       REMOVE SHOP DIRECTORY CATEGORY SIDEBAR FROM SHOP.HTML
+       ========================================================= */
+
+    .premium-public-shop-page .shops-directory-sidebar,
+    body:has(.premium-public-shop-page) .shops-directory-sidebar,
+    body:has(.premium-public-shop-page) #shopsCategoryList {
+      display: none !important;
+    }
+
+    body:has(.premium-public-shop-page) .shops-directory-layout {
+      grid-template-columns: 1fr !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -243,16 +260,17 @@
     <aside class="shop-sidebar shop-wow-sidebar premium-shop-sidebar">
 
       <section
-          id="shopAboutCard"
-          class="pro-side-card shop-wow-card premium-sidebar-card premium-shop-about-card"></section>
+        id="shopAboutCard"
+        class="pro-side-card shop-wow-card premium-sidebar-card premium-shop-about-card">
+      </section>
 
       <section
-          id="featuredShopCard"
-          class="pro-side-card shop-wow-card premium-sidebar-card">
+        id="featuredShopCard"
+        class="pro-side-card shop-wow-card premium-sidebar-card">
       </section>
-      
+
       <section
-          id="shopPolicyCard"
+        id="shopPolicyCard"
         class="pro-side-card shop-wow-card premium-sidebar-card premium-protection-card">
 
         <div class="premium-sidebar-heading">
@@ -273,13 +291,16 @@
       <section
         id="shopRatingCard"
         class="pro-side-card shop-wow-card premium-sidebar-card premium-rating-card">
+
         <div class="shop-page-loading small">
           <div class="shop-page-loading-spinner"></div>
           <p>Loading rating...</p>
         </div>
+
       </section>
 
-      <section class="pro-side-card shop-wow-card premium-sidebar-card premium-support-card">
+      <section
+        class="pro-side-card shop-wow-card premium-sidebar-card premium-support-card">
 
         <div class="premium-sidebar-heading">
           <div class="premium-sidebar-icon">💬</div>
@@ -339,7 +360,7 @@
 </main>
 
 <script type="module" src="js/nav.js?v=5.2"></script>
-<script type="module" src="js/shop.js?v=5.0"></script>
+<script type="module" src="js/shop.js?v=5.1-no-directory-sidebar"></script>
 
 </body>
 </html>
