@@ -186,6 +186,65 @@ function renderCategoryIcons() {
   });
 }
 
+function getBannerShopUrl(banner) {
+  if (!banner) return "shops.html";
+
+  // Prefer a direct URL saved by the admin, if one exists.
+  const directUrl = String(
+    banner.shopUrl ||
+    banner.targetUrl ||
+    banner.linkUrl ||
+    banner.url ||
+    ""
+  ).trim();
+
+  if (directUrl) return directUrl;
+
+  // Prefer the exact shop/seller ID. MauMarket shops normally use
+  // the seller UID as the shop document ID.
+  const shopId = String(
+    banner.shopId ||
+    banner.sellerId ||
+    banner.ownerId ||
+    banner.featuredShopId ||
+    banner.targetShopId ||
+    banner.uid ||
+    ""
+  ).trim();
+
+  if (shopId) {
+    return `shop.html?id=${encodeURIComponent(shopId)}`;
+  }
+
+  // If the banner stores a shop slug, use it.
+  const storedSlug = String(
+    banner.shopSlug ||
+    banner.slug ||
+    ""
+  ).trim();
+
+  if (storedSlug) {
+    return `shop.html?shop=${encodeURIComponent(storedSlug)}`;
+  }
+
+  // Last fallback: use the banner's shop name as the public shop slug.
+  // This keeps older banners working when they were saved before shopId
+  // was added to the banner document.
+  const shopName = String(banner.shopName || "").trim();
+
+  if (shopName) {
+    const generatedSlug = normalizeShopSlug(shopName);
+
+    if (generatedSlug) {
+      return `shop.html?shop=${encodeURIComponent(generatedSlug)}`;
+    }
+  }
+
+  // Only fall back to the Featured Shops directory when the banner
+  // contains no shop reference at all.
+  return "shops.html";
+}
+
 async function loadTopBanner() {
   if (!topAdBanner) return;
 
@@ -265,9 +324,9 @@ async function loadTopBanner() {
             </p>
 
             <a
-              href="shops.html"
+              href="${getBannerShopUrl(banner)}"
               class="featured-banner-button">
-              Explore Featured Shops
+              Explore Featured Shop
             </a>
 
           </div>
