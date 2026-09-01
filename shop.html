@@ -10,16 +10,42 @@
 
   <style>
     /* =========================================================
-       REMOVE SHOP DIRECTORY CATEGORY SIDEBAR FROM SHOP.HTML
+       SHOP.HTML — REMOVE THE SHOP CATEGORIES PANEL COMPLETELY
        ========================================================= */
 
-    .premium-public-shop-page .shops-directory-sidebar,
-    body:has(.premium-public-shop-page) .shops-directory-sidebar,
-    body:has(.premium-public-shop-page) #shopsCategoryList {
+    /* Known shop-directory/category sidebar selectors */
+    body .shops-directory-sidebar,
+    body #shopsCategoryList,
+    body .shop-categories-sidebar,
+    body .shop-category-sidebar,
+    body .shops-category-sidebar,
+    body .category-sidebar,
+    body .categories-sidebar,
+    body .shop-categories-panel,
+    body .shops-categories-panel {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+
+    /* Hide the complete filter card that contains the category list */
+    body .filter-card:has(#shopsCategoryList),
+    body aside:has(#shopsCategoryList),
+    body section:has(#shopsCategoryList) {
       display: none !important;
     }
 
-    body:has(.premium-public-shop-page) .shops-directory-layout {
+    /* If a shared directory layout is accidentally injected, use one column */
+    body .shops-directory-layout {
       grid-template-columns: 1fr !important;
     }
   </style>
@@ -359,8 +385,71 @@
 
 </main>
 
+
+<script>
+  (function removeShopCategoriesFromPublicShop() {
+    function removeCategoryPanels() {
+      const directSelectors = [
+        "#shopsCategoryList",
+        ".shops-directory-sidebar",
+        ".shop-categories-sidebar",
+        ".shop-category-sidebar",
+        ".shops-category-sidebar",
+        ".category-sidebar",
+        ".categories-sidebar",
+        ".shop-categories-panel",
+        ".shops-categories-panel"
+      ];
+
+      directSelectors.forEach((selector) => {
+        document.querySelectorAll(selector).forEach((element) => {
+          const wrapper =
+            element.closest(".filter-card") ||
+            element.closest("aside") ||
+            element;
+
+          wrapper.remove();
+        });
+      });
+
+      /* Catch shared/injected cards by their visible title. */
+      document.querySelectorAll(
+        ".filter-card, aside, section, div"
+      ).forEach((element) => {
+        if (!element.isConnected) return;
+
+        const heading = element.querySelector(
+          ":scope > h1, :scope > h2, :scope > h3, :scope > .filter-card-heading h1, :scope > .filter-card-heading h2, :scope > .filter-card-heading h3"
+        );
+
+        const headingText = String(heading?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+
+        if (headingText === "shop categories") {
+          element.remove();
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", removeCategoryPanels);
+
+    const observer = new MutationObserver(() => {
+      removeCategoryPanels();
+    });
+
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true
+    });
+
+    window.addEventListener("load", removeCategoryPanels);
+  })();
+</script>
+
 <script type="module" src="js/nav.js?v=5.2"></script>
-<script type="module" src="js/shop.js?v=5.1-no-directory-sidebar"></script>
+<script type="module" src="js/shop.js?v=5.2-no-categories-panel"></script>
 
 </body>
 </html>
