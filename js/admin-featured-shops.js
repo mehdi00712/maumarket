@@ -75,6 +75,9 @@ const approveFeaturedBtn = document.getElementById(
 const rejectFeaturedBtn = document.getElementById(
   "rejectFeaturedBtn"
 );
+const revokeFeaturedBtn = document.getElementById(
+  "revokeFeaturedBtn"
+);
 const closeFeaturedModal = document.getElementById(
   "closeFeaturedModal"
 );
@@ -581,6 +584,20 @@ function renderRequestDetails(request) {
         : ""
     }
 
+    ${
+      request.revocationReason || request.shopData?.featuredRevocationReason
+        ? `
+          <section class="featured-admin-detail-section">
+            <h3>Revocation Reason</h3>
+            <p>${escapeHtml(
+              request.revocationReason ||
+              request.shopData?.featuredRevocationReason
+            )}</p>
+          </section>
+        `
+        : ""
+    }
+
     <section class="featured-admin-detail-actions">
       <a
         href="${escapeHtml(publicShopUrl)}"
@@ -609,18 +626,36 @@ function renderRequestDetails(request) {
 
 function updateModalButtons(request) {
   const effectiveStatus = getEffectiveStatus(request);
-  const isPending = effectiveStatus === "pending";
+
+  const canGrant = [
+    "pending",
+    "rejected",
+    "expired",
+    "revoked"
+  ].includes(effectiveStatus);
+
+  const canReject = effectiveStatus === "pending";
+  const canRevoke = effectiveStatus === "approved";
 
   if (approveFeaturedBtn) {
-    approveFeaturedBtn.style.display = isPending ? "" : "none";
+    approveFeaturedBtn.style.display = canGrant ? "" : "none";
     approveFeaturedBtn.disabled = false;
-    approveFeaturedBtn.textContent = "Approve";
+    approveFeaturedBtn.textContent =
+      effectiveStatus === "pending"
+        ? "Grant Access"
+        : "Grant Access Again";
   }
 
   if (rejectFeaturedBtn) {
-    rejectFeaturedBtn.style.display = isPending ? "" : "none";
+    rejectFeaturedBtn.style.display = canReject ? "" : "none";
     rejectFeaturedBtn.disabled = false;
     rejectFeaturedBtn.textContent = "Reject";
+  }
+
+  if (revokeFeaturedBtn) {
+    revokeFeaturedBtn.style.display = canRevoke ? "" : "none";
+    revokeFeaturedBtn.disabled = false;
+    revokeFeaturedBtn.textContent = "Revoke Access";
   }
 }
 
@@ -668,12 +703,12 @@ async function approveSelectedRequest() {
     "this shop";
 
   const confirmed = window.confirm(
-    `Approve ${shopName} as a Featured Shop for ${FEATURED_DURATION_DAYS} days?`
+    `Grant ${shopName} Featured Shop access for ${FEATURED_DURATION_DAYS} days?`
   );
 
   if (!confirmed) return;
 
-  setProcessingState(true, "Approving...");
+  setProcessingState(true, "Granting...");
 
   try {
     const now = new Date();
@@ -724,7 +759,7 @@ async function approveSelectedRequest() {
     });
 
     alert(
-      `${shopName} is now a Featured Shop until ${formatDate(expiry)}.`
+      `${shopName} has been granted Featured Shop access until ${formatDate(expiry)}.`
     );
 
     closeRequestModalForce();
@@ -733,7 +768,7 @@ async function approveSelectedRequest() {
     console.error("Could not approve Featured Shop request:", error);
     alert(
       error.message ||
-        "The Featured Shop request could not be approved."
+        "Featured Shop access could not be granted."
     );
   } finally {
     setProcessingState(false);
@@ -811,16 +846,107 @@ async function rejectSelectedRequest() {
   }
 }
 
+async function revokeSelectedRequest() {
+  if (!selectedRequest || isProcessing) return;
+
+  const request = selectedRequest;
+  const sellerId = getRequestSellerId(request);
+
+  if (!sellerId) {
+    alert("This request does not have a valid seller ID.");
+    return;
+  }
+
+  const shopName =
+    request.shopData?.shopName ||
+    request.shopName ||
+    request.businessName ||
+    "this shop";
+
+  const reason = window.prompt(
+    `Enter the reason for revoking Featured Shop access for ${shopName}:`
+  );
+
+  if (reason === null) return;
+
+  const cleanReason = reason.trim();
+
+  if (cleanReason.length < 3) {
+    alert("Please enter a clear revocation reason.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Revoke Featured Shop access for ${shopName}? The shop will stop appearing as Featured immediately.`
+  );
+
+  if (!confirmed) return;
+
+  setProcessingState(true, "Revoking...");
+
+  try {
+    const requestReference = doc(
+      db,
+      "featuredShopRequests",
+      request.id
+    );
+
+    const shopReference = doc(db, "shops", sellerId);
+    const shopSnapshot = await getDoc(shopReference);
+
+    await updateDoc(requestReference, {
+      status: "revoked",
+      featuredStatus: "revoked",
+      revokedAt: serverTimestamp(),
+      revokedBy: currentAdmin?.uid || "",
+      revokedByEmail: currentAdmin?.email || "",
+      revocationReason: cleanReason,
+      featuredPaymentVerified: false,
+      updatedAt: serverTimestamp()
+    });
+
+    if (shopSnapshot.exists()) {
+      await updateDoc(shopReference, {
+        featuredShop: false,
+        featuredStatus: "revoked",
+        featuredPaymentVerified: false,
+        showInExploreShops: false,
+        featuredRevocationReason: cleanReason,
+        featuredRevokedAt: serverTimestamp(),
+        featuredRevokedBy: currentAdmin?.uid || "",
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    alert(`${shopName}'s Featured Shop access has been revoked.`);
+
+    closeRequestModalForce();
+    await loadFeaturedShopRequests();
+  } catch (error) {
+    console.error("Could not revoke Featured Shop access:", error);
+
+    alert(
+      error.message ||
+      "Featured Shop access could not be revoked."
+    );
+  } finally {
+    setProcessingState(false);
+  }
+}
+
 function setProcessingState(processing, label = "") {
   isProcessing = processing;
 
   if (approveFeaturedBtn) {
     approveFeaturedBtn.disabled = processing;
 
-    if (processing && label.startsWith("Approving")) {
+    if (
+      processing &&
+      (label.startsWith("Granting") || label.startsWith("Approving"))
+    ) {
       approveFeaturedBtn.textContent = label;
     } else if (!processing) {
-      approveFeaturedBtn.textContent = "Approve";
+      approveFeaturedBtn.textContent = "Grant Access";
     }
   }
 
@@ -831,6 +957,16 @@ function setProcessingState(processing, label = "") {
       rejectFeaturedBtn.textContent = label;
     } else if (!processing) {
       rejectFeaturedBtn.textContent = "Reject";
+    }
+  }
+
+  if (revokeFeaturedBtn) {
+    revokeFeaturedBtn.disabled = processing;
+
+    if (processing && label.startsWith("Revoking")) {
+      revokeFeaturedBtn.textContent = label;
+    } else if (!processing) {
+      revokeFeaturedBtn.textContent = "Revoke Access";
     }
   }
 
@@ -936,6 +1072,11 @@ function attachEvents() {
   rejectFeaturedBtn?.addEventListener(
     "click",
     rejectSelectedRequest
+  );
+
+  revokeFeaturedBtn?.addEventListener(
+    "click",
+    revokeSelectedRequest
   );
 
   featuredRequestModal?.addEventListener("cancel", (event) => {
@@ -1132,6 +1273,7 @@ function formatStatusLabel(status) {
     pending: "Pending Review",
     approved: "Active",
     rejected: "Rejected",
+    revoked: "Revoked",
     expired: "Expired",
     cancelled: "Cancelled"
   };
