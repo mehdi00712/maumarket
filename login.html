@@ -4,23 +4,129 @@
   <meta charset="UTF-8">
   <title>Login | MauMarket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .password-field {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-field input {
+      width: 100%;
+      padding-right: 52px;
+      box-sizing: border-box;
+    }
+
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .password-toggle:hover {
+      background: rgba(99, 71, 255, 0.08);
+    }
+
+    .password-toggle:focus-visible {
+      outline: 2px solid #6747ff;
+      outline-offset: 2px;
+    }
+
+    #message {
+      min-height: 24px;
+    }
+
+    .error-message {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .success-message {
+      color: #15803d;
+      font-weight: 600;
+    }
+  </style>
 </head>
+
 <body class="auth-body">
 
-<div class="auth-card">
-  <h1>Login</h1>
+  <div class="auth-card">
 
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
+    <h1>Login</h1>
 
-  <button id="loginBtn">Login</button>
+    <input
+      id="email"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+      inputmode="email"
+      required
+    >
 
-  <p id="message"></p>
-  <p>No account? <a href="register.html">Register</a></p>
-</div>
+    <div class="password-field">
 
-<script type="module" src="js/auth.js"></script>
-<script src="js/footer.js"></script>
+      <input
+        id="password"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+        required
+      >
+
+      <button
+        id="togglePassword"
+        class="password-toggle"
+        type="button"
+        aria-label="Show password"
+        title="Show password"
+      >
+        👁
+      </button>
+
+    </div>
+
+    <button
+      id="loginBtn"
+      type="button"
+    >
+      Login
+    </button>
+
+    <p
+      id="message"
+      aria-live="polite"
+    ></p>
+
+    <p>
+      No account?
+      <a href="register.html">
+        Register
+      </a>
+    </p>
+
+  </div>
+
+  <script
+    type="module"
+    src="js/auth.js?v=2.0-friendly-errors-password-eye"
+  ></script>
+
+  <script src="js/footer.js"></script>
+
 </body>
 </html>
