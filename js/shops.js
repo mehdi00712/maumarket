@@ -14,9 +14,7 @@ import {
   - Loads active/approved shops
   - Loads active marketplace listings
   - Counts listings per seller
-  - Loads active categories
-  - Search by shop name, description, category and location
-  - Filter by category
+  - Search by shop name, description and location
   - Sort by featured, rating, listings, newest and alphabetical
   - Responsive premium shop cards
   - Personalized public shop links
@@ -28,13 +26,11 @@ const shopsEmptyState = document.getElementById("shopsEmptyState");
 
 const shopsSearchInput = document.getElementById("shopsSearchInput");
 const shopsSearchBtn = document.getElementById("shopsSearchBtn");
-const shopsCategoryFilter = document.getElementById("shopsCategoryFilter");
 const shopsSortFilter = document.getElementById("shopsSortFilter");
 
 const clearShopFiltersBtn = document.getElementById("clearShopFiltersBtn");
 const shopsEmptyClearBtn = document.getElementById("shopsEmptyClearBtn");
 
-const shopsCategoryList = document.getElementById("shopsCategoryList");
 
 const shopsResultCount = document.getElementById("shopsResultCount");
 const shopsDirectoryTitle = document.getElementById("shopsDirectoryTitle");
@@ -49,17 +45,14 @@ const retryShopsBtn = document.getElementById("retryShopsBtn");
 
 let allShops = [];
 let allListings = [];
-let allCategories = [];
 let featuredShops = [];
 
 let activeSearch = "";
-let activeCategory = "";
 let activeSort = "featured";
 
 const params = new URLSearchParams(window.location.search);
 
 activeSearch = params.get("search") || "";
-activeCategory = params.get("category") || "";
 activeSort = params.get("sort") || "featured";
 
 if (shopsSearchInput) shopsSearchInput.value = activeSearch;
@@ -67,47 +60,11 @@ if (shopsSortFilter) shopsSortFilter.value = activeSort;
 
 attachEvents();
 
-await loadCategories();
 await loadShopsDirectory();
 
 /* =========================================================
    LOAD DATA
    ========================================================= */
-
-async function loadCategories() {
-  try {
-    const snapshot = await getDocs(collection(db, "categories"));
-
-    allCategories = [];
-
-    snapshot.forEach((docSnap) => {
-      const category = {
-        id: docSnap.id,
-        ...docSnap.data()
-      };
-
-      if (category.active !== false && category.name) {
-        allCategories.push(category);
-      }
-    });
-
-    allCategories.sort((a, b) => {
-      const aOrder = Number(a.sortOrder || 0);
-      const bOrder = Number(b.sortOrder || 0);
-
-      if (aOrder !== bOrder) return aOrder - bOrder;
-
-      return String(a.name || "").localeCompare(String(b.name || ""));
-    });
-
-    renderCategoryControls();
-  } catch (error) {
-    console.warn("Could not load shop categories:", error.message);
-
-    allCategories = [];
-    renderCategoryControls();
-  }
-}
 
 async function loadShopsDirectory() {
   showLoadingState();
@@ -253,97 +210,6 @@ function emptyListingStats() {
 }
 
 /* =========================================================
-   CATEGORY CONTROLS
-   ========================================================= */
-
-function renderCategoryControls() {
-  if (shopsCategoryFilter) {
-    shopsCategoryFilter.innerHTML = `
-      <option value="">All Categories</option>
-    `;
-
-    allCategories.forEach((category) => {
-      const option = document.createElement("option");
-
-      option.value = category.name;
-      option.textContent = category.name;
-
-      shopsCategoryFilter.appendChild(option);
-    });
-
-    ensureCategoryOption(activeCategory);
-    shopsCategoryFilter.value = activeCategory;
-  }
-
-  if (!shopsCategoryList) return;
-
-  shopsCategoryList.innerHTML = "";
-
-  const allButton = createCategoryButton({
-    name: "",
-    label: "All Shops"
-  });
-
-  shopsCategoryList.appendChild(allButton);
-
-  allCategories.forEach((category) => {
-    shopsCategoryList.appendChild(
-      createCategoryButton({
-        name: category.name,
-        label: category.name
-      })
-    );
-  });
-}
-
-function createCategoryButton(category) {
-  const button = document.createElement("button");
-
-  button.type = "button";
-  button.className = `shops-category-btn ${
-    activeCategory === category.name ? "active" : ""
-  }`;
-
-  button.innerHTML = `
-    <span>${escapeHtml(category.label)}</span>
-    <small>${getCategoryShopCount(category.name)}</small>
-  `;
-
-  button.addEventListener("click", () => {
-    setCategory(category.name);
-    renderCategoryControls();
-    renderShops(true);
-  });
-
-  return button;
-}
-
-function getCategoryShopCount(categoryName) {
-  if (!categoryName) return allShops.length;
-
-  return allShops.filter((shop) => {
-    return getShopCategories(shop).includes(categoryName);
-  }).length;
-}
-
-function ensureCategoryOption(categoryName) {
-  if (!shopsCategoryFilter || !categoryName) return;
-
-  const exists = Array.from(shopsCategoryFilter.options).some(
-    (option) => option.value === categoryName
-  );
-
-  if (!exists) {
-    const option = document.createElement("option");
-
-    option.value = categoryName;
-    option.textContent = categoryName;
-
-    shopsCategoryFilter.appendChild(option);
-  }
-}
-
-/* =========================================================
    RENDER SHOPS
    ========================================================= */
 
@@ -365,10 +231,8 @@ function renderShops(shouldScroll = false) {
     `.toLowerCase();
 
     const matchesSearch = !search || searchableText.includes(search);
-    const matchesCategory =
-      !activeCategory || shopCategories.includes(activeCategory);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   });
 
   filtered = sortShops(filtered, activeSort);
@@ -389,7 +253,6 @@ function renderShops(shouldScroll = false) {
 
   updateResultsText(filtered.length);
   updateUrlState();
-  renderCategoryControls();
 
   if (shouldScroll) {
     document.querySelector(".shops-directory-main")?.scrollIntoView({
@@ -612,11 +475,6 @@ function attachEvents() {
     renderShops(true);
   });
 
-  shopsCategoryFilter?.addEventListener("change", () => {
-    setCategory(shopsCategoryFilter.value);
-    renderShops(true);
-  });
-
   shopsSortFilter?.addEventListener("change", () => {
     activeSort = shopsSortFilter.value || "featured";
     renderShops(false);
@@ -626,22 +484,12 @@ function attachEvents() {
   shopsEmptyClearBtn?.addEventListener("click", clearFilters);
 }
 
-function setCategory(value) {
-  activeCategory = value || "";
-
-  if (shopsCategoryFilter) {
-    ensureCategoryOption(activeCategory);
-    shopsCategoryFilter.value = activeCategory;
-  }
-}
 
 function clearFilters() {
   activeSearch = "";
-  activeCategory = "";
   activeSort = "featured";
 
   if (shopsSearchInput) shopsSearchInput.value = "";
-  if (shopsCategoryFilter) shopsCategoryFilter.value = "";
   if (shopsSortFilter) shopsSortFilter.value = "featured";
 
   renderShops(true);
@@ -651,7 +499,6 @@ function updateUrlState() {
   const nextParams = new URLSearchParams();
 
   if (activeSearch) nextParams.set("search", activeSearch);
-  if (activeCategory) nextParams.set("category", activeCategory);
   if (activeSort && activeSort !== "featured") {
     nextParams.set("sort", activeSort);
   }
@@ -712,20 +559,15 @@ function updateHeroStats() {
 
 function updateResultsText(count) {
   if (shopsResultCount) {
-    const categoryText = activeCategory
-      ? ` in ${activeCategory}`
-      : "";
 
     shopsResultCount.textContent =
-      `${count} verified shop${count === 1 ? "" : "s"} found${categoryText}.`;
+      `${count} verified shop${count === 1 ? "" : "s"} found.`;
   }
 
   if (shopsDirectoryTitle) {
     if (activeSearch) {
       shopsDirectoryTitle.textContent =
         `Search results for "${activeSearch}"`;
-    } else if (activeCategory) {
-      shopsDirectoryTitle.textContent = `${activeCategory} Shops`;
     } else {
       shopsDirectoryTitle.textContent = "All Shops";
     }
