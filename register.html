@@ -3,18 +3,66 @@
 
 <head>
   <meta charset="UTF-8">
-
   <title>Register | MauMarket</title>
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link
-    rel="stylesheet"
-    href="styles.css"
-  >
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .password-field {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-field input {
+      width: 100%;
+      padding-right: 52px;
+      box-sizing: border-box;
+    }
+
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .password-toggle:hover {
+      background: rgba(99, 71, 255, 0.08);
+    }
+
+    .password-toggle:focus-visible {
+      outline: 2px solid #6747ff;
+      outline-offset: 2px;
+    }
+
+    #message {
+      min-height: 24px;
+    }
+
+    .error-message {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .success-message {
+      color: #15803d;
+      font-weight: 600;
+    }
+  </style>
 </head>
 
 <body class="auth-body">
@@ -23,256 +71,99 @@
 
     <h1>Create Account</h1>
 
-    <!-- Full Name -->
-    <input
-      id="name"
-      type="text"
-      placeholder="Full name"
-      autocomplete="name"
-      required
-    >
+    <input id="name" type="text" placeholder="Full name" autocomplete="name" required>
 
-    <!-- Phone -->
-    <input
-      id="phone"
-      type="tel"
-      placeholder="Phone number"
-      autocomplete="tel"
-      required
-    >
+    <input id="phone" type="tel" placeholder="Phone number" autocomplete="tel" required>
 
-    <!-- Email -->
-    <input
-      id="email"
-      type="email"
-      placeholder="Email"
-      autocomplete="email"
-      required
-    >
+    <input id="email" type="email" placeholder="Email" autocomplete="email" inputmode="email" required>
 
-    <!-- Password -->
-    <input
-      id="password"
-      type="password"
-      placeholder="Password"
-      autocomplete="new-password"
-      minlength="6"
-      required
-    >
+    <div class="password-field">
+      <input
+        id="password"
+        type="password"
+        placeholder="Password"
+        autocomplete="new-password"
+        minlength="6"
+        required
+      >
 
-    <!-- Role -->
+      <button
+        id="togglePassword"
+        class="password-toggle"
+        type="button"
+        aria-label="Show password"
+        title="Show password"
+      >
+        👁
+      </button>
+    </div>
+
     <select id="role">
-
-      <option value="customer">
-        Customer
-      </option>
-
-      <option value="seller">
-        Seller
-      </option>
-
+      <option value="customer">Customer</option>
+      <option value="seller">Seller</option>
     </select>
 
-    <!-- =====================================================
-         BUYER AGREEMENT
-    ====================================================== -->
-
-    <section
-      id="buyerAgreement"
-      class="agreement-card"
-    >
-
+    <section id="buyerAgreement" class="agreement-card">
       <h3>Buyer Agreement</h3>
 
       <div class="agreement-scroll">
-
-        <p>
-          I agree to provide accurate personal,
-          contact and delivery information.
-        </p>
-
-        <p>
-          I understand that MauMarket connects
-          buyers with independent sellers.
-        </p>
-
-        <p>
-          I understand that delivery is managed
-          by MauMarket or its authorised delivery
-          partners.
-        </p>
-
-        <p>
-          I agree to make payments only through
-          approved MauMarket payment methods.
-        </p>
-
-        <p>
-          I understand that payment proofs may be
-          reviewed before orders are processed.
-        </p>
-
-        <p>
-          I agree not to submit fraudulent refund,
-          delivery or payment claims.
-        </p>
-
-        <p>
-          I agree to use MauMarket only for lawful
-          purposes.
-        </p>
-
+        <p>I agree to provide accurate personal, contact and delivery information.</p>
+        <p>I understand that MauMarket connects buyers with independent sellers.</p>
+        <p>I understand that delivery is managed by MauMarket or its authorised delivery partners.</p>
+        <p>I agree to make payments only through approved MauMarket payment methods.</p>
+        <p>I understand that payment proofs may be reviewed before orders are processed.</p>
+        <p>I agree not to submit fraudulent refund, delivery or payment claims.</p>
+        <p>I agree to use MauMarket only for lawful purposes.</p>
       </div>
 
       <label class="agreement-check">
-
-        <input
-          id="buyerTermsCheck"
-          type="checkbox"
-        >
-
-        <span>
-          I have read and agree to the
-          MauMarket Buyer Agreement.
-        </span>
-
+        <input id="buyerTermsCheck" type="checkbox">
+        <span>I have read and agree to the MauMarket Buyer Agreement.</span>
       </label>
-
     </section>
 
-    <!-- =====================================================
-         SELLER AGREEMENT
-    ====================================================== -->
-
-    <section
-      id="sellerAgreement"
-      class="agreement-card hidden"
-    >
-
+    <section id="sellerAgreement" class="agreement-card hidden">
       <h3>Seller Agreement</h3>
 
       <div class="agreement-scroll">
-
-        <p>
-          I confirm that all registration information
-          I provide is accurate and complete.
-        </p>
-
-        <p>
-          I understand that MauMarket may request
-          additional verification before approving
-          my seller account.
-        </p>
-
-        <p>
-          I agree to list only lawful, genuine and
-          permitted products or services.
-        </p>
-
-        <p>
-          I will not list illegal, counterfeit,
-          stolen, unsafe, hazardous or prohibited
-          products.
-        </p>
-
-        <p>
-          I understand that MauMarket applies a
-          marketplace service fee to sales.
-        </p>
-
-        <p>
-          I agree to prepare confirmed orders on
-          time and package products properly.
-        </p>
-
-        <p>
-          I understand that all deliveries are
-          managed by MauMarket or authorised
-          logistics partners.
-        </p>
-
-        <p>
-          I agree not to bypass MauMarket by
-          contacting buyers for off-platform
-          transactions.
-        </p>
-
-        <p>
-          I understand that payouts may be delayed
-          or withheld if fraud, disputes or policy
-          breaches are suspected.
-        </p>
-
-        <p>
-          I understand that MauMarket may suspend
-          or terminate my seller account if I break
-          platform rules.
-        </p>
-
+        <p>I confirm that all registration information I provide is accurate and complete.</p>
+        <p>I understand that MauMarket may request additional verification before approving my seller account.</p>
+        <p>I agree to list only lawful, genuine and permitted products or services.</p>
+        <p>I will not list illegal, counterfeit, stolen, unsafe, hazardous or prohibited products.</p>
+        <p>I understand that MauMarket applies a marketplace service fee to sales.</p>
+        <p>I agree to prepare confirmed orders on time and package products properly.</p>
+        <p>I understand that all deliveries are managed by MauMarket or authorised logistics partners.</p>
+        <p>I agree not to bypass MauMarket by contacting buyers for off-platform transactions.</p>
+        <p>I understand that payouts may be delayed or withheld if fraud, disputes or policy breaches are suspected.</p>
+        <p>I understand that MauMarket may suspend or terminate my seller account if I break platform rules.</p>
       </div>
 
       <label class="agreement-check">
-
-        <input
-          id="sellerTermsCheck"
-          type="checkbox"
-        >
-
-        <span>
-          I have read and agree to the
-          MauMarket Seller Agreement.
-        </span>
-
+        <input id="sellerTermsCheck" type="checkbox">
+        <span>I have read and agree to the MauMarket Seller Agreement.</span>
       </label>
 
       <label class="agreement-check">
-
-        <input
-          id="sellerAccuracyCheck"
-          type="checkbox"
-        >
-
-        <span>
-          I confirm that I am authorised to sell
-          the products or services I will list on
-          MauMarket.
-        </span>
-
+        <input id="sellerAccuracyCheck" type="checkbox">
+        <span>I confirm that I am authorised to sell the products or services I will list on MauMarket.</span>
       </label>
-
     </section>
 
-    <!-- Register -->
-    <button
-      id="registerBtn"
-      type="button"
-      disabled
-    >
+    <button id="registerBtn" type="button" disabled>
       Create Account
     </button>
 
-    <!-- Firebase / registration messages -->
-    <p
-      id="message"
-      aria-live="polite"
-    ></p>
+    <p id="message" aria-live="polite"></p>
 
     <p>
       Already have an account?
-      <a href="login.html">
-        Login
-      </a>
+      <a href="login.html">Login</a>
     </p>
 
   </div>
 
-  <script
-    type="module"
-    src="./js/register.js?v=3.0"
-  ></script>
-
+  <script type="module" src="./js/register.js?v=3.1-password-eye"></script>
   <script src="js/footer.js"></script>
 
 </body>
-
 </html>
