@@ -64,6 +64,25 @@ if (searchInput2) searchInput2.value = activeSearch;
 attachSearchEvents();
 attachFilterEvents();
 
+
+/* =========================================================
+   SHARED NAV SEARCH BRIDGE
+   nav.js dispatches "maumarket:search" on products.html.
+   This listener applies the search and scrolls to results.
+   ========================================================= */
+window.addEventListener("maumarket:search", (event) => {
+  const detail = event?.detail || {};
+  const nextSearch = String(detail.search || "").trim();
+  const nextCategory = String(detail.category || "").trim();
+  const shouldScroll = detail.scroll === true;
+
+  setSearch(nextSearch);
+  setCategory(nextCategory);
+  updateUrlState();
+  renderCategoryIcons();
+  renderItems(shouldScroll);
+});
+
 await loadCategories();
 await loadTopBanner();
 await loadItems();
@@ -1024,21 +1043,41 @@ function updateUrlState() {
 
 function scrollToProducts() {
   const target = document.getElementById("marketProducts") || productsGrid;
+  if (!target) return;
 
-  target?.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
+  const sharedNav = document.getElementById("mmSharedNav");
+  const mobileSearch = document.getElementById("mmMobileSearch");
+
+  const navHeight = sharedNav?.getBoundingClientRect().height || 0;
+  const mobileSearchHeight =
+    window.innerWidth <= 980
+      ? (mobileSearch?.getBoundingClientRect().height || 0)
+      : 0;
+
+  const extraGap = 18;
+  const top =
+    target.getBoundingClientRect().top +
+    window.scrollY -
+    navHeight -
+    mobileSearchHeight -
+    extraGap;
+
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior: "smooth"
   });
 }
 
 function attachSearchEvents() {
   searchInput?.addEventListener("input", () => {
     setSearch(searchInput.value);
+    updateUrlState();
     renderItems(false);
   });
 
   searchInput2?.addEventListener("input", () => {
     setSearch(searchInput2.value);
+    updateUrlState();
     renderItems(false);
   });
 
