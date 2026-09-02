@@ -276,8 +276,7 @@
 
 <article id="contact-form" class="legal-card">
   <h2>Send us a message</h2>
-  <p class="notice">This form is ready for you to connect to Firebase, EmailJS or your own backend.</p>
-  <form class="contact-form" onsubmit="event.preventDefault(); alert('Connect this form to your support backend before going live.');">
+    <form class="contact-form" id="whatsappSupportForm">
     <label>Full Name
       <input type="text" name="name" placeholder="Your full name" required>
     </label>
@@ -324,6 +323,44 @@
   </main>
 
   <script src="js/footer.js"></script>
+
+<script>
+  const whatsappSupportForm = document.getElementById("whatsappSupportForm");
+
+  whatsappSupportForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(whatsappSupportForm);
+
+    const name = String(formData.get("name") || "").trim();
+    const email = String(formData.get("email") || "").trim();
+    const topic = String(formData.get("topic") || "").trim();
+    const orderId = String(formData.get("orderId") || "").trim();
+    const message = String(formData.get("message") || "").trim();
+
+    const whatsappNumber = "23057750662";
+
+    const text = [
+      "Hello MauMarket Support,",
+      "",
+      `Name: ${name}`,
+      `Email: ${email}`,
+      `Topic: ${topic}`,
+      orderId ? `Order ID: ${orderId}` : "",
+      "",
+      "Message:",
+      message
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const whatsappUrl =
+      `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  });
+</script>
+
   
 </body>
 </html>
