@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us | MauMarket</title>
+  <meta name="description" content="Get support for orders, payments, delivery, buyer accounts, seller accounts and other MauMarket questions.">
+  <link rel="stylesheet" href="styles.css?v=7.3">
+  
+<style>
+  :root{
+    --mm-purple:#5b35ff;
+    --mm-purple-dark:#3218c9;
+    --mm-gold:#ffbd2e;
+    --mm-ink:#101629;
+    --mm-muted:#667085;
+    --mm-border:#e8e8f4;
+    --mm-bg:#f7f7fc;
+    --mm-card:#ffffff;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:var(--mm-bg);
+    color:var(--mm-ink);
+    line-height:1.65;
+  }
+
+  .legal-page{
+    width:min(1180px,calc(100% - 28px));
+    margin:28px auto 70px;
+  }
+
+  .legal-hero{
+    padding:44px 42px;
+    border:1px solid rgba(91,53,255,.14);
+    border-radius:30px;
+    background:
+      radial-gradient(circle at 90% 15%,rgba(91,53,255,.15),transparent 28%),
+      linear-gradient(135deg,#fff,#f8f6ff 60%,#fffaf0);
+    box-shadow:0 24px 70px rgba(31,25,75,.09);
+  }
+
+  .eyebrow{
+    display:inline-block;
+    margin-bottom:12px;
+    color:var(--mm-purple);
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+  }
+
+  .legal-hero h1{
+    margin:0;
+    font-size:clamp(36px,5vw,64px);
+    line-height:1;
+    letter-spacing:-.04em;
+  }
+
+  .legal-hero p{
+    max-width:820px;
+    margin:18px 0 0;
+    color:var(--mm-muted);
+    font-size:17px;
+  }
+
+  .legal-grid{
+    display:grid;
+    grid-template-columns:260px minmax(0,1fr);
+    gap:24px;
+    margin-top:24px;
+    align-items:start;
+  }
+
+  .legal-nav{
+    position:sticky;
+    top:20px;
+    padding:20px;
+    border:1px solid var(--mm-border);
+    border-radius:22px;
+    background:#fff;
+    box-shadow:0 12px 30px rgba(16,24,40,.06);
+  }
+
+  .legal-nav h3{
+    margin:0 0 12px;
+    font-size:16px;
+  }
+
+  .legal-nav a{
+    display:block;
+    padding:9px 10px;
+    border-radius:10px;
+    color:#344054;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:700;
+  }
+
+  .legal-nav a:hover{
+    background:#f3f0ff;
+    color:var(--mm-purple);
+  }
+
+  .legal-content{
+    display:grid;
+    gap:18px;
+  }
+
+  .legal-card{
+    padding:28px;
+    border:1px solid var(--mm-border);
+    border-radius:22px;
+    background:var(--mm-card);
+    box-shadow:0 12px 30px rgba(16,24,40,.055);
+  }
+
+  .legal-card h2{
+    margin:0 0 10px;
+    font-size:25px;
+    letter-spacing:-.02em;
+  }
+
+  .legal-card h3{
+    margin:18px 0 8px;
+    font-size:17px;
+  }
+
+  .legal-card p{
+    margin:0 0 12px;
+    color:#475467;
+  }
+
+  .legal-card ul{
+    margin:10px 0 0 20px;
+    color:#475467;
+  }
+
+  .legal-card li{margin:6px 0}
+
+  .notice{
+    padding:14px 16px;
+    border:1px solid #ddd6fe;
+    border-radius:14px;
+    background:#f7f5ff;
+    color:#4b3c8f;
+    font-weight:700;
+  }
+
+  .contact-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+  }
+
+  .contact-item{
+    padding:20px;
+    border:1px solid var(--mm-border);
+    border-radius:18px;
+    background:#fafafe;
+  }
+
+  .contact-item strong{
+    display:block;
+    margin-bottom:6px;
+  }
+
+  .contact-form{
+    display:grid;
+    gap:14px;
+  }
+
+  .contact-form label{
+    font-size:13px;
+    font-weight:800;
+    color:#344054;
+  }
+
+  .contact-form input,
+  .contact-form select,
+  .contact-form textarea{
+    width:100%;
+    margin-top:6px;
+    padding:13px 14px;
+    border:1px solid #dfe3ec;
+    border-radius:12px;
+    background:#fff;
+    font:inherit;
+  }
+
+  .contact-form textarea{min-height:140px;resize:vertical}
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:48px;
+    padding:0 20px;
+    border:0;
+    border-radius:13px;
+    background:linear-gradient(135deg,var(--mm-purple),#7557ff);
+    color:#fff;
+    text-decoration:none;
+    font-weight:900;
+    cursor:pointer;
+  }
+
+  .faq-item{
+    padding:16px 0;
+    border-bottom:1px solid #eceef3;
+  }
+
+  .faq-item:last-child{border-bottom:0}
+  .faq-item h3{margin:0 0 6px}
+
+  .footer-links{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 16px;
+    margin-top:26px;
+    padding:18px 4px 0;
+    border-top:1px solid #e5e7eb;
+  }
+
+  .footer-links a{
+    color:var(--mm-purple);
+    text-decoration:none;
+    font-weight:800;
+  }
+
+  @media(max-width:800px){
+    .legal-grid{grid-template-columns:1fr}
+    .legal-nav{position:static}
+    .contact-grid{grid-template-columns:1fr}
+    .legal-hero{padding:30px 22px}
+    .legal-card{padding:22px}
+  }
+</style>
+
+  
+</head>
+<body>
+  <script type="module" src="js/nav.js?v=5.9"></script>
+
+  <main class="legal-page">
+    <section class="legal-hero">
+      <span class="eyebrow">MauMarket Support & Legal</span>
+      <h1>Contact Us</h1>
+      <p>Get support for orders, payments, delivery, buyer accounts, seller accounts and other MauMarket questions.</p>
+    </section>
+
+    <div class="legal-grid">
+      <aside class="legal-nav">
+        <h3>On this page</h3>
+        <a href="#contact-options">Support options</a>
+<a href="#contact-form">Send a message</a>
+<a href="#response-times">Response times</a>
+      </aside>
+
+      <section class="legal-content">
+        
+<article id="contact-options" class="legal-card">
+  <h2>Contact MauMarket Support</h2>
+  <p>Use the most relevant support option below so your request can be handled faster.</p>
+  <div class="contact-grid">
+    <div class="contact-item"><strong>Orders & Delivery</strong><span>Questions about order status, delivery, delays or receiving an item.</span></div>
+    <div class="contact-item"><strong>Payments & Refunds</strong><span>Payment verification, refund requests, failed payments and transaction questions.</span></div>
+    <div class="contact-item"><strong>Buyer Support</strong><span>Help with purchases, disputes, returns or account access.</span></div>
+    <div class="contact-item"><strong>Seller Support</strong><span>Listings, orders, payouts, Featured Shop access and seller account issues.</span></div>
+  </div>
+</article>
+
+<article id="contact-form" class="legal-card">
+  <h2>Send us a message</h2>
+  <p class="notice">This form is ready for you to connect to Firebase, EmailJS or your own backend.</p>
+  <form class="contact-form" onsubmit="event.preventDefault(); alert('Connect this form to your support backend before going live.');">
+    <label>Full Name
+      <input type="text" name="name" placeholder="Your full name" required>
+    </label>
+    <label>Email Address
+      <input type="email" name="email" placeholder="you@example.com" required>
+    </label>
+    <label>Support Topic
+      <select name="topic" required>
+        <option value="">Choose a topic</option>
+        <option>Order & Delivery</option>
+        <option>Payment & Refund</option>
+        <option>Buyer Account</option>
+        <option>Seller Account</option>
+        <option>Featured Shop</option>
+        <option>Technical Issue</option>
+        <option>Other</option>
+      </select>
+    </label>
+    <label>Order ID (optional)
+      <input type="text" name="orderId" placeholder="Enter your order ID if relevant">
+    </label>
+    <label>Message
+      <textarea name="message" placeholder="Tell us what happened..." required></textarea>
+    </label>
+    <button class="btn" type="submit">Send Message</button>
+  </form>
+</article>
+
+<article id="response-times" class="legal-card">
+  <h2>Support response times</h2>
+  <p>MauMarket aims to review support requests as quickly as reasonably possible. Requests involving payments, delivery disputes or account security may require additional verification before a resolution is provided.</p>
+</article>
+
+      </section>
+    </div>
+
+    <div class="footer-links">
+      <a href="contact.html">Contact Us</a>
+      <a href="help-centre.html">Help Centre</a>
+      <a href="terms.html">Terms & Conditions</a>
+      <a href="buyer-policy.html">Buyer Policy</a>
+      <a href="seller-policy.html">Seller Policy</a>
+    </div>
+  </main>
+
+  <script src="js/footer.js"></script>
+  
+</body>
+</html>
